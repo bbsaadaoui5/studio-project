@@ -1,0 +1,29 @@
+
+{
+    "convo_01": {
+        "id": "convo_01",
+        "participantIds": ["admin_user_01", "student_02"],
+        "participantDetails": [
+            { "id": "admin_user_01", "name": "Admin", "avatar": "https://picsum.photos/seed/admin_user_01/100/100" },
+            { "id": "student_02", "name": "Salma Khatibi", "avatar": "https://picsum.photos/seed/student_02/100/100" }
+        ],
+        "lastMessage": {
+            "text": "N'oubliez pas que votre projet est à rendre demain.",
+            "timestamp": "2024-07-30T10:00:00Z",
+            "senderId": "admin_user_01"
+        }
+    },
+    "convo_02": {
+        "id": "convo_02",
+        "participantIds": ["admin_user_01", "staff_01"],
+        "participantDetails": [
+            { "id": "admin_user_01", "name": "Admin", "avatar": "https://picsum.photos/seed/admin_user_01/100/100" },
+            { "id": "staff_01", "name": "Fatima Al-Fihri", "avatar": "https://picsum.photos/seed/staff_01/100/100" }
+        ],
+        "lastMessage": {
+            "text": "Pouvez-vous me faire parvenir les notes du dernier test de physique s'il vous plaît ?",
+            "timestamp": "2024-07-29T15:30:00Z",
+            "senderId": "admin_user_01"
+        }
+    }
+}

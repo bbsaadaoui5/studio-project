@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.next/
+.firebase/
+
+# Production builds
+.next/
+out/
+dist/
+
+# Environment variables
+.env*.local
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS files
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Firebase
+.firebase/
+firebase-debug.log*
+.firebase/
+.next/
+node_modules/
+.firebase/
+.next/
+node_modules/
+.gitignore

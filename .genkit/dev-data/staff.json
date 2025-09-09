@@ -1,0 +1,43 @@
+
+{
+  "staff_01": {
+    "id": "staff_01",
+    "name": "Fatima Al-Fihri",
+    "email": "fatima.alfihri@example.com",
+    "role": "teacher",
+    "department": "Science",
+    "hireDate": "2020-08-15T09:00:00.000Z",
+    "status": "active",
+    "salary": 240000
+  },
+  "staff_02": {
+    "id": "staff_02",
+    "name": "Ahmed Bennani",
+    "email": "ahmed.bennani@example.com",
+    "role": "teacher",
+    "department": "Mathematics",
+    "hireDate": "2018-07-20T09:00:00.000Z",
+    "status": "active",
+    "salary": 260000
+  },
+  "staff_03": {
+    "id": "staff_03",
+    "name": "Amina Ziani",
+    "email": "amina.ziani@example.com",
+    "role": "admin",
+    "department": "Administration",
+    "hireDate": "2015-03-10T09:00:00.000Z",
+    "status": "active",
+    "salary": 350000
+  },
+  "staff_04": {
+    "id": "staff_04",
+    "name": "Hassan El-Guerrouj",
+    "email": "hassan.elguerrouj@example.com",
+    "role": "support",
+    "department": "Support",
+    "hireDate": "2022-11-01T09:00:00.000Z",
+    "status": "active",
+    "salary": 180000
+  }
+}

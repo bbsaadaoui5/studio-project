@@ -1,0 +1,39 @@
+
+{
+  "course_math_01": {
+    "id": "course_math_01",
+    "name": "Mathématiques Avancées",
+    "teacher": "Ahmed Bennani",
+    "description": "Un cours approfondi sur le calcul, l'algèbre et la géométrie pour les élèves avancés.",
+    "credits": 4,
+    "department": "Mathematics",
+    "createdAt": "2023-01-01T10:00:00Z"
+  },
+  "course_sci_01": {
+    "id": "course_sci_01",
+    "name": "Physique Classique",
+    "teacher": "Fatima Al-Fihri",
+    "description": "Explorez les principes fondamentaux de la mécanique, de l'électricité et du magnétisme.",
+    "credits": 4,
+    "department": "Science",
+    "createdAt": "2023-01-01T10:00:00Z"
+  },
+  "course_eng_01": {
+    "id": "course_eng_01",
+    "name": "Littérature Anglaise",
+    "teacher": "Amina Ziani",
+    "description": "Une étude de la littérature anglaise classique et contemporaine.",
+    "credits": 3,
+    "department": "English",
+    "createdAt": "2023-01-01T10:00:00Z"
+  },
+  "course_hist_01": {
+    "id": "course_hist_01",
+    "name": "Histoire du Maroc",
+    "teacher": "Hassan El-Guerrouj",
+    "description": "Un aperçu complet de l'histoire du Maroc, de l'Antiquité à nos jours.",
+    "credits": 3,
+    "department": "History",
+    "createdAt": "2023-01-01T10:00:00Z"
+  }
+}

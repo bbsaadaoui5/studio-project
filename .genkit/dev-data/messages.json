@@ -1,0 +1,31 @@
+
+{
+    "msg_01": {
+        "id": "msg_01",
+        "conversationId": "convo_01",
+        "senderId": "student_02",
+        "text": "Bonjour, j'ai une question sur le devoir de mathématiques.",
+        "timestamp": "2024-07-30T09:00:00Z"
+    },
+    "msg_02": {
+        "id": "msg_02",
+        "conversationId": "convo_01",
+        "senderId": "admin_user_01",
+        "text": "Bonjour Salma, bien sûr. Comment puis-je vous aider ?",
+        "timestamp": "2024-07-30T09:05:00Z"
+    },
+    "msg_03": {
+        "id": "msg_03",
+        "conversationId": "convo_01",
+        "senderId": "admin_user_01",
+        "text": "N'oubliez pas que votre projet est à rendre demain.",
+        "timestamp": "2024-07-30T10:00:00Z"
+    },
+    "msg_04": {
+        "id": "msg_04",
+        "conversationId": "convo_02",
+        "senderId": "admin_user_01",
+        "text": "Pouvez-vous me faire parvenir les notes du dernier test de physique s'il vous plaît ?",
+        "timestamp": "2024-07-29T15:30:00Z"
+    }
+}
