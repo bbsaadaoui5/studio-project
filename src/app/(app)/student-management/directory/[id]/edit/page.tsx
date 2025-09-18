@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -34,6 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getStudent, updateStudent } from "@/services/studentService";
+import { getCoursesByType } from "@/services/courseService";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Student } from "@/lib/types";
 import { getYear, getMonth, getDate } from "date-fns";
@@ -46,6 +46,9 @@ const studentSchema = z.object({
   studentType: z.enum(["regular", "support"]),
   grade: z.string(),
   className: z.string(),
+  supportCourseId: z.string().optional(),
+  teacher: z.string().optional(),
+  teacherId: z.string().optional(),
   parentName: z.string().min(3, "Parent/Guardian name is required."),
   contact: z.string().min(10, "Please enter a valid contact number."),
   altContact: z.string().optional(),
@@ -57,6 +60,9 @@ const studentSchema = z.object({
 }).refine(data => data.studentType === 'support' || (data.grade && data.className), {
     message: "Grade and Class are required for regular students.",
     path: ["grade"],
+}).refine(data => data.studentType === 'regular' || (!!data.supportCourseId && !!data.teacher), {
+    message: "Support course and teacher are required for support students.",
+    path: ["supportCourseId"],
 });
 
 const years = Array.from({ length: 70 }, (_, i) => new Date().getFullYear() - 3 - i);
@@ -77,6 +83,7 @@ const months = [
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditStudentPage() {
+  const [courses, setCourses] = useState<any[]>([]);
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
@@ -90,6 +97,7 @@ export default function EditStudentPage() {
   });
 
   const studentType = form.watch("studentType");
+  const supportCourseId = form.watch("supportCourseId");
 
   useEffect(() => {
     if (!id) return;
@@ -105,6 +113,9 @@ export default function EditStudentPage() {
             medicalNotes: fetchedStudent.medicalNotes || '',
             altContact: fetchedStudent.altContact || '',
             email: fetchedStudent.email || '',
+            supportCourseId: (fetchedStudent as any).supportCourseId || '',
+            teacher: (fetchedStudent as any).teacher || '',
+            teacherId: (fetchedStudent as any).teacherId || '',
           });
         } else {
           notFound();
@@ -122,6 +133,50 @@ export default function EditStudentPage() {
     fetchStudent();
   }, [id, form, toast]);
 
+  // Load support courses for dropdown
+  useEffect(() => {
+    getCoursesByType("support").then((data) => setCourses(data || []));
+  }, []);
+
+  // Auto-populate teacher when support course changes
+  useEffect(() => {
+    if (studentType !== 'support' || !supportCourseId) {
+      form.setValue('teacher', '');
+      form.setValue('teacherId', '');
+      return;
+    }
+    const course = courses.find((c) => c.id === supportCourseId);
+    if (course) {
+      const firstTeacher = (course as any).teachers?.[0];
+      if (firstTeacher) {
+        form.setValue('teacher', firstTeacher.name);
+        form.setValue('teacherId', firstTeacher.id || '');
+      } else {
+        const teacherName = (course as any).teacher || '';
+        form.setValue('teacher', teacherName);
+        form.setValue('teacherId', '');
+      }
+    } else {
+      form.setValue('teacher', '');
+      form.setValue('teacherId', '');
+    }
+  }, [studentType, supportCourseId, courses, form]);
+
+  // Default teacher to first option when options exist but no teacher selected
+  useEffect(() => {
+    if (studentType !== 'support' || !supportCourseId) return;
+    const course: any = courses.find((c) => c.id === supportCourseId);
+    if (!course) return;
+    const firstTeacher = course?.teachers?.[0];
+    if (firstTeacher && !form.getValues('teacher')) {
+      form.setValue('teacher', firstTeacher.name);
+      form.setValue('teacherId', firstTeacher.id || '');
+    } else if (course?.teacher && !form.getValues('teacher')) {
+      form.setValue('teacher', course.teacher);
+      form.setValue('teacherId', '');
+    }
+  }, [studentType, supportCourseId, courses, form]);
+
   async function onSubmit(values: z.infer<typeof studentSchema>) {
     setIsSaving(true);
     try {
@@ -129,6 +184,9 @@ export default function EditStudentPage() {
         ...values,
         grade: values.studentType === 'regular' ? values.grade : 'N/A',
         className: values.studentType === 'regular' ? values.className : 'N/A',
+        supportCourseId: values.studentType === 'support' ? (values.supportCourseId || '') : '',
+        teacher: values.studentType === 'support' ? (values.teacher || '') : '',
+        teacherId: values.studentType === 'support' ? (values.teacherId || '') : '',
         dateOfBirth: values.dateOfBirth.toISOString(),
         medicalNotes: values.medicalNotes || '',
         altContact: values.altContact || '',
@@ -183,64 +241,322 @@ export default function EditStudentPage() {
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
-              <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="e.g., Youssef El-Amrani" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address (Optional)</FormLabel> <FormControl> <Input placeholder="e.g., youssef.elamrani@example.com" {...field} value={field.value ?? ''} /> </FormControl> <FormMessage /> </FormItem> )}/>
+              <FormField 
+                control={form.control} 
+                name="name" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Youssef El-Amrani" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="email" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., youssef.elamrani@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="md:col-span-2">
-                <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Controller
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <Select onValueChange={(val) => { const d = new Date(field.value || Date.now()); d.setFullYear(parseInt(val)); field.onChange(d); }} value={field.value ? String(getYear(field.value)) : ''}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl>
-                          <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <Select onValueChange={(val) => { const d = new Date(field.value || Date.now()); d.setMonth(parseInt(val)); field.onChange(d); }} value={field.value ? String(getMonth(field.value)) : ''}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl>
-                          <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <Select onValueChange={(val) => { const d = new Date(field.value || Date.now()); d.setDate(parseInt(val)); field.onChange(d); }} value={field.value ? String(getDate(field.value)) : ''}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl>
-                          <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  <FormMessage>{form.formState.errors.dateOfBirth?.message}</FormMessage>
-                </FormItem>
-              </div>
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Date of Birth</FormLabel>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select onValueChange={(val) => { 
+                        const d = new Date(field.value || Date.now()); 
+                        d.setFullYear(parseInt(val)); 
+                        field.onChange(d); 
+                      }} value={field.value ? String(getYear(field.value)) : ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Year" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Select onValueChange={(val) => { 
+                        const d = new Date(field.value || Date.now()); 
+                        d.setMonth(parseInt(val)); 
+                        field.onChange(d); 
+                      }} value={field.value ? String(getMonth(field.value)) : ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Month" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Select onValueChange={(val) => { 
+                        const d = new Date(field.value || Date.now()); 
+                        d.setDate(parseInt(val)); 
+                        field.onChange(d); 
+                      }} value={field.value ? String(getDate(field.value)) : ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Day" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem> <FormLabel>Gender</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="male">Male</SelectItem> <SelectItem value="female">Female</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="status" render={({ field }) => ( <FormItem> <FormLabel>Status</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value} > <FormControl> <SelectTrigger> <SelectValue placeholder="Select a status" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="active">Active</SelectItem> <SelectItem value="inactive">Inactive</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="studentType" render={({ field }) => ( <FormItem> <FormLabel>Student Type</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="regular">Regular (Grade-based)</SelectItem> <SelectItem value="support">Support Program</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
+              <FormField 
+                control={form.control} 
+                name="gender" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="status" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="studentType" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Student Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="regular">Regular (Grade-based)</SelectItem>
+                        <SelectItem value="support">Support Program</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               {studentType === 'regular' && (
                 <>
-                  <FormField control={form.control} name="grade" render={({ field }) => ( <FormItem> <FormLabel>Grade</FormLabel> <Select onValueChange={field.onChange} value={field.value} > <FormControl> <SelectTrigger> <SelectValue placeholder="Select a grade" /> </SelectTrigger> </FormControl> <SelectContent> {[...Array(12)].map((_, i) => ( <SelectItem key={i + 1} value={`${i + 1}`}> Grade {i + 1} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-                  <FormField control={form.control} name="className" render={({ field }) => ( <FormItem> <FormLabel>Class Name</FormLabel> <FormControl> <Input placeholder="e.g., A" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                  <FormField 
+                    control={form.control} 
+                    name="grade" 
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Grade</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a grade" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {[...Array(12)].map((_, i) => (
+                              <SelectItem key={i + 1} value={`${i + 1}`}>
+                                Grade {i + 1}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField 
+                    control={form.control} 
+                    name="className" 
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., A" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              {studentType === 'support' && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="supportCourseId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Support Course</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a course" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {courses.map((course) => (
+                              <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="teacher"
+                    render={({ field }) => {
+                      const selectedCourse = courses.find((c) => c.id === supportCourseId) as any;
+                      const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
+                        ? selectedCourse.teachers
+                        : (selectedCourse?.teacher ? [{ name: selectedCourse.teacher }] : []);
+                      const hasTeachers = teacherOptions.length > 0;
+                      return (
+                        <FormItem>
+                          <FormLabel>Teacher</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              const selectedTeacher = teacherOptions.find(t => t.name === value);
+                              field.onChange(value);
+                              form.setValue("teacherId", selectedTeacher?.id || "");
+                            }} 
+                            value={field.value || ""} 
+                            disabled={!hasTeachers}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={hasTeachers ? "Select a teacher" : "No teachers available"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {teacherOptions.map((t, idx) => (
+                                <SelectItem key={t.id || t.name || idx} value={t.name}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
+                  />
                 </>
               )}
 
-              <FormField control={form.control} name="parentName" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian Name</FormLabel> <FormControl> <Input placeholder="e.g., Leila El-Amrani" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="contact" render={({ field }) => ( <FormItem> <FormLabel>Parent/Guardian Contact</FormLabel> <FormControl> <Input placeholder="e.g., +212 600-000000" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="altContact" render={({ field }) => ( <FormItem> <FormLabel>Alternative Contact (Optional)</FormLabel> <FormControl> <Input placeholder="e.g., +212 600-000001" {...field} value={field.value ?? ''} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Address</FormLabel> <FormControl> <Textarea placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="medicalNotes" render={({ field }) => ( <FormItem className="md:col-span-2"> <FormLabel>Medical Notes (Optional)</FormLabel> <FormControl> <Textarea placeholder="e.g., Allergic to peanuts" value={field.value ?? ''} onChange={field.onChange} /> </FormControl> <FormMessage /> </FormItem> )}/>
+              <FormField 
+                control={form.control} 
+                name="parentName" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent/Guardian Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Leila El-Amrani" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="contact" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent/Guardian Contact</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., +212 600-000000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="altContact" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Alternative Contact (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., +212 600-000001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="address" 
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField 
+                control={form.control} 
+                name="medicalNotes" 
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Medical Notes (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="e.g., Allergic to peanuts" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="animate-spin" />}

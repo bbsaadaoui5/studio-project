@@ -18,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 
 export default function SupportCourseDetailsPage() {
     const params = useParams();
-    const id = params.id as string;
+    const id = params?.id as string;
+if (!id) { return <div>ID not found</div>; }
     
     const [course, setCourse] = useState<Course | null>(null);
     const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([]);

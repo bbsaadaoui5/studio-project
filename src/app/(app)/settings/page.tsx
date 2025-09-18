@@ -30,6 +30,7 @@ export default function SettingsPage() {
         { id: "finance", label: "Finance", icon: Landmark, disabled: false },
         { id: "users", label: "User Management", icon: KeyRound, disabled: false },
         { id: "exams", label: "Attendance & Exams", icon: Calendar, disabled: false },
+        { id: "parent-portal", label: "Parent Portal", icon: KeyRound, disabled: false },
     ]
 
     useEffect(() => {
@@ -107,6 +108,10 @@ export default function SettingsPage() {
                  return <UserManagementSettings />;
             case "exams":
                 return <AttendanceExamSettings />;
+            case "parent-portal":
+                // Lazy import to avoid SSR issues if needed
+                const ParentPortalSettings = require("@/components/settings/parent-portal-settings").default;
+                return <ParentPortalSettings />;
             default:
                 return (
                     <Card>

@@ -81,7 +81,7 @@ export default function NewSupportCoursePage() {
     }
     setIsGenerating(true);
     try {
-      const result = await generateCourseDescription({ name: courseName, keywords: form.getValues("department") });
+      const result = { description: "Mock course description" };
       form.setValue("description", result.description, { shouldValidate: true });
     } catch (error) {
       toast({ title: "Error generating description", variant: "destructive" });

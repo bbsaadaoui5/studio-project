@@ -65,7 +65,8 @@ const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditStaffPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
+if (!id) { return <div>ID not found</div>; }
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -187,22 +188,28 @@ export default function EditStaffPage() {
                     <FormLabel>Date of Birth</FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                         <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
+                          <>
                             <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setFullYear(parseInt(val)); dobField.onChange(d);}} value={String(getYear(dobField.value || Date.now()))}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl>
-                                <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl>
+                              <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                             </Select>
+                          </>
                         )}/>
                         <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
+                          <>
                             <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setMonth(parseInt(val)); dobField.onChange(d);}} value={String(getMonth(dobField.value || Date.now()))}>
-                               <FormControl> <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl>
-                                <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl>
+                              <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
                             </Select>
+                          </>
                         )}/>
                         <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
+                          <>
                             <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setDate(parseInt(val)); dobField.onChange(d);}} value={String(getDate(dobField.value || Date.now()))}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl>
-                                <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl>
+                              <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
                             </Select>
+                          </>
                         )}/>
                     </div>
                     <FormMessage />

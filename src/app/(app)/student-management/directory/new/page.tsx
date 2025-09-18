@@ -1,12 +1,13 @@
-
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { getCoursesByType, getCoursesByGrade } from "@/services/courseService";
+import type { Course } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,106 +35,156 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addStudent } from "@/services/studentService";
-import { getCoursesByGrade } from "@/services/courseService";
 import { enrollStudentInCourses } from "@/services/enrollmentService";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { getYear, getMonth, getDate } from "date-fns";
 
 const studentSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
-  email: z.string().email("Please enter a valid email address.").optional().or(z.literal('')),
+  email: z.string().email("Please enter a valid email address.").optional().or(z.literal("")),
   gender: z.enum(["male", "female"]),
   studentType: z.enum(["regular", "support"]),
-  grade: z.string(),
-  className: z.string(),
+  grade: z.string().optional(),
+  className: z.string().optional(),
   parentName: z.string().min(3, "Parent/Guardian name is required."),
   contact: z.string().min(10, "Please enter a valid contact number."),
   altContact: z.string().optional(),
   address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({
-    required_error: "A date of birth is required.",
-  }),
+  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
   medicalNotes: z.string().optional(),
-}).refine(data => data.studentType === 'support' || (data.grade && data.className), {
-    message: "Grade and Class are required for regular students.",
-    path: ["grade"],
+  supportCourseId: z.string().optional(),
+  teacher: z.string().optional(),
+  teacherId: z.string().optional(),
 });
-
-const years = Array.from({ length: 70 }, (_, i) => new Date().getFullYear() - 3 - i);
-const months = [
-  { value: 0, label: 'January' }, { value: 1, label: 'February' }, { value: 2, label: 'March' },
-  { value: 3, label: 'April' }, { value: 4, label: 'May' }, { value: 5, label: 'June' },
-  { value: 6, label: 'July' }, { value: 7, label: 'August' }, { value: 8, label: 'September' },
-  { value: 9, label: 'October' }, { value: 10, label: 'November' }, { value: 11, label: 'December' },
-];
-const days = Array.from({ length: 31 }, (_, i) => i + 1);
-
 
 export default function NewStudentPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
   const form = useForm<z.infer<typeof studentSchema>>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
       name: "",
       email: "",
+      gender: "male",
+      studentType: "regular",
       grade: "",
       className: "",
       parentName: "",
       contact: "",
       altContact: "",
       address: "",
+      dateOfBirth: undefined,
       medicalNotes: "",
-      studentType: "regular",
-      gender: "male",
+      supportCourseId: "",
+      teacher: "",
+      teacherId: "",
     },
   });
 
   const studentType = form.watch("studentType");
+  const supportCourseId = form.watch("supportCourseId");
+
+  useEffect(() => {
+    getCoursesByType("support").then((data) => setCourses(data || []));
+  }, []);
+
+  // Auto-populate teacher when support course selection changes
+  useEffect(() => {
+    if (studentType !== "support" || !supportCourseId) {
+      form.setValue("teacher", "");
+      form.setValue("teacherId", "");
+      return;
+    }
+    
+    const course = courses.find((c) => c.id === supportCourseId);
+    if (course) {
+      const firstTeacher = (course as any).teachers?.[0];
+      if (firstTeacher) {
+        form.setValue("teacher", firstTeacher.name);
+        form.setValue("teacherId", firstTeacher.id || "");
+      } else {
+        const teacherName = (course as any).teacher || "";
+        form.setValue("teacher", teacherName);
+        form.setValue("teacherId", "");
+      }
+    } else {
+      form.setValue("teacher", "");
+      form.setValue("teacherId", "");
+    }
+  }, [supportCourseId, studentType, courses, form]);
+  
+  // Default teacher to first option when options exist but no teacher selected
+  useEffect(() => {
+    if (studentType !== "support" || !supportCourseId) return;
+    const course: any = courses.find((c) => c.id === supportCourseId);
+    if (!course) return;
+    const firstTeacher = course?.teachers?.[0];
+    if (firstTeacher && !form.getValues("teacher")) {
+      form.setValue("teacher", firstTeacher.name);
+      form.setValue("teacherId", firstTeacher.id || "");
+    } else if (course?.teacher && !form.getValues("teacher")) {
+      form.setValue("teacher", course.teacher);
+      form.setValue("teacherId", "");
+    }
+  }, [studentType, supportCourseId, courses, form]);
 
   const onSubmit = async (values: z.infer<typeof studentSchema>) => {
     setIsLoading(true);
     try {
-      const newStudentData = {
+      let newStudentData = {
         ...values,
-        grade: values.studentType === 'regular' ? values.grade : 'N/A',
-        className: values.studentType === 'regular' ? values.className : 'N/A',
         dateOfBirth: values.dateOfBirth.toISOString(),
+        grade: values.grade ?? "",
+        className: values.className ?? "",
+        supportCourseId: values.supportCourseId ?? "",
+        teacher: values.teacher ?? "",
+        teacherId: values.teacherId ?? "",
       };
+      if (values.studentType === "regular") {
+        newStudentData = {
+          ...newStudentData,
+          supportCourseId: "",
+          teacher: "",
+          teacherId: "",
+        };
+      } else if (values.studentType === "support") {
+        newStudentData = {
+          ...newStudentData,
+          grade: "",
+          className: "",
+        };
+      }
       const studentId = await addStudent(newStudentData);
-      
-      if (values.studentType === 'regular' && values.grade) {
-          try {
-            const coursesForGrade = await getCoursesByGrade(values.grade);
-            if (coursesForGrade.length > 0) {
-                const courseIds = coursesForGrade.map(c => c.id);
-                await enrollStudentInCourses(studentId, courseIds);
-                toast({
-                    title: "Student Enrolled & Courses Assigned",
-                    description: `Successfully enrolled ${values.name} and assigned them to ${courseIds.length} course(s).`,
-                });
-            } else {
-                toast({
-                    title: "Student Enrolled",
-                    description: `Successfully enrolled ${values.name}. No courses found for Grade ${values.grade} to auto-enroll.`,
-                });
-            }
-          } catch (enrollmentError) {
+      if (values.studentType === "regular" && values.grade) {
+        try {
+          const coursesForGrade = await getCoursesByGrade(values.grade);
+          if (coursesForGrade.length > 0) {
+            const courseIds = coursesForGrade.map((c) => c.id);
+            await enrollStudentInCourses(studentId, courseIds);
             toast({
-                title: "Student Enrolled, but Courses Failed",
-                description: `Successfully enrolled ${values.name}, but failed to automatically assign courses. Please do it manually.`,
-                variant: "destructive",
+              title: "Student Enrolled & Courses Assigned",
+              description: `Successfully enrolled ${values.name} and assigned them to ${courseIds.length} course(s).`,
+            });
+          } else {
+            toast({
+              title: "Student Enrolled",
+              description: `Successfully enrolled ${values.name}. No courses found for Grade ${values.grade} to auto-enroll.`,
             });
           }
+        } catch (enrollmentError) {
+          toast({
+            title: "Student Enrolled, but Courses Failed",
+            description: `Successfully enrolled ${values.name}, but failed to automatically assign courses. Please do it manually.`,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
-            title: "Student Enrolled",
-            description: `Successfully enrolled ${values.name} in the support program.`,
-         });
+          title: "Student Enrolled",
+          description: `Successfully enrolled ${values.name} in the support program.`,
+        });
       }
-
-
       router.push("/student-management/directory");
     } catch (error) {
       toast({
@@ -166,10 +217,7 @@ export default function NewStudentPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -196,7 +244,7 @@ export default function NewStudentPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="gender"
                 render={({ field }) => (
@@ -213,7 +261,7 @@ export default function NewStudentPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="studentType"
                 render={({ field }) => (
@@ -230,111 +278,106 @@ export default function NewStudentPage() {
                   </FormItem>
                 )}
               />
-              
-              {studentType === 'regular' && (
+              {/* Regular student fields */}
+              {studentType === "regular" && (
                 <>
-                    <FormField
-                        control={form.control}
-                        name="grade"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Grade</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select a grade" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {[...Array(12)].map((_, i) => (
-                                <SelectItem key={i + 1} value={`${i + 1}`}>
-                                    Grade {i + 1}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="className"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Class Name</FormLabel>
-                            <FormControl>
-                            <Input placeholder="e.g., A" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="grade"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Grade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., 5" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="className"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., A" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </>
               )}
-              <div className="md:col-span-2">
-                <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Controller
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
+              {/* Support student fields */}
+              {studentType === "support" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="supportCourseId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Support Course</FormLabel>
                         <Select
-                          onValueChange={(val) => {
-                            const current = field.value || new Date();
-                            const newDate = new Date(current);
-                            newDate.setFullYear(parseInt(val));
-                            field.onChange(newDate);
-                          }}
-                          value={field.value ? String(getYear(field.value)) : ''}
+                          onValueChange={field.onChange}
+                          value={field.value}
                         >
-                          <FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl>
-                          <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a course" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {courses.map((course) => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
-                      )}
-                    />
-                    <Controller
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={(val) => {
-                            const current = field.value || new Date();
-                            const newDate = new Date(current);
-                            newDate.setMonth(parseInt(val));
-                            field.onChange(newDate);
-                          }}
-                           value={field.value ? String(getMonth(field.value)) : ''}
-                        >
-                          <FormControl><SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl>
-                           <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                    />
-                     <Controller
-                      control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={(val) => {
-                            const current = field.value || new Date();
-                            const newDate = new Date(current);
-                            newDate.setDate(parseInt(val));
-                            field.onChange(newDate);
-                          }}
-                          value={field.value ? String(getDate(field.value)) : ''}
-                        >
-                          <FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl>
-                          <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  <FormMessage>{form.formState.errors.dateOfBirth?.message}</FormMessage>
-                </FormItem>
-              </div>
-             
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="teacher"
+                    render={({ field }) => {
+                      const selectedCourse = courses.find((c) => c.id === supportCourseId) as any;
+                      const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
+                        ? selectedCourse.teachers
+                        : (selectedCourse?.teacher ? [{ name: selectedCourse.teacher }] : []);
+                      const hasTeachers = teacherOptions.length > 0;
+                      return (
+                        <FormItem>
+                          <FormLabel>Teacher</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              const selectedTeacher = teacherOptions.find(t => t.name === value);
+                              field.onChange(value);
+                              form.setValue("teacherId", selectedTeacher?.id || "");
+                            }} 
+                            value={field.value || ""} 
+                            disabled={!hasTeachers}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={hasTeachers ? "Select a teacher" : "No teachers available"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {teacherOptions.map((t, idx) => (
+                                <SelectItem key={t.id || t.name || idx} value={t.name}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
+                  />
+                </>
+              )}
               <FormField
                 control={form.control}
                 name="parentName"
@@ -345,7 +388,7 @@ export default function NewStudentPage() {
                       <Input placeholder="e.g., Leila El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )}
               />
               <FormField
@@ -361,7 +404,7 @@ export default function NewStudentPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="altContact"
                 render={({ field }) => (
@@ -374,14 +417,14 @@ export default function NewStudentPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="address"
                 render={({ field }) => (
-                  <FormItem className="md:col-span-2">
+                  <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
+                      <Input placeholder="e.g., 123 Main St, Casablanca" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -391,10 +434,27 @@ export default function NewStudentPage() {
                 control={form.control}
                 name="medicalNotes"
                 render={({ field }) => (
-                  <FormItem className="md:col-span-2">
+                  <FormItem>
                     <FormLabel>Medical Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Allergic to peanuts" {...field} />
+                      <Textarea placeholder="e.g., Allergies, medications, etc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date of Birth</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        value={field.value ? field.value.toISOString().substring(0, 10) : ""}
+                        onChange={e => field.onChange(new Date(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -402,8 +462,8 @@ export default function NewStudentPage() {
               />
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading && <Loader2 className="animate-spin" />}
-                  {isLoading ? "Enrolling..." : "Enroll Student"}
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Enroll Student
                 </Button>
               </div>
             </form>

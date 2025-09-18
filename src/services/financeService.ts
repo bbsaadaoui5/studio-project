@@ -50,7 +50,8 @@ export const getExpenses = async (from?: Date, to?: Date): Promise<Expense[]> =>
   }
 };
 
-export const addExpense = async (expenseData: Omit<Expense, 'id' | 'date'>) => {
+export const addExpense = async (expenseData: Omit<Expense, 'id'>) => {
+
   try {
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expenseData,
@@ -141,11 +142,11 @@ export const getPaymentsForStudent = async (studentId: string): Promise<Payment[
   }
 };
 
-export const recordPayment = async (paymentData: Omit<Payment, 'id' | 'date'>): Promise<string> => {
+export const recordPayment = async (paymentData: Omit<Payment, 'id'>): Promise<Payment> => {
   try {
     const docRef = await addDoc(collection(db, "payments"), { ...paymentData, date: serverTimestamp() });
     await updateDoc(docRef, { id: docRef.id });
-    return docRef.id;
+    return { ...paymentData, id: docRef.id, date: new Date().toISOString() } as Payment;
   } catch (error) {
     console.error("Error recording payment:", error);
     throw new Error("Could not record payment.");

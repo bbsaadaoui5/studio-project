@@ -17,7 +17,8 @@ import { format } from "date-fns";
 export default function StaffProfilePage() {
     const params = useParams();
     const router = useRouter();
-    const id = params.id as string;
+    const id = params?.id as string;
+if (!id) { return <div>ID not found</div>; }
     const [staff, setStaff] = useState<Staff | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -91,7 +92,7 @@ export default function StaffProfilePage() {
             }
             return format(date, "PPP");
         } catch (error) {
-            console.error("Invalid date format:", dateString, error);
+            console.error("Invalid date format provided", error);
             return "N/A";
         }
     }

@@ -38,7 +38,7 @@ export const generatePayroll = async (period: string): Promise<GeneratePayrollRe
     }
 
     const activeStaff = (await getStaffMembers()).filter(
-      (s) => s.status === "active" && s.paymentType === "salary" && s.paymentRate > 0
+      (s) => s.status === "active" && s.paymentType === "salary" && s.paymentRate && s.paymentRate && s.paymentRate && s.paymentRate > 0
     );
 
     if (activeStaff.length === 0) {
@@ -47,7 +47,7 @@ export const generatePayroll = async (period: string): Promise<GeneratePayrollRe
 
     let totalAmount = 0;
     const payslips: Payslip[] = activeStaff.map((staff) => {
-      const monthlySalary = staff.paymentRate; // paymentRate is now the monthly salary
+      const monthlySalary = staff.paymentRate || 0; // paymentRate is now the monthly salary
       const deductions = monthlySalary * 0.1; 
       const bonus = 0;
       const netPay = monthlySalary + bonus - deductions;
@@ -56,7 +56,7 @@ export const generatePayroll = async (period: string): Promise<GeneratePayrollRe
       return {
         staffId: staff.id,
         staffName: staff.name,
-        salary: monthlySalary,
+        salary: monthlySalary as number,
         bonus,
         deductions,
         netPay,

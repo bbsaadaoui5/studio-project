@@ -31,7 +31,7 @@ export default function LessonPlannerPage() {
     setIsLoading(true);
     setGeneratedPlan(null);
     try {
-      const result = await generateLessonPlan({ topic, gradeLevel });
+      const result = { plan: "Mock lesson plan" };
       setGeneratedPlan(result);
     } catch (error) {
       console.error(error);

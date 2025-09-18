@@ -26,9 +26,9 @@ export type Announcement = {
 };
 
 export type Course = {
-  id:string;
+  id: string;
   name: string;
-  teacher: string;
+  teachers: { id: string; name: string }[];
   description: string;
   credits: number;
   department: string;
@@ -40,6 +40,8 @@ export type Course = {
 export type Staff = {
   id:string;
   name: string;
+  position?: string; 
+  department?: string; 
   email?: string;
   phone: string;
   altPhone?: string;
@@ -48,7 +50,6 @@ export type Staff = {
   dateOfBirth: string; // ISO Date String
   qualifications: string;
   role: "teacher" | "admin" | "support";
-  department: string;
   hireDate: string;
   status: "active" | "inactive";
   paymentType?: "salary" | "commission" | "headcount";
@@ -139,12 +140,12 @@ export type StudentFeeStatus = {
 }
 
 export type Expense = {
-    id: string;
-    category: "salaries" | "utilities" | "supplies" | "maintenance" | "other";
-    description: string;
-    amount: number;
-    date: string; // ISO Date String
-}
+  id?: string;
+  date: string;
+  amount: number;
+  category: "salaries" | "utilities" | "supplies" | "maintenance" | "other";
+  description: string;
+};
 
 export type Book = {
   id: string;
@@ -185,6 +186,16 @@ export type ParentAccess = {
   id: string; // The token itself
   studentId: string;
   createdAt: string; // ISO Date String
+}
+
+export type Parent = {
+  id: string; // Firebase Auth UID
+  name: string;
+  email: string;
+  phone?: string;
+  linkedStudentIds: string[]; // Students this parent can view
+  createdAt: string; // ISO Date String
+  status: "active" | "inactive";
 }
 
 export type Payslip = {

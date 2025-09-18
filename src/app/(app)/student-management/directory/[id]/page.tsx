@@ -12,14 +12,17 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { getStudent } from "@/services/studentService";
 import { Student } from "@/lib/types";
+import { getCourse } from "@/services/courseService";
 import { format } from "date-fns";
 
 export default function StudentProfilePage() {
     const params = useParams();
     const router = useRouter();
-    const id = params.id as string;
+    const id = params?.id as string;
+    if (!id) { return <div>ID not found</div>; }
     const [student, setStudent] = useState<Student | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [supportCourse, setSupportCourse] = useState<any>(null);
 
     useEffect(() => {
       if (!id) return;
@@ -33,6 +36,13 @@ export default function StudentProfilePage() {
                 return;
             }
             setStudent(studentData);
+            // If support program, fetch course
+            if (studentData.studentType === 'support' && studentData.supportCourseId) {
+                const course = await getCourse(studentData.supportCourseId);
+                setSupportCourse(course);
+            } else {
+                setSupportCourse(null);
+            }
         } catch (error) {
             console.error("Could not fetch student details:", error);
         } finally {
@@ -42,7 +52,7 @@ export default function StudentProfilePage() {
 
       getStudentData();
     }, [id]);
-    
+
     if (isLoading) {
       return (
         <div className="flex justify-center items-center h-full">
@@ -50,7 +60,7 @@ export default function StudentProfilePage() {
         </div>
       );
     }
-    
+
     if (!student) {
       return notFound();
     }
@@ -92,6 +102,12 @@ export default function StudentProfilePage() {
                         <Badge variant="secondary" className="capitalize">Grade {student.grade} - Class {student.className}</Badge>
                       ) : (
                         <Badge variant="secondary" className="capitalize">Support Program</Badge>
+                      )}
+                      {student.studentType === 'support' && supportCourse && (
+                        <>
+                          <Badge variant="secondary" className="capitalize">Course: {supportCourse.name}</Badge>
+                          <Badge variant="secondary" className="capitalize">Teacher: {supportCourse.teacher}</Badge>
+                        </>
                       )}
                       <Badge variant="outline" className="capitalize">{student.gender}</Badge>
                   </div>

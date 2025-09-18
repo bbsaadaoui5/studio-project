@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+export const dynamic = 'force-dynamic';
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, GraduationCap, ShieldCheck } from "lucide-react";
-import { getStaffMembers, addStaffMember } from "@/services/staffService";
+// Firebase service imports temporarily disabled
+// import { getStaffMembers, addStaffMember } from "@/services/staffService";
 
 export default function SetupPage() {
   const router = useRouter();

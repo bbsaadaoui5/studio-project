@@ -43,3 +43,7 @@ node_modules/
 .next/
 node_modules/
 .gitignore
+.vercel
+
+# Local Netlify folder
+.netlify

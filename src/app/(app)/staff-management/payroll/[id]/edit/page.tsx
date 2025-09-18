@@ -17,7 +17,8 @@ import { format } from "date-fns";
 
 export default function EditPayrollPage() {
     const params = useParams();
-    const id = params.id as string;
+    const id = params?.id as string;
+if (!id) { return <div>ID not found</div>; }
     const router = useRouter();
     const { toast } = useToast();
 

@@ -76,10 +76,15 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  const sanitizeCSS = (css: string) => {
+    // Remove potentially dangerous characters and patterns
+    return css.replace(/[<>"'&]/g, '').replace(/javascript:/gi, '').replace(/expression\(/gi, '');
+  };
+
   return (
     <style
       dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
+        __html: sanitizeCSS(Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
@@ -94,7 +99,7 @@ ${colorConfig
 }
 `
           )
-          .join("\n"),
+          .join("\n")),
       }}
     />
   )

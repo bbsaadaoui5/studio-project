@@ -1,33 +1,28 @@
 {
+  "source": "functions",
+  "codebase": "functions",
+  "ignore": [
+    "node_modules",
+    ".git",
+    "firebase-debug.log",
+    "firebase-debug.*.log",
+    "*.local"
+  ],
+  "predeploy": [
+    "npm --prefix \"$RESOURCE_DIR\" run lint"
+  ],
   "hosting": {
-    "public": ".next",
+    "public": "public",
     "ignore": [
-      "firebase.json", 
+      "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
       {
         "source": "**",
-        "function": "ssrcampuscworking",
-        "region": "us-central1"  // ← CHANGE TO us-central1
-      }
-    ],
-    "headers": [
-      {
-        "source": "**", 
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=3600"
-          }
-        ]
+        "destination": "/index.html"
       }
     ]
-  },
-  "functions": {
-    "source": ".",
-    "codebase": "firebase-frameworks-campusc-working", 
-    "runtime": "nodejs20"
   }
 }

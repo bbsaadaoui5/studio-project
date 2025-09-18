@@ -91,8 +91,8 @@ export const getCoursesByType = async (type: "academic" | "support"): Promise<Co
         });
         return courses;
     } catch (error) {
-        console.error(`Error getting ${type} courses:`, error);
-        throw new Error(`Failed to get ${type} courses.`);
+        console.error(`Error getting courses:`, error);
+        throw new Error(`Failed to get courses.`);
     }
 };
 

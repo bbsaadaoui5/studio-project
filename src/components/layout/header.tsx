@@ -40,6 +40,8 @@ const months = [
 ];
 
 export function Header() {
+    // Add state for selectedGrade (for parent portal dialog)
+    const [selectedGrade, setSelectedGrade] = useState<string>("");
     const pathname = usePathname();
     const router = useRouter();
     const isMobile = useIsMobile();
@@ -203,45 +205,73 @@ export function Header() {
         {isClient && !isMobile && (
           <TooltipProvider>
             <div className="hidden md:flex items-center gap-1">
-               <Dialog open={isViewParentDialogOpen} onOpenChange={setIsViewParentDialogOpen}>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                       <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full">
-                                <User className="h-5 w-5" />
-                                <span className="sr-only">View as Parent</span>
-                            </Button>
-                        </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>View as Parent</TooltipContent>
-                </Tooltip>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>View Parent Portal</DialogTitle>
-                        <DialogDescription>Select a student to view their parent portal.</DialogDescription>
-                    </DialogHeader>
-                    <Command>
-                      <CommandInput placeholder="Search students..." />
-                      <CommandList>
-                        <CommandEmpty>No student found.</CommandEmpty>
-                        <CommandGroup>
-                           {isLoadingData ? <div className="p-4 text-center text-sm">Loading...</div> : students.map((student) => (
-                              <CommandItem key={student.id} value={student.name} onSelect={() => setViewSelectedStudent(student.id)}>
-                                <Check className={cn("mr-2 h-4 w-4", viewSelectedStudent === student.id ? "opacity-100" : "opacity-0")} />
-                                {student.name}
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                    <DialogFooter>
-                      <Button onClick={handleViewParentPortal} disabled={!viewSelectedStudent || isLoadingData || isSubmitting}>
-                        {isSubmitting || isLoadingData ? <Loader2 className="animate-spin" /> : <Eye />}
-                        View Portal
-                      </Button>
-                    </DialogFooter>
-                </DialogContent>
-               </Dialog>
+                             <Dialog open={isViewParentDialogOpen} onOpenChange={setIsViewParentDialogOpen}>
+                                 <Tooltip>
+                                        <TooltipTrigger asChild>
+                                             <DialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="rounded-full">
+                                                                <User className="h-5 w-5" />
+                                                                <span className="sr-only">View as Parent</span>
+                                                        </Button>
+                                                </DialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>View as Parent</TooltipContent>
+                                </Tooltip>
+                                <DialogContent>
+                                        <DialogHeader>
+                                                <DialogTitle>View Parent Portal</DialogTitle>
+                                                <DialogDescription>Select a grade, then a student to view their parent portal.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4">
+                                            {/* Grade Selector */}
+                                            <div>
+                                                <Label htmlFor="grade-select">Grade</Label>
+                                                <Select
+                                                    onValueChange={(grade) => {
+                                                        setViewSelectedStudent("");
+                                                        setSelectedGrade(grade);
+                                                    }}
+                                                    value={selectedGrade || ""}
+                                                >
+                                                    <SelectTrigger id="grade-select">
+                                                        <SelectValue placeholder="Select a grade..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {[...new Set(students.map(s => s.grade))].sort().map(grade => (
+                                                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {/* Student Selector */}
+                                            <div>
+                                                <Label htmlFor="student-select">Student</Label>
+                                                <Select
+                                                    onValueChange={setViewSelectedStudent}
+                                                    value={viewSelectedStudent || ""}
+                                                    disabled={!selectedGrade}
+                                                >
+                                                    <SelectTrigger id="student-select">
+                                                        <SelectValue placeholder={selectedGrade ? "Select a student..." : "Select a grade first"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {students.filter(s => s.grade === selectedGrade).map(student => (
+                                                            <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button onClick={handleViewParentPortal} disabled={!viewSelectedStudent || isLoadingData || isSubmitting}>
+                                                {isSubmitting || isLoadingData ? <Loader2 className="animate-spin" /> : <Eye />}
+                                                View Portal
+                                            </Button>
+                                        </DialogFooter>
+                                </DialogContent>
+                             </Dialog>
+
+
 
                <Dialog open={isViewTeacherDialogOpen} onOpenChange={setIsViewTeacherDialogOpen}>
                  <Tooltip>
@@ -395,9 +425,9 @@ export function Header() {
                     </DialogFooter>
                 </DialogContent>
                </Dialog>
-            </div>
-          </TooltipProvider>
-        )}
+                        </div>
+                    </TooltipProvider>
+                )}
         
         {isClient && (
             <DropdownMenu>

@@ -17,7 +17,11 @@ import { getSettings } from "@/services/settingsService";
 export default function ClassRosterPage() {
   const params = useParams();
   const { toast } = useToast();
-  const classId = params.id as string;
+  const classId = params?.id as string;
+if (!classId) {
+  // Handle the case where id is missing
+  return <div>Class ID not found</div>;
+}
   const [grade, className] = classId.split('-');
   
   const [students, setStudents] = useState<Student[]>([]);

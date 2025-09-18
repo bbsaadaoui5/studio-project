@@ -64,7 +64,8 @@ const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditStaffPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
+if (!id) { return <div>ID not found</div>; }
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -158,43 +159,168 @@ export default function EditStaffPage() {
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
-              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="altPhone" render={({ field }) => (<FormItem><FormLabel>Alt. Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="altPhone" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Alt. Phone</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="gender" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gender</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Date of Birth</FormLabel>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
-                          <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setFullYear(parseInt(val)); dobField.onChange(d);}} value={String(getYear(dobField.value || Date.now()))}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl>
-                            <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-                          </Select>
-                      )}/>
-                      <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
-                          <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setMonth(parseInt(val)); dobField.onChange(d);}} value={String(getMonth(dobField.value || Date.now()))}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl>
-                            <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
-                          </Select>
-                      )}/>
-                      <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
-                          <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setDate(parseInt(val)); dobField.onChange(d);}} value={String(getDate(dobField.value || Date.now()))}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl>
-                            <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
-                          </Select>
-                      )}/>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-              )}/>
-              <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Admin</SelectItem><SelectItem value="support">Support</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="department" render={({ field }) => (<FormItem><FormLabel>Department</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Mathematics">Mathematics</SelectItem><SelectItem value="English">English</SelectItem><SelectItem value="Science">Science</SelectItem><SelectItem value="History">History</SelectItem><SelectItem value="Arts">Arts</SelectItem><SelectItem value="Administration">Administration</SelectItem><SelectItem value="Support">Support</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="salary" render={({ field }) => (<FormItem><FormLabel>Annual Salary</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="qualifications" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Qualifications</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Date of Birth</FormLabel>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
+                      <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setFullYear(parseInt(val)); dobField.onChange(d);}} value={String(getYear(dobField.value || Date.now()))}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                      </Select>
+                    )}/>
+                    <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
+                      <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setMonth(parseInt(val)); dobField.onChange(d);}} value={String(getMonth(dobField.value || Date.now()))}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    )}/>
+                    <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
+                      <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setDate(parseInt(val)); dobField.onChange(d);}} value={String(getDate(dobField.value || Date.now()))}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
+                      </Select>
+                    )}/>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="address" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="role" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="support">Support</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="department" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Mathematics">Mathematics</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Science">Science</SelectItem>
+                      <SelectItem value="History">History</SelectItem>
+                      <SelectItem value="Arts">Arts</SelectItem>
+                      <SelectItem value="Administration">Administration</SelectItem>
+                      <SelectItem value="Support">Support</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="salary" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Annual Salary</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="qualifications" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Qualifications</FormLabel>
+                  <FormControl>
+                    <Textarea rows={3} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="animate-spin" />}

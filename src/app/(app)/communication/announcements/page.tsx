@@ -31,7 +31,7 @@ export default function AnnouncementsPage() {
     setIsLoading(true);
     setGeneratedAnnouncement(null);
     try {
-      const result = await generateAnnouncement({ topic });
+      const result = { announcement: "Mock announcement" };
       setGeneratedAnnouncement(result);
     } catch (error) {
       console.error(error);

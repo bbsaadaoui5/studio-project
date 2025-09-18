@@ -36,8 +36,10 @@ import { getCourse, updateCourse } from "@/services/courseService";
 import { ArrowLeft, Loader2, Wand2 } from "lucide-react";
 import { Course } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
-import { generateCourseDescription } from "@/ai/flows/generate-course-description-flow";
-
+// Temporary mock function - replace AI call
+const generateCourseDescription = async (): Promise<string> => {
+  return "This is a mock course description for testing purposes.";
+};
 const courseSchema = z.object({
   name: z.string().min(3, "Course name must be at least 3 characters."),
   teacher: z.string().min(3, "Teacher name must be at least 3 characters."),
@@ -49,7 +51,8 @@ const courseSchema = z.object({
 
 export default function EditCoursePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
+if (!id) { return <div>ID not found</div>; }
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +117,7 @@ export default function EditCoursePage() {
     }
     setIsGenerating(true);
     try {
-      const result = await generateCourseDescription({ name: courseName, keywords: form.getValues("department") });
+      const result = { description: "Mock course description" };
       form.setValue("description", result.description, { shouldValidate: true });
     } catch (error) {
       toast({ title: "Error generating description", variant: "destructive" });

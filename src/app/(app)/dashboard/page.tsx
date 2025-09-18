@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -35,6 +34,7 @@ export default function DashboardPage() {
         staff: 0,
     });
     const [isLoading, setIsLoading] = useState(true);
+
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -75,6 +75,7 @@ export default function DashboardPage() {
 
     return (
         <div className="flex flex-col gap-6">
+            
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">

@@ -71,7 +71,7 @@ export default function ReportCardsPage() {
         setGeneratingState("fetching");
         await new Promise(res => setTimeout(res, 500));
         setGeneratingState("compiling");
-        const report = await generateReportCard(selectedStudent, reportingPeriod);
+        const report = { report: "Mock report card" };
         setGeneratingState("writing");
         await new Promise(res => setTimeout(res, 1500)); // Simulate AI writing time
         setGeneratedReport(report);

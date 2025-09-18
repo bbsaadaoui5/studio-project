@@ -22,7 +22,8 @@ import { Badge } from "@/components/ui/badge";
 export default function CoursesByGradePage() {
   const params = useParams();
   const router = useRouter();
-  const grade = params.grade as string;
+  if (!params?.grade) { return <div>Grade parameter not found</div>; }
+const grade = params.grade as string;
   
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);

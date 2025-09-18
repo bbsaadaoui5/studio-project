@@ -121,7 +121,6 @@ const menuItems = [
     icon: UserSquare,
     subMenus: [
       { label: "Instructors", href: "/support-programs/instructors", icon: Contact },
-      { label: "Students", href: "/support-programs/students", icon: Users2 },
       { label: "Courses", href: "/support-programs/courses", icon: BookCopy },
     ],
   },
@@ -174,6 +173,14 @@ const menuItems = [
       { label: "Fees", href: "/finance/fees", icon: Receipt },
       { label: "Expenses", href: "/finance/expenses", icon: TrendingDown },
       { label: "Reports", href: "/finance/reports", icon: BarChart },
+    ],
+  },
+  {
+    label: "Reports & Analytics",
+    icon: BarChart,
+    subMenus: [
+      { label: "Academic Reports", href: "/reports", icon: BookOpen },
+      { label: "Financial Reports", href: "/finance/reports", icon: Landmark },
     ],
   },
 ];

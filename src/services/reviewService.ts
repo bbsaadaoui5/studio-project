@@ -5,7 +5,7 @@ import type { StaffReview } from "@/lib/types";
 
 const REVIEWS_COLLECTION = "staffReviews";
 
-export type NewStaffReview = Omit<StaffReview, 'id' | 'reviewDate'>;
+export type NewStaffReview = Omit<StaffReview, 'id'>;
 
 /**
  * Adds a new staff review to the database.
