@@ -239,7 +239,7 @@ export default function StaffDirectoryPage() {
                 <CardTitle>Staff Directory</CardTitle>
                 <CardDescription>Browse and manage staff records.</CardDescription>
             </div>
-             <Button asChild>
+             <Button asChild className="btn-glass-primary btn-click-effect">
                 <Link href="/staff-management/directory/new">
                     <PlusCircle />
                     Add New Staff
@@ -256,7 +256,7 @@ export default function StaffDirectoryPage() {
                     />
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
+                        <Button variant="outline" className="ml-auto btn-glass btn-click-effect">
                         Columns <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -342,6 +342,7 @@ export default function StaffDirectoryPage() {
                         size="sm"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
+                        className="btn-glass btn-click-effect"
                     >
                         Previous
                     </Button>
@@ -350,6 +351,7 @@ export default function StaffDirectoryPage() {
                         size="sm"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
+                        className="btn-glass btn-click-effect"
                     >
                         Next
                     </Button>

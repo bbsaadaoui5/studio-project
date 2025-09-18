@@ -43,7 +43,7 @@ const staffSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
   phone: z.string().min(10, "Please enter a valid phone number."),
   altPhone: z.string().optional(),
-  gender: z.enum(["male", "female", "other"]),
+  gender: z.enum(["male", "female"]),
   address: z.string().min(10, "Please enter a valid address."),
   dateOfBirth: z.date({ required_error: "A date of birth is required." }),
   qualifications: z.string().min(10, "Please enter qualifications."),
@@ -205,7 +205,6 @@ if (!id) { return <div>ID not found</div>; }
                     <SelectContent>
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

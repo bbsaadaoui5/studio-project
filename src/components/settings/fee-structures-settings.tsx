@@ -216,7 +216,13 @@ export function FeeStructuresSettings() {
                         <FormLabel>Grade</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select a grade" /></SelectTrigger></FormControl>
-                            <SelectContent>{[...Array(12)].map((_, i) => (<SelectItem key={i+1} value={`${i + 1}`}>Grade {i + 1}</SelectItem>))}</SelectContent>
+                            <SelectContent>
+                              <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                              <SelectItem value="Pre-K">Pre-K</SelectItem>
+                              <SelectItem value="KG1">KG1</SelectItem>
+                              <SelectItem value="KG2">KG2</SelectItem>
+                              {[...Array(12)].map((_, i) => (<SelectItem key={i+1} value={`${i + 1}`}>Grade {i + 1}</SelectItem>))}
+                            </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>

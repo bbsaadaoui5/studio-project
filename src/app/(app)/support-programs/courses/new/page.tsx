@@ -22,7 +22,7 @@ import {
 import { addCourse } from "@/services/courseService";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateCourseDescription } from "@/ai/flows/generate-course-description-flow";
+
 
 const courseSchema = z.object({
   name: z.string().min(3, "Course name must be at least 3 characters."),
@@ -75,16 +75,36 @@ export default function NewSupportCoursePage() {
 
   const handleGenerateDescription = async () => {
     const courseName = form.getValues("name");
+    const department = form.getValues("department");
     if (!courseName) {
       toast({ title: "Please enter a course name first.", variant: "destructive" });
       return;
     }
     setIsGenerating(true);
     try {
-      const result = { description: "Mock course description" };
-      form.setValue("description", result.description, { shouldValidate: true });
+      const prompt = `Generate a detailed course description for a ${department || 'support'} course called "${courseName}". The description should be educational, engaging, and suitable for a school environment. Include what students will learn, activities they'll participate in, and the benefits of taking this course. Keep it between 100-200 words.`;
+      
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.response) {
+        form.setValue("description", data.response, { shouldValidate: true });
+        toast({ title: "Description generated successfully!" });
+      } else {
+        throw new Error(data.error?.message || 'Failed to generate description');
+      }
     } catch (error) {
-      toast({ title: "Error generating description", variant: "destructive" });
+      console.error('AI Generation Error:', error);
+      toast({ 
+        title: "Error generating description", 
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive" 
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -101,12 +121,18 @@ export default function NewSupportCoursePage() {
         </Button>
         <h1 className="text-2xl font-bold">Add New Support Course</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Course Details</CardTitle>
-          <CardDescription>Fill out the form below to add a new support/extracurricular course.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Course Details</h2>
+          <p className="text-sm text-muted-foreground">
+            Fill out the form below to add a new support/extracurricular course.
+          </p>
+        </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
@@ -116,7 +142,7 @@ export default function NewSupportCoursePage() {
                   <FormItem>
                     <FormLabel>Course Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Robotics Club" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Robotics Club" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -129,7 +155,7 @@ export default function NewSupportCoursePage() {
                   <FormItem>
                     <FormLabel>Instructor Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Fatima Al-Fihri" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Fatima Al-Fihri" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -179,22 +205,21 @@ export default function NewSupportCoursePage() {
                         </Button>
                     </div>
                     <FormControl>
-                      <Textarea rows={5} placeholder="Provide a brief summary of the course..." {...field} />
+                      <Textarea className="glass-input" rows={5} placeholder="Provide a brief summary of the course..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <div className="md:col-span-2 flex justify-end">
-                <Button type="submit" disabled={isLoading || isGenerating}>
+                <Button type="submit" disabled={isLoading || isGenerating} className="btn-gradient btn-click-effect">
                     {isLoading && <Loader2 className="animate-spin" />}
                     {isLoading ? "Creating..." : "Create Course"}
                 </Button>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

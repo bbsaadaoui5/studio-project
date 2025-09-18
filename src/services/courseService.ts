@@ -162,3 +162,52 @@ export const getCourseCount = async (): Promise<number> => {
     throw new Error("Failed to get course count.");
   }
 };
+
+// Function to assign a teacher to multiple courses
+export const assignTeacherToCourses = async (teacherId: string, teacherName: string, courseIds: string[]): Promise<void> => {
+  try {
+    const batch = writeBatch(db);
+    
+    for (const courseId of courseIds) {
+      const courseRef = doc(db, "courses", courseId);
+      const courseDoc = await getDoc(courseRef);
+      
+      if (courseDoc.exists()) {
+        const courseData = courseDoc.data() as Course;
+        const existingTeachers = courseData.teachers || [];
+        
+        // Check if teacher is already assigned
+        if (!existingTeachers.some(t => t.id === teacherId)) {
+          const updatedTeachers = [...existingTeachers, { id: teacherId, name: teacherName }];
+          batch.update(courseRef, { teachers: updatedTeachers });
+        }
+      }
+    }
+    
+    await batch.commit();
+  } catch (error) {
+    console.error("Error assigning teacher to courses:", error);
+    throw new Error("Failed to assign teacher to courses.");
+  }
+};
+
+// Function to remove a teacher from all courses
+export const removeTeacherFromAllCourses = async (teacherId: string): Promise<void> => {
+  try {
+    const coursesSnapshot = await getDocs(collection(db, "courses"));
+    const batch = writeBatch(db);
+    
+    coursesSnapshot.forEach((doc) => {
+      const courseData = doc.data() as Course;
+      if (courseData.teachers?.some(t => t.id === teacherId)) {
+        const updatedTeachers = courseData.teachers.filter(t => t.id !== teacherId);
+        batch.update(doc.ref, { teachers: updatedTeachers });
+      }
+    });
+    
+    await batch.commit();
+  } catch (error) {
+    console.error("Error removing teacher from courses:", error);
+    throw new Error("Failed to remove teacher from courses.");
+  }
+};

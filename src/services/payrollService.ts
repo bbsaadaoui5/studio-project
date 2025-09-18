@@ -48,7 +48,7 @@ export const generatePayroll = async (period: string): Promise<GeneratePayrollRe
     let totalAmount = 0;
     const payslips: Payslip[] = activeStaff.map((staff) => {
       const monthlySalary = staff.paymentRate || 0; // paymentRate is now the monthly salary
-      const deductions = monthlySalary * 0.1; 
+      const deductions = 0; // No deductions until tax system is implemented
       const bonus = 0;
       const netPay = monthlySalary + bonus - deductions;
       totalAmount += netPay;

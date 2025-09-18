@@ -8,12 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  GlassModal,
+  GlassModalContent,
+  GlassModalDescription,
+  GlassModalHeader,
+  GlassModalTitle,
+} from "@/components/ui/glass-modal";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -228,15 +228,19 @@ export default function EditStudentPage() {
         </Button>
         <h1 className="text-2xl font-bold">Edit Student Information</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Editing: {student.name}</CardTitle>
-          <CardDescription>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Editing: {student.name}</h2>
+          <p className="text-sm text-muted-foreground">
             Update the student's information below.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
+          </p>
+        </div>
+        <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -248,7 +252,7 @@ export default function EditStudentPage() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Youssef El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Youssef El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -261,7 +265,7 @@ export default function EditStudentPage() {
                   <FormItem>
                     <FormLabel>Email Address (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., youssef.elamrani@example.com" {...field} />
+                      <Input className="glass-input" placeholder="e.g., youssef.elamrani@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -420,7 +424,7 @@ export default function EditStudentPage() {
                       <FormItem>
                         <FormLabel>Class Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., A" {...field} />
+                          <Input className="glass-input" placeholder="e.g., A" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -499,7 +503,7 @@ export default function EditStudentPage() {
                   <FormItem>
                     <FormLabel>Parent/Guardian Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Leila El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Leila El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -512,7 +516,7 @@ export default function EditStudentPage() {
                   <FormItem>
                     <FormLabel>Parent/Guardian Contact</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +212 600-000000" {...field} />
+                      <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -525,7 +529,7 @@ export default function EditStudentPage() {
                   <FormItem>
                     <FormLabel>Alternative Contact (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +212 600-000001" {...field} />
+                      <Input className="glass-input" placeholder="e.g., +212 600-000001" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -538,7 +542,7 @@ export default function EditStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
+                      <Textarea className="glass-input" placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -551,22 +555,21 @@ export default function EditStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Medical Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Allergic to peanuts" {...field} />
+                      <Textarea className="glass-input" placeholder="e.g., Allergic to peanuts" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <div className="md:col-span-2 flex justify-end">
-                <Button type="submit" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving} className="btn-gradient btn-click-effect">
                   {isSaving && <Loader2 className="animate-spin" />}
                   {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

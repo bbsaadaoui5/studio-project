@@ -127,14 +127,18 @@ export default function NewSupportStudentPage() {
         </Button>
         <h1 className="text-2xl font-bold">Add Support Program Student</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Student Information</CardTitle>
-          <CardDescription>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Student Information</h2>
+          <p className="text-sm text-muted-foreground">
             Fill out the form below to enroll a new student in a support program.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -147,7 +151,7 @@ export default function NewSupportStudentPage() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Youssef El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Youssef El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -160,7 +164,7 @@ export default function NewSupportStudentPage() {
                   <FormItem>
                     <FormLabel>Email Address (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., youssef.elamrani@example.com" {...field} />
+                      <Input className="glass-input" placeholder="e.g., youssef.elamrani@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -208,7 +212,7 @@ export default function NewSupportStudentPage() {
                   <FormItem>
                     <FormLabel>Teacher</FormLabel>
                     <FormControl>
-                      <Input {...field} readOnly value={selectedTeacher} placeholder="Teacher will be auto-filled" />
+                      <Input className="glass-input" {...field} readOnly value={selectedTeacher} placeholder="Teacher will be auto-filled" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -221,7 +225,7 @@ export default function NewSupportStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Date of Birth</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input className="glass-input" type="date" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -234,7 +238,7 @@ export default function NewSupportStudentPage() {
                   <FormItem>
                     <FormLabel>Parent/Guardian Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Leila El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Leila El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -247,7 +251,7 @@ export default function NewSupportStudentPage() {
                   <FormItem>
                     <FormLabel>Parent/Guardian Contact</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +212 600-000000" {...field} />
+                      <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -260,7 +264,7 @@ export default function NewSupportStudentPage() {
                   <FormItem>
                     <FormLabel>Alternative Contact (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +212 600-000001" {...field} />
+                      <Input className="glass-input" placeholder="e.g., +212 600-000001" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -273,7 +277,7 @@ export default function NewSupportStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
+                      <Textarea className="glass-input" placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -286,22 +290,21 @@ export default function NewSupportStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Medical Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Allergic to peanuts" {...field} />
+                      <Textarea className="glass-input" placeholder="e.g., Allergic to peanuts" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <div className="md:col-span-2 flex justify-end">
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
                   {isLoading && <Loader2 className="animate-spin" />}
                   {isLoading ? "Enrolling..." : "Enroll Student"}
                 </Button>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

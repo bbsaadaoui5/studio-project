@@ -70,7 +70,7 @@ export default function LoginPage() {
                 <GraduationCap className="h-8 w-8 text-primary-foreground" />
             </div>
         </div>
-        <CardTitle className="text-2xl">CampusConnect Login</CardTitle>
+        <CardTitle className="text-2xl">Almawed Login</CardTitle>
         <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
       </CardHeader>
       <CardContent>

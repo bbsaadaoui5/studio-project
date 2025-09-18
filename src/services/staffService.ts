@@ -4,15 +4,31 @@ import { db } from "@/lib/firebase-client";
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, setDoc, writeBatch, query, where, runTransaction, getCountFromServer, serverTimestamp } from "firebase/firestore";
 import type { Staff } from "@/lib/types";
 import { createAuthUser } from "./authService";
+import { assignTeacherToCourses } from "./courseService";
 
 // Type for a new staff member, omitting the 'id'
 export type NewStaff = Omit<Staff, 'id'> & { password?: string };
 export type UpdatableStaff = Omit<Staff, 'id' | 'hireDate'>;
 
+const getNextStaffId = async (): Promise<string> => {
+    const counterRef = doc(db, "counters", "staffId");
+    
+    return runTransaction(db, async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+        let nextId = 1001;
+        if (counterDoc.exists()) {
+            nextId = counterDoc.data().currentId + 1;
+        }
+        transaction.set(counterRef, { currentId: nextId }, { merge: true });
+        return `STAFF${nextId}`;
+    });
+};
+
 // Function to add a new staff member to Firestore and create an auth user if needed
-export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' | 'hireDate'>): Promise<string> => {
-  const { email, password, role, ...restOfStaffData } = staffData;
+export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' | 'hireDate' | 'idNumber'> & { courseIds?: string[] }): Promise<string> => {
+  const { email, password, role, courseIds, ...restOfStaffData } = staffData;
   let authUid = '';
+  const staffId = await getNextStaffId();
 
   // Case 1: Role requires a login (teacher or admin)
   if (role === 'teacher' || role === 'admin') {
@@ -41,6 +57,7 @@ export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' |
 
   const newStaffData = {
     ...restOfStaffData,
+    idNumber: staffId,
     email: email || '', // Ensure email is not undefined
     role,
     status: "active" as const,
@@ -51,6 +68,12 @@ export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' |
 
   try {
     await setDoc(newDocRef, { ...newStaffData, id: newDocRef.id });
+    
+    // Assign teacher to courses if courseIds provided and role is teacher
+    if (role === "teacher" && courseIds && courseIds.length > 0) {
+      await assignTeacherToCourses(newDocRef.id, restOfStaffData.name, courseIds);
+    }
+    
     return newDocRef.id;
   } catch (error) {
     console.error("CRITICAL: Auth user created but Firestore staff document failed for teachers/admins.", error);

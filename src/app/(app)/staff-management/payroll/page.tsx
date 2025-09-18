@@ -57,7 +57,7 @@ export default function PayrollPage() {
             if (result.success) {
                  toast({
                     title: "Payroll Generated",
-                    description: `Successfully ran payroll for ${currentMonthYear}.`,
+                    description: `Successfully ran payroll for ${currentMonthYear}. Click on the payroll to view details.`,
                 });
                 await fetchHistory(); // Refresh history
             } else {
@@ -112,7 +112,7 @@ export default function PayrollPage() {
                         <p className="mt-1 text-sm text-muted-foreground">
                             This will calculate salaries, deductions, and net pay for all active staff.
                         </p>
-                        <Button className="mt-6" onClick={handleRunPayroll} disabled={isGenerating}>
+                        <Button className="mt-6 btn-gradient btn-click-effect" onClick={handleRunPayroll} disabled={isGenerating}>
                             {isGenerating && <Loader2 className="animate-spin" />}
                             {isGenerating ? "Generating..." : "Run Payroll"}
                         </Button>
@@ -148,34 +148,40 @@ export default function PayrollPage() {
                             <TableBody>
                                 {payrollHistory.length > 0 ? (
                                     payrollHistory.map((payroll) => (
-                                        <TableRow key={payroll.id}>
+                                        <TableRow key={payroll.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/staff-management/payroll/${payroll.id}/summary`)}>
                                             <TableCell className="font-medium">{payroll.period}</TableCell>
                                             <TableCell>{format(new Date(payroll.runDate), "PPP")}</TableCell>
                                             <TableCell className="text-right">{formatCurrency(payroll.totalAmount)}</TableCell>
                                             <TableCell className="text-right">
-                                                 <Button variant="outline" size="sm" onClick={() => router.push(`/staff-management/payroll/${payroll.id}/edit`)}>
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    Edit
-                                                 </Button>
-                                                  <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="sm" className="ml-2" onClick={() => setPayrollToDelete(payroll)}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This will permanently delete the payroll record for {payrollToDelete?.period}. This action cannot be undone.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel onClick={() => setPayrollToDelete(null)}>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={handleDeletePayroll}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <div className="flex gap-1">
+                                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/staff-management/payroll/${payroll.id}/summary`); }} className="btn-glass btn-click-effect">
+                                                        <ReceiptText className="mr-2 h-4 w-4" />
+                                                        View
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/staff-management/payroll/${payroll.id}/edit`); }} className="btn-glass btn-click-effect">
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="btn-glass btn-click-effect" onClick={(e) => { e.stopPropagation(); setPayrollToDelete(payroll); }}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This will permanently delete the payroll record for {payrollToDelete?.period}. This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel onClick={() => setPayrollToDelete(null)}>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={handleDeletePayroll}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))

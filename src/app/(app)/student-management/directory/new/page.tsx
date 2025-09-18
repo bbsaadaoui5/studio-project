@@ -10,12 +10,12 @@ import { getCoursesByType, getCoursesByGrade } from "@/services/courseService";
 import type { Course } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  GlassModal,
+  GlassModalContent,
+  GlassModalDescription,
+  GlassModalHeader,
+  GlassModalTitle,
+} from "@/components/ui/glass-modal";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -208,16 +208,20 @@ export default function NewStudentPage() {
         </Button>
         <h1 className="text-2xl font-bold">Add New Student</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Student Information</CardTitle>
-          <CardDescription>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Student Information</h2>
+          <p className="text-sm text-muted-foreground">
             Fill out the form below to enroll a new student.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          </p>
+        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="name"
@@ -225,7 +229,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Youssef El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Youssef El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -238,7 +242,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Email Address (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., youssef.elamrani@example.com" {...field} />
+                      <Input className="glass-input" placeholder="e.g., youssef.elamrani@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -288,7 +292,7 @@ export default function NewStudentPage() {
                       <FormItem>
                         <FormLabel>Grade</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., 5" {...field} />
+                          <Input className="glass-input" placeholder="e.g., 5" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -301,7 +305,7 @@ export default function NewStudentPage() {
                       <FormItem>
                         <FormLabel>Class Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., A" {...field} />
+                          <Input className="glass-input" placeholder="e.g., A" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -385,7 +389,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Parent/Guardian Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Leila El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Leila El-Amrani" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -398,7 +402,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Parent/Guardian Contact</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +212 600-000000" {...field} />
+                      <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -411,7 +415,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Alternative Contact (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., +212 600-000001" {...field} />
+                      <Input className="glass-input" placeholder="e.g., +212 600-000001" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -424,7 +428,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 123 Main St, Casablanca" {...field} />
+                      <Input className="glass-input" placeholder="e.g., 123 Main St, Casablanca" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -437,7 +441,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Medical Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., Allergies, medications, etc." {...field} />
+                      <Textarea className="glass-input" placeholder="e.g., Allergies, medications, etc." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -451,8 +455,9 @@ export default function NewStudentPage() {
                     <FormLabel>Date of Birth</FormLabel>
                     <FormControl>
                       <Input
+                        className="glass-input"
                         type="date"
-                        value={field.value ? field.value.toISOString().substring(0, 10) : ""}
+                        value={field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().substring(0, 10) : ""}
                         onChange={e => field.onChange(new Date(e.target.value))}
                       />
                     </FormControl>
@@ -461,15 +466,14 @@ export default function NewStudentPage() {
                 )}
               />
               <div className="md:col-span-2 flex justify-end">
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Enroll Student
                 </Button>
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

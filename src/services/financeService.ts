@@ -16,7 +16,8 @@ import {
   writeBatch,
   serverTimestamp
 } from "firebase/firestore";
-import type { Expense, FeeStructure, Payment } from "@/lib/types";
+import type { Expense, FeeStructure, Payment, Payroll } from "@/lib/types";
+import { getPayrolls } from "./payrollService";
 
 // --- Expenses ---
 
@@ -94,10 +95,24 @@ export const getFeeStructures = async (): Promise<FeeStructure[]> => {
 
 export const getFeeStructureForGrade = async (grade: string, academicYear: string): Promise<FeeStructure | null> => {
     try {
+        // First try exact match
         const docId = `${grade}-${academicYear}`;
         const docRef = doc(db, "feeStructures", docId);
         const docSnap = await getDoc(docRef);
-        return docSnap.exists() ? docSnap.data() as FeeStructure : null;
+        
+        if (docSnap.exists()) {
+            return docSnap.data() as FeeStructure;
+        }
+        
+        // If not found, try case-insensitive search through all structures
+        const allStructures = await getFeeStructures();
+        const normalizedGrade = grade.toLowerCase();
+        
+        return allStructures.find(structure => 
+            structure.grade.toLowerCase() === normalizedGrade && 
+            structure.academicYear === academicYear
+        ) || null;
+        
     } catch (error) {
         console.error("Error fetching fee structure:", error);
         throw new Error("Failed to fetch fee structure.");
@@ -129,13 +144,18 @@ export const updateFeeStructure = async (structureId: string, structureData: Par
 
 export const getPaymentsForStudent = async (studentId: string): Promise<Payment[]> => {
   try {
-    const q = query(collection(db, "payments"), where("studentId", "==", studentId), orderBy("date", "desc"));
+    const q = query(collection(db, "payments"), where("studentId", "==", studentId));
     const querySnapshot = await getDocs(q);
     const payments: Payment[] = [];
     querySnapshot.forEach((doc) => {
-        payments.push(doc.data() as Payment);
+        const data = doc.data();
+        payments.push({
+          ...data,
+          date: data.date?.toDate?.().toISOString() || data.date
+        } as Payment);
     });
-    return payments;
+    // Sort in JavaScript instead of Firestore
+    return payments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   } catch (error) {
     console.error("Error fetching payments:", error);
     throw new Error("Failed to fetch payments.");
@@ -179,12 +199,45 @@ export const getIncomeSummary = async (): Promise<Record<string, number>> => {
         const querySnapshot = await getDocs(collection(db, "payments"));
         return querySnapshot.docs.reduce((acc, doc) => {
             const payment = doc.data() as Payment;
-            const month = new Date(payment.date).toLocaleString('default', { month: 'long', year: 'numeric' });
+            const month = new Date(payment.date).toLocaleString('default', { month: 'long' });
             acc[month] = (acc[month] || 0) + payment.amount;
             return acc;
         }, {} as Record<string, number>);
     } catch (error) {
          console.error("Error getting income summary:", error);
          return {};
+    }
+};
+
+export const getSalaryExpenses = async (): Promise<Record<string, number>> => {
+    try {
+        const payrolls = await getPayrolls();
+        return payrolls.reduce((acc, payroll) => {
+            const month = new Date(payroll.runDate).toLocaleString('default', { month: 'long' });
+            acc[month] = (acc[month] || 0) + payroll.totalAmount;
+            return acc;
+        }, {} as Record<string, number>);
+    } catch (error) {
+        console.error("Error getting salary expenses:", error);
+        return {};
+    }
+};
+
+export const getExpenseSummaryWithSalaries = async (): Promise<Record<string, number>> => {
+    try {
+        const [regularExpenses, salaryExpenses] = await Promise.all([
+            getExpenseSummary(),
+            getSalaryExpenses()
+        ]);
+        
+        const totalSalaries = Object.values(salaryExpenses).reduce((sum, amount) => sum + amount, 0);
+        
+        return {
+            ...regularExpenses,
+            "Staff Salaries": totalSalaries
+        };
+    } catch (error) {
+        console.error("Error getting expense summary with salaries:", error);
+        return {};
     }
 };

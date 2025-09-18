@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,16 +31,20 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { addStaffMember } from "@/services/staffService";
+import { getCourses } from "@/services/courseService";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { Course } from "@/lib/types";
 
 const staffSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
+  courseIds: z.array(z.string()).optional(),
   email: z.string().email("Please enter a valid email address."),
   phone: z.string().min(10, "Please enter a valid phone number."),
   altPhone: z.string().optional(),
-  gender: z.enum(["male", "female", "other"]),
+  gender: z.enum(["male", "female"]),
   address: z.string().min(10, "Please enter a valid address."),
   dateOfBirth: z.date({ required_error: "A date of birth is required." }),
   qualifications: z.string().min(10, "Please enter qualifications."),
@@ -49,13 +53,18 @@ const staffSchema = z.object({
   paymentType: z.enum(["salary", "commission", "headcount"]).optional(),
   paymentRate: z.number().optional(),
   salary: z.number().optional(),
-  password: z.string().min(6, "Password must be at least 6 characters.").optional(),
+
 });
 
 export default function NewInstructorPage() {
   const [isSaving, setIsSaving] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
   const router = useRouter();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    getCourses().then(setCourses).catch(console.error);
+  }, []);
 
   const form = useForm<z.infer<typeof staffSchema>>({
     resolver: zodResolver(staffSchema),
@@ -72,7 +81,7 @@ export default function NewInstructorPage() {
       paymentType: "salary",
       paymentRate: 0,
       salary: 0,
-      password: "",
+      courseIds: [],
     },
   });
 
@@ -111,14 +120,18 @@ export default function NewInstructorPage() {
         <h1 className="text-2xl font-bold ml-2">Add New Instructor</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Instructor Information</CardTitle>
-          <CardDescription>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Instructor Information</h2>
+          <p className="text-sm text-muted-foreground">
             Fill in the details to add a new instructor to the staff directory.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -129,7 +142,7 @@ export default function NewInstructorPage() {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input className="glass-input" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -142,7 +155,7 @@ export default function NewInstructorPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" />
+                        <Input className="glass-input" {...field} type="email" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -155,7 +168,7 @@ export default function NewInstructorPage() {
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input className="glass-input" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -168,7 +181,7 @@ export default function NewInstructorPage() {
                     <FormItem>
                       <FormLabel>Alt. Phone (Optional)</FormLabel>
                       <FormControl>
-                        <Input {...field} value={field.value ?? ""} />
+                        <Input className="glass-input" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -189,7 +202,6 @@ export default function NewInstructorPage() {
                         <SelectContent>
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -226,6 +238,7 @@ export default function NewInstructorPage() {
                       <FormLabel>Date of Birth</FormLabel>
                       <FormControl>
                         <Input
+                          className="glass-input"
                           type="date"
                           value={field.value ? field.value.toISOString().split('T')[0] : ""}
                           onChange={(e) => field.onChange(new Date(e.target.value))}
@@ -242,7 +255,7 @@ export default function NewInstructorPage() {
                     <FormItem className="md:col-span-2">
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea className="glass-input" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -255,7 +268,7 @@ export default function NewInstructorPage() {
                     <FormItem className="md:col-span-2">
                       <FormLabel>Qualifications</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea className="glass-input" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -320,6 +333,7 @@ export default function NewInstructorPage() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            className="glass-input"
                             type="number"
                             {...field}
                             onChange={(e) => field.onChange(Number(e.target.value))}
@@ -330,16 +344,34 @@ export default function NewInstructorPage() {
                     )}
                   />
                 )}
-                {(form.watch("role") === "teacher" || form.watch("role") === "admin") && (
+                {form.watch("role") === "teacher" && (
                   <FormField
                     control={form.control}
-                    name="password"
+                    name="courseIds"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="password" />
-                        </FormControl>
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Courses to Teach</FormLabel>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-3">
+                          {courses.map((course) => (
+                            <div key={course.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={course.id}
+                                checked={field.value?.includes(course.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentIds = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...currentIds, course.id]);
+                                  } else {
+                                    field.onChange(currentIds.filter(id => id !== course.id));
+                                  }
+                                }}
+                              />
+                              <label htmlFor={course.id} className="text-sm">
+                                {course.name} ({course.type === "academic" ? `Grade ${course.grade}` : "Support"})
+                              </label>
+                            </div>
+                          ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -355,15 +387,14 @@ export default function NewInstructorPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving} className="btn-gradient btn-click-effect">
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isSaving ? "Adding..." : "Add Instructor"}
                 </Button>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

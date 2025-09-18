@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/chart"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
-import { getExpenseSummary } from "@/services/financeService"
+import { getExpenseSummaryWithSalaries } from "@/services/financeService"
 
 export function ExpenseBreakdownChart() {
     const [chartData, setChartData] = React.useState<any[]>([]);
@@ -25,7 +25,7 @@ export function ExpenseBreakdownChart() {
     React.useEffect(() => {
         const fetchExpenseData = async () => {
             try {
-                const expenseSummary = await getExpenseSummary();
+                const expenseSummary = await getExpenseSummaryWithSalaries();
                 const data = Object.keys(expenseSummary).map((key, index) => ({
                     name: key.charAt(0).toUpperCase() + key.slice(1),
                     value: expenseSummary[key],

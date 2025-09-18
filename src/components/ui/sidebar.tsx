@@ -324,10 +324,8 @@ export const AppSidebar: React.FC = () => {
     >
       <div className={cn("flex h-16 items-center border-b border-sidebar-border px-6", { "justify-between": isOpen, "justify-center": !isOpen })}>
         <Link href="/" className="flex items-center gap-2 font-semibold">
-           <div className="bg-background rounded-md p-1.5">
-            <GraduationCap className="h-6 w-6 text-primary" />
-           </div>
-          {isOpen && <span className="truncate">CampusConnect</span>}
+            <img src="/icon-192.png" alt="Almawed" className="h-8 w-8" />
+          {isOpen && <span className="truncate">Almawed</span>}
         </Link>
       </div>
       <div className="flex-1 overflow-auto">

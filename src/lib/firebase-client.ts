@@ -5,7 +5,8 @@ const firebaseConfig = {
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ""
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
 
@@ -13,7 +14,7 @@ const firebaseConfig = {
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth } from "firebase/auth"; // THIS IS REQUIRED FOR 'auth'
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore"; // THIS IS REQUIRED FOR 'db'
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore"; // THIS IS REQUIRED FOR 'db'
 import { getStorage } from "firebase/storage"; // THIS IS REQUIRED FOR 'storage'
 import { getAnalytics, isSupported as isAnalyticsSupported } from "firebase/analytics";
 
@@ -35,7 +36,7 @@ export const initializeClientSideServices = async () => {
     if (typeof window !== 'undefined') {
         // Enable offline persistence
         try {
-            await enableIndexedDbPersistence(db);
+            await enableMultiTabIndexedDbPersistence(db);
         } catch (err: any) {
             if (err.code === 'failed-precondition') {
                 console.warn('Firestore offline persistence failed: Multiple tabs open.');
@@ -44,15 +45,15 @@ export const initializeClientSideServices = async () => {
             }
         }
 
-        // Enable Analytics
-        try {
-            const supported = await isAnalyticsSupported();
-            if (supported) {
-                analytics = getAnalytics(app);
-            }
-        } catch (error) {
-            console.error("Failed to initialize Analytics", error);
-        }
+        // Enable Analytics (commented out to avoid errors)
+        // try {
+        //     const supported = await isAnalyticsSupported();
+        //     if (supported && process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
+        //         analytics = getAnalytics(app);
+        //     }
+        // } catch (error) {
+        //     console.error("Failed to initialize Analytics", error);
+        // }
     }
 }
 

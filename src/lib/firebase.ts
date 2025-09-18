@@ -1,6 +1,5 @@
-// TEMPORARILY DISABLED - Firebase initialization
-// import { initializeApp, getApps, getApp } from 'firebase/app';
-// import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 
 // Firebase configuration using environment variables
 export const firebaseConfig = {
@@ -13,31 +12,17 @@ export const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || ""
 };
 
-// Mock Firebase for temporary build testing
-export const db = {
-  // Mock basic firestore methods
-  collection: (path: string) => ({
-    doc: (id: string) => ({
-      get: async () => ({ 
-        exists: true, 
-        data: () => ({ id, name: "Mock Data" }),
-        id 
-      }),
-      set: async (data: any) => ({ id, ...data }),
-      update: async (data: any) => ({ id, ...data })
-    }),
-    get: async () => ({ 
-      docs: [{ 
-        data: () => ({ name: "Mock Item" }),
-        id: "mock-id" 
-      }] 
-    }),
-    where: () => ({
-      get: async () => ({ docs: [] })
-    })
-  })
-} as any;
+// Initialize Firebase
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const db = getFirestore(app);
 
-// Initialize Firebase - COMMENTED OUT FOR TESTING
-// const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-// export const db = getFirestore(app);
+// Enable multi-tab persistence to fix the synchronization error
+if (typeof window !== 'undefined') {
+  enableMultiTabIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('The current browser does not support all of the features required to enable persistence.');
+    }
+  });
+}

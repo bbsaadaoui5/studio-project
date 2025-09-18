@@ -19,14 +19,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  GlassModal,
+  GlassModalContent,
+  GlassModalDescription,
+  GlassModalHeader,
+  GlassModalTitle,
+  GlassModalTrigger,
+} from "@/components/ui/glass-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -143,20 +142,20 @@ export default function ExamsPage() {
               Schedule and manage all upcoming exams.
             </CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
+          <GlassModal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <GlassModalTrigger asChild>
+              <Button className="btn-glass-primary btn-click-effect">
                 <PlusCircle />
                 Schedule New Exam
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Schedule a New Exam</DialogTitle>
-                <DialogDescription>
+            </GlassModalTrigger>
+            <GlassModalContent className="sm:max-w-[425px]">
+              <GlassModalHeader>
+                <GlassModalTitle>Schedule a New Exam</GlassModalTitle>
+                <GlassModalDescription>
                   Enter the details for the new exam.
-                </DialogDescription>
-              </DialogHeader>
+                </GlassModalDescription>
+              </GlassModalHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                    <FormField
@@ -181,7 +180,7 @@ export default function ExamsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Exam Title</FormLabel>
-                        <FormControl><Input placeholder="e.g., Midterm Exam" {...field} /></FormControl>
+                        <FormControl><Input className="glass-input" placeholder="e.g., Midterm Exam" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -230,21 +229,21 @@ export default function ExamsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Duration (in minutes)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 60" {...field} /></FormControl>
+                        <FormControl><Input className="glass-input" type="number" placeholder="e.g., 60" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <DialogFooter className="pt-4">
-                    <Button type="submit" disabled={isSubmitting}>
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSubmitting} className="btn-gradient btn-click-effect">
                       {isSubmitting && <Loader2 className="animate-spin" />}
                       {isSubmitting ? "Scheduling..." : "Schedule Exam"}
                     </Button>
-                  </DialogFooter>
+                  </div>
                 </form>
               </Form>
-            </DialogContent>
-          </Dialog>
+            </GlassModalContent>
+          </GlassModal>
         </CardHeader>
         <CardContent>
           {isLoading ? (

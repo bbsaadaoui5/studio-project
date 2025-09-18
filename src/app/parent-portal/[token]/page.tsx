@@ -194,7 +194,7 @@ export default function ParentPortalPage() {
                     <div className="bg-primary rounded-md p-1.5">
                         <GraduationCap className="h-6 w-6 text-primary-foreground" />
                     </div>
-                    <span className="text-lg font-semibold">CampusConnect Parent Portal</span>
+                    <span className="text-lg font-semibold">Almawed Parent Portal</span>
                 </div>
                 <div className="text-right text-sm">
                     <p className="font-semibold">{student.name}</p>

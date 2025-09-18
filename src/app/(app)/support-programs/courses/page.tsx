@@ -48,7 +48,7 @@ export default function SupportCoursesPage() {
             <h1 className="text-2xl font-bold">Support Program Courses</h1>
             <p className="text-muted-foreground">Manage all non-academic, support, and extracurricular courses.</p>
         </div>
-        <Button asChild>
+        <Button asChild className="btn-glass-primary btn-click-effect">
             <Link href="/support-programs/courses/new">
                 <PlusCircle />
                 <span>Add New Support Course</span>
@@ -90,7 +90,7 @@ export default function SupportCoursesPage() {
                     </p>
                 </CardContent>
                 <CardFooter className="flex justify-end p-4 pt-0">
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" asChild className="btn-glass btn-click-effect">
                     <Link href={`/support-programs/courses/${course.id}`}>View Details</Link>
                     </Button>
                 </CardFooter>

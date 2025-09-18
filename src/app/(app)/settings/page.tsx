@@ -69,7 +69,7 @@ export default function SettingsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>General Settings</CardTitle>
-                            <CardDescription>Manage global settings for the CampusConnect application.</CardDescription>
+                            <CardDescription>Manage global settings for the Almawed application.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {isLoading ? (

@@ -238,7 +238,7 @@ export default function StudentDirectoryPage() {
                 <CardTitle>Student Directory</CardTitle>
                 <CardDescription>Browse and manage student records.</CardDescription>
             </div>
-             <Button asChild>
+             <Button asChild className="btn-glass-primary btn-click-effect">
                 <Link href="/student-management/directory/new">
                     <PlusCircle />
                     Add New Student
@@ -255,7 +255,7 @@ export default function StudentDirectoryPage() {
                     />
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
+                        <Button variant="outline" className="ml-auto btn-glass btn-click-effect">
                         Columns <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -341,6 +341,7 @@ export default function StudentDirectoryPage() {
                         size="sm"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
+                        className="btn-glass btn-click-effect"
                     >
                         Previous
                     </Button>
@@ -349,6 +350,7 @@ export default function StudentDirectoryPage() {
                         size="sm"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
+                        className="btn-glass btn-click-effect"
                     >
                         Next
                     </Button>

@@ -19,14 +19,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  GlassModal,
+  GlassModalContent,
+  GlassModalDescription,
+  GlassModalHeader,
+  GlassModalTitle,
+  GlassModalTrigger,
+} from "@/components/ui/glass-modal";
 import {
   Form,
   FormControl,
@@ -160,20 +159,20 @@ export default function ExpensesPage() {
                                 </PopoverContent>
                             </Popover>
 
-                            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button>
+                            <GlassModal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                <GlassModalTrigger asChild>
+                                    <Button className="btn-glass-primary btn-click-effect">
                                         <PlusCircle />
                                         Add Expense
                                     </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Record New Expense</DialogTitle>
-                                        <DialogDescription>
+                                </GlassModalTrigger>
+                                <GlassModalContent>
+                                    <GlassModalHeader>
+                                        <GlassModalTitle>Record New Expense</GlassModalTitle>
+                                        <GlassModalDescription>
                                             Enter the details of the expense below.
-                                        </DialogDescription>
-                                    </DialogHeader>
+                                        </GlassModalDescription>
+                                    </GlassModalHeader>
                                     <Form {...form}>
                                         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
                                             <FormField
@@ -183,7 +182,7 @@ export default function ExpensesPage() {
                                                 <FormItem>
                                                     <FormLabel>Description</FormLabel>
                                                     <FormControl>
-                                                        <Textarea placeholder="e.g., Monthly electricity bill" {...field} />
+                                                        <Textarea className="glass-input" placeholder="e.g., Monthly electricity bill" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -196,7 +195,7 @@ export default function ExpensesPage() {
                                                 <FormItem>
                                                     <FormLabel>Amount</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" placeholder="0.00" {...field} />
+                                                        <Input className="glass-input" type="number" placeholder="0.00" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -226,17 +225,17 @@ export default function ExpensesPage() {
                                                 </FormItem>
                                                 )}
                                             />
-                                            <DialogFooter>
-                                                <Button type="submit" disabled={isSubmitting}>
+                                            <div className="flex justify-end pt-4">
+                                                <Button type="submit" disabled={isSubmitting} className="btn-gradient btn-click-effect">
                                                     {isSubmitting && <Loader2 className="animate-spin" />}
                                                     {isSubmitting ? "Adding..." : "Add Expense"}
                                                 </Button>
-                                            </DialogFooter>
+                                            </div>
                                         </form>
                                     </Form>
-                                </DialogContent>
-                            </Dialog>
-                            <Button variant="outline" onClick={handlePrint}>
+                                </GlassModalContent>
+                            </GlassModal>
+                            <Button variant="outline" onClick={handlePrint} className="btn-glass btn-click-effect">
                                 <Printer />
                                 Print
                             </Button>

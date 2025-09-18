@@ -78,18 +78,23 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Announcement</CardTitle>
-          <CardDescription>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Generate Announcement</h2>
+          <p className="text-sm text-muted-foreground">
             Enter a topic, and the AI will generate a professional announcement for you.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="topic">Topic</Label>
               <Textarea
+                className="glass-input"
                 id="topic"
                 placeholder="e.g., Upcoming parent-teacher conference"
                 value={topic}
@@ -97,14 +102,13 @@ export default function AnnouncementsPage() {
               />
             </div>
           </div>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleGenerate} disabled={isLoading}>
+        <div className="pt-4">
+          <Button onClick={handleGenerate} disabled={isLoading} className="btn-glass-primary btn-click-effect">
             {isLoading ? <Loader2 className="animate-spin" /> : <Wand2 />}
             {isLoading ? 'Generating...' : 'Generate'}
           </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
       
       <Card className={!generatedAnnouncement && !isLoading ? "flex items-center justify-center" : ""}>
         {isLoading && (
@@ -130,19 +134,19 @@ export default function AnnouncementsPage() {
             <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="generated-title">Title</Label>
-                    <Input id="generated-title" value={generatedAnnouncement.title} readOnly />
+                    <Input className="glass-input" id="generated-title" value={generatedAnnouncement.title} readOnly />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="generated-content">Content</Label>
-                    <Textarea id="generated-content" value={generatedAnnouncement.content} readOnly rows={8} />
+                    <Textarea className="glass-input" id="generated-content" value={generatedAnnouncement.content} readOnly rows={8} />
                 </div>
             </CardContent>
             <CardFooter className="justify-end gap-2">
-                <Button variant="outline" onClick={handleCopy}>
+                <Button variant="outline" onClick={handleCopy} className="btn-glass btn-click-effect">
                     <ClipboardCopy />
                     Copy to Clipboard
                 </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button onClick={handleSave} disabled={isSaving} className="btn-gradient btn-click-effect">
                     {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
                     {isSaving ? "Saving..." : "Save & Publish"}
                 </Button>

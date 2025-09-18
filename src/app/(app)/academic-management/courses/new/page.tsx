@@ -96,12 +96,18 @@ export default function NewCoursePage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Course</CardTitle>
-          <CardDescription>Fill out the form to create a new course.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>Add New Course</h2>
+          <p className="text-sm text-muted-foreground">
+            Fill out the form to create a new course.
+          </p>
+        </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
               <FormField
@@ -111,7 +117,7 @@ export default function NewCoursePage() {
                   <FormItem>
                     <FormLabel>Course Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Mathematics" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Mathematics" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -124,7 +130,7 @@ export default function NewCoursePage() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Course description..." {...field} />
+                      <Textarea className="glass-input" placeholder="Course description..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -137,7 +143,7 @@ export default function NewCoursePage() {
                   <FormItem>
                     <FormLabel>Credits</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} {...field} />
+                      <Input className="glass-input" type="number" min={1} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +156,7 @@ export default function NewCoursePage() {
                   <FormItem>
                     <FormLabel>Department</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Science" {...field} />
+                      <Input className="glass-input" placeholder="e.g., Science" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,7 +169,7 @@ export default function NewCoursePage() {
                   <FormItem>
                     <FormLabel>Grade</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 5" {...field} />
+                      <Input className="glass-input" placeholder="e.g., 5" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -221,13 +227,12 @@ export default function NewCoursePage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
                 {isLoading ? "Creating..." : "Create Course"}
               </Button>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -74,7 +74,7 @@ export default function SelectGradePage() {
                         <Button 
                             key={grade} 
                             variant="outline" 
-                            className="p-6 h-auto flex justify-between items-center text-lg"
+                            className="p-6 h-auto flex justify-between items-center text-lg btn-glass btn-click-effect"
                             onClick={() => handleGradeSelect(grade)}
                         >
                             <span>Grade {grade}</span>

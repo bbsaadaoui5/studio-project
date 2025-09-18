@@ -1,21 +1,22 @@
 @tailwind base;
+@tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 207 100% 95%; /* Light Blue - #E3F2FD */
+    --background: 207 100% 95%;
     --foreground: 222.2 84% 4.9%;
     --card: 210 40% 98%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 210 40% 98%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 229 99% 59%; /* Deep Blue - #304FFE */
+    --primary: 229 99% 59%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 36 100% 50%; /* Orange - #FF9100 */
+    --accent: 36 100% 50%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -28,14 +29,21 @@
     --chart-3: 190 75% 45%;
     --chart-4: 350 85% 60%;
     --chart-5: 50 85% 55%;
-    --sidebar-background: 229 99% 59%; /* Primary Deep Blue */
-    --sidebar-foreground: 210 40% 98%; /* White text */
-    --sidebar-primary: 217.2 91.2% 59.8%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 228 98% 65%; /* Lighter blue for hover/active */
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 229 99% 59%; /* Same as background */
-    --sidebar-ring: 224.3 76.3% 48%;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 229 99% 59%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 229 99% 59%;
+    
+    /* Glassmorphic Design Variables */
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-backdrop: rgba(0, 0, 0, 0.1);
+    --content-bg: rgba(255, 255, 255, 0.1);
+    --primary-gradient: linear-gradient(135deg, #6e8efb, #a777e3);
   }
 
   .dark {
@@ -64,14 +72,14 @@
     --chart-3: 190 75% 45%;
     --chart-4: 350 85% 60%;
     --chart-5: 50 85% 55%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217.2 91.2% 59.8%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 224.3 76.3% 48%;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 229 99% 59%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 229 99% 59%;
   }
 }
 
@@ -82,6 +90,203 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+  /* Glassmorphic Modal */
+  .glass-modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background: var(--glass-backdrop);
+    backdrop-filter: blur(10px);
+  }
+  
+  .glass-content {
+    @apply relative w-full max-w-lg rounded-2xl border p-6;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    animation: modalSlideIn 0.3s ease-out;
+  }
+  
+  /* Primary Gradient Button */
+  .btn-gradient {
+    background: var(--primary-gradient);
+    @apply text-white border-0 transition-all duration-300 hover:scale-105 hover:shadow-xl;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+  }
+  
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, #5b21b6, #7c3aed);
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+    transform: translateY(-2px) scale(1.02);
+  }
+  
+  /* Glass Card */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    @apply rounded-2xl shadow-lg;
+  }
+  
+  /* Form Controls */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(2px);
+    border: 1px solid var(--glass-border);
+    @apply rounded-lg transition-all duration-300 focus:bg-white focus:shadow-md hover:bg-white/95 hover:border-primary/30;
+  }
+  
+  .glass-input:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: hsl(var(--primary));
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Smooth transitions for interactive elements */
+.transition-glass {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Glassmorphic Button Variants */
+.btn-glass {
+  background: rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  @apply transition-all duration-300 ease-out;
+  color: hsl(var(--foreground)) !important;
+}
+
+.btn-glass:hover {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: 0 8px 32px rgba(148, 163, 184, 0.25);
+  transform: translateY(-1px);
+  animation: subtle-vibrate 0.3s ease-in-out;
+  color: hsl(var(--foreground)) !important;
+}
+
+.btn-glass:hover * {
+  color: hsl(var(--foreground)) !important;
+}
+
+.btn-glass:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Primary Glass Button */
+.btn-glass-primary {
+  background: rgba(79, 70, 229, 0.15);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  @apply text-primary transition-all duration-300 ease-out;
+  color: hsl(var(--primary)) !important;
+}
+
+.btn-glass-primary:hover {
+  background: rgba(79, 70, 229, 0.25);
+  border-color: rgba(79, 70, 229, 0.4);
+  box-shadow: 0 8px 32px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+  animation: subtle-vibrate 0.3s ease-in-out;
+  color: hsl(var(--primary)) !important;
+}
+
+.btn-glass-primary:hover * {
+  color: hsl(var(--primary)) !important;
+}
+
+/* Success Glass Button */
+.btn-glass-success {
+  background: rgba(34, 197, 94, 0.2);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  @apply text-green-600 transition-all duration-300 ease-out;
+  color: rgb(34, 197, 94) !important;
+}
+
+.btn-glass-success:hover {
+  background: rgba(34, 197, 94, 0.4);
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 8px 32px rgba(34, 197, 94, 0.3);
+  transform: translateY(-1px);
+  animation: subtle-vibrate 0.3s ease-in-out;
+  color: white !important;
+}
+
+.btn-glass-success:hover * {
+  color: white !important;
+}
+
+/* Subtle Vibration Animation */
+@keyframes subtle-vibrate {
+  0%, 100% { transform: translateY(-1px) translateX(0); }
+  25% { transform: translateY(-1px) translateX(-0.5px); }
+  75% { transform: translateY(-1px) translateX(0.5px); }
+}
+
+/* Enhanced Gradient Button with Vibration */
+.btn-gradient:hover {
+  animation: subtle-vibrate 0.3s ease-in-out, gradient-shift 0.3s ease-in-out;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* Click Effect for All Buttons */
+.btn-click-effect:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Global Button Glassmorphic Base */
+.btn, button {
+  @apply transition-all duration-300 ease-out;
+}
+
+/* Default Button Glassmorphic Style */
+button:not(.btn-gradient):not(.btn-glass):not(.btn-glass-primary):not(.btn-glass-success), 
+.btn:not(.btn-gradient):not(.btn-glass):not(.btn-glass-primary):not(.btn-glass-success) {
+  background: rgba(79, 70, 229, 0.08) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(79, 70, 229, 0.15) !important;
+  @apply transition-all duration-300 ease-out;
+  color: hsl(var(--foreground)) !important;
+}
+
+button:not(.btn-gradient):not(.btn-glass):not(.btn-glass-primary):not(.btn-glass-success):hover,
+.btn:not(.btn-gradient):not(.btn-glass):not(.btn-glass-primary):not(.btn-glass-success):hover {
+  background: rgba(79, 70, 229, 0.15) !important;
+  border-color: rgba(79, 70, 229, 0.25) !important;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.2) !important;
+  transform: translateY(-1px) !important;
+  animation: subtle-vibrate 0.3s ease-in-out !important;
+  color: hsl(var(--primary)) !important;
+}
+
+button:not(.btn-gradient):not(.btn-glass):not(.btn-glass-primary):not(.btn-glass-success):active,
+.btn:not(.btn-gradient):not(.btn-glass):not(.btn-glass-primary):not(.btn-glass-success):active {
+  transform: scale(0.95) !important;
+  transition: transform 0.1s ease-in-out !important;
 }
 
 @media print {

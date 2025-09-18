@@ -225,7 +225,7 @@ export default function SupportStudentsPage() {
                 <CardTitle>Support Program Students</CardTitle>
                 <CardDescription>A directory of all students enrolled in support programs.</CardDescription>
             </div>
-             <Button asChild>
+             <Button asChild className="btn-glass-primary btn-click-effect">
                 <Link href="/student-management/directory/new">
                     <PlusCircle />
                     Add New Student
@@ -242,7 +242,7 @@ export default function SupportStudentsPage() {
                     />
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
+                        <Button variant="outline" className="ml-auto btn-glass btn-click-effect">
                         Columns <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -328,6 +328,7 @@ export default function SupportStudentsPage() {
                         size="sm"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
+                        className="btn-glass btn-click-effect"
                     >
                         Previous
                     </Button>
@@ -336,6 +337,7 @@ export default function SupportStudentsPage() {
                         size="sm"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
+                        className="btn-glass btn-click-effect"
                     >
                         Next
                     </Button>

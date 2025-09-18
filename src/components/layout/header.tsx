@@ -110,12 +110,7 @@ export function Header() {
     }, [pathname, isClient]);
 
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-        router.push(`/search?q=${searchQuery.trim()}`);
-        }
-    };
+
 
     const handleViewParentPortal = async () => {
         if (!viewSelectedStudent) return;
@@ -188,17 +183,7 @@ export function Header() {
         {isClient && isMobile && <h1 className="text-lg font-semibold capitalize">{pageTitle}</h1>}
       </div>
 
-       <div className="relative flex-1 md:grow-0">
-        <form onSubmit={handleSearch}>
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </form>
-      </div>
+
 
       <div className="ml-auto flex items-center gap-1 md:gap-2">
         
@@ -317,16 +302,28 @@ export function Header() {
 
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                          <Link href="/staff-management/directory/new"><Briefcase /></Link>
+                      <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-full" 
+                          onClick={() => router.push('/staff-management/directory/new')}
+                      >
+                          <UserPlus className="h-5 w-5" />
+                          <span className="sr-only">Add New Staff</span>
                       </Button>
                   </TooltipTrigger>
                   <TooltipContent>Add New Staff</TooltipContent>
               </Tooltip>
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                          <Link href="/academic-management/courses/new"><BookOpenCheck /></Link>
+                      <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-full" 
+                          onClick={() => router.push('/academic-management/courses/new')}
+                      >
+                          <BookOpenCheck className="h-5 w-5" />
+                          <span className="sr-only">Add New Course</span>
                       </Button>
                   </TooltipTrigger>
                   <TooltipContent>Add New Course</TooltipContent>

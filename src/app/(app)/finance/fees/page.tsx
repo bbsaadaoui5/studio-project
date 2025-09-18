@@ -312,7 +312,7 @@ export default function FeesPage() {
                             </CardDescription>
                         </div>
                          {selectedStudent && dateRange && (
-                            <Button onClick={handlePrint} variant="outline">
+                            <Button onClick={handlePrint} variant="outline" className="btn-glass btn-click-effect">
                                 <Printer className="mr-2" />
                                 Print Statement
                             </Button>
@@ -364,7 +364,7 @@ export default function FeesPage() {
                         </div>
                     </div>
                     {(dateRange) && (
-                         <Button variant="ghost" size="icon" onClick={clearFilters}>
+                         <Button variant="ghost" size="icon" onClick={clearFilters} className="btn-glass btn-click-effect">
                             <X className="h-4 w-4" />
                         </Button>
                     )}
@@ -443,7 +443,7 @@ export default function FeesPage() {
                             <CardFooter className="no-print">
                                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button className="w-full">
+                                        <Button className="w-full btn-gradient btn-click-effect">
                                             <Receipt />
                                             Record a Payment
                                         </Button>
@@ -480,7 +480,7 @@ export default function FeesPage() {
                                             </div>
                                         </div>
                                         <DialogFooter>
-                                            <Button onClick={handleRecordPayment} disabled={isSubmitting}>
+                                            <Button onClick={handleRecordPayment} disabled={isSubmitting} className="btn-gradient btn-click-effect">
                                                 {isSubmitting && <Loader2 className="animate-spin" />}
                                                 Submit Payment
                                             </Button>
@@ -542,12 +542,12 @@ export default function FeesPage() {
                                                     <TableCell className="capitalize">{p.method.replace('-', ' ')}</TableCell>
                                                     <TableCell>{formatCurrency(p.amount)}</TableCell>
                                                     <TableCell className="text-right no-print">
-                                                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)}>
+                                                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)} className="btn-glass btn-click-effect">
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
                                                          <AlertDialog>
                                                             <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(p)}>
+                                                                <Button variant="ghost" size="icon" onClick={() => setPaymentToDelete(p)} className="btn-glass btn-click-effect">
                                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                                 </Button>
                                                             </AlertDialogTrigger>
@@ -620,8 +620,8 @@ export default function FeesPage() {
                         </div>
                     )}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleEditPayment} disabled={isSubmitting}>
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="btn-glass btn-click-effect">Cancel</Button>
+                        <Button onClick={handleEditPayment} disabled={isSubmitting} className="btn-gradient btn-click-effect">
                             {isSubmitting && <Loader2 className="animate-spin" />}
                             Save Changes
                         </Button>

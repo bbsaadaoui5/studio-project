@@ -25,7 +25,7 @@ export const getSettings = async (): Promise<SchoolSettings> => {
     } else {
       // Return default settings if none are found
       return {
-        schoolName: "CampusConnect Academy",
+        schoolName: "Almawed Academy",
         academicYear: "2024-2025",
         address: "",
       };

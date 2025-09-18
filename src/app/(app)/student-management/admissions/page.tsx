@@ -15,14 +15,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  GlassModal,
+  GlassModalContent,
+  GlassModalDescription,
+  GlassModalHeader,
+  GlassModalTitle,
+  GlassModalTrigger,
+} from "@/components/ui/glass-modal";
 import {
   Form,
   FormControl,
@@ -147,20 +146,20 @@ export default function AdmissionsPage() {
                             Review and manage new student admission applications.
                         </CardDescription>
                     </div>
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
+                    <GlassModal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <GlassModalTrigger asChild>
+                            <Button className="btn-gradient">
                                 <PlusCircle />
                                 Add Application
                             </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Admission Application</DialogTitle>
-                                <DialogDescription>
+                        </GlassModalTrigger>
+                        <GlassModalContent>
+                            <GlassModalHeader>
+                                <GlassModalTitle>Add New Admission Application</GlassModalTitle>
+                                <GlassModalDescription>
                                     Enter the details of the new applicant.
-                                </DialogDescription>
-                            </DialogHeader>
+                                </GlassModalDescription>
+                            </GlassModalHeader>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
                                      <FormField
@@ -170,7 +169,7 @@ export default function AdmissionsPage() {
                                         <FormItem>
                                             <FormLabel>Applicant's Full Name</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g., Layla Bennani" {...field} />
+                                                <Input className="glass-input" placeholder="e.g., Layla Bennani" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -183,7 +182,7 @@ export default function AdmissionsPage() {
                                         <FormItem>
                                             <FormLabel>Applicant's Email</FormLabel>
                                             <FormControl>
-                                                <Input type="email" placeholder="e.g., layla.b@example.com" {...field} />
+                                                <Input className="glass-input" type="email" placeholder="e.g., layla.b@example.com" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -212,7 +211,7 @@ export default function AdmissionsPage() {
                                         <FormItem>
                                             <FormLabel>Parent/Guardian Name</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g., Omar Bennani" {...field} />
+                                                <Input className="glass-input" placeholder="e.g., Omar Bennani" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -225,7 +224,7 @@ export default function AdmissionsPage() {
                                         <FormItem>
                                             <FormLabel>Parent Contact Number</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g., +212 600-000000" {...field} />
+                                                <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -238,22 +237,22 @@ export default function AdmissionsPage() {
                                         <FormItem>
                                             <FormLabel>Previous School (Optional)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g., Al-Khwarizmi High School" {...field} />
+                                                <Input className="glass-input" placeholder="e.g., Al-Khwarizmi High School" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                         )}
                                     />
-                                    <DialogFooter>
-                                        <Button type="submit" disabled={isSubmitting}>
+                                    <div className="flex justify-end pt-4">
+                                        <Button type="submit" disabled={isSubmitting} className="btn-gradient">
                                             {isSubmitting && <Loader2 className="animate-spin" />}
                                             {isSubmitting ? "Submitting..." : "Submit Application"}
                                         </Button>
-                                    </DialogFooter>
+                                    </div>
                                 </form>
                             </Form>
-                        </DialogContent>
-                    </Dialog>
+                        </GlassModalContent>
+                    </GlassModal>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (

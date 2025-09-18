@@ -13,24 +13,25 @@ const getNextStudentId = async (): Promise<string> => {
     
     return runTransaction(db, async (transaction) => {
         const counterDoc = await transaction.get(counterRef);
-        let nextId = 123;
+        let nextId = 2024001;
         if (counterDoc.exists()) {
             nextId = counterDoc.data().currentId + 1;
         }
         transaction.set(counterRef, { currentId: nextId }, { merge: true });
-        return `${nextId}`;
+        return `STU${nextId}`;
     });
 };
 
 
 // Function to add a new student to Firestore
-export const addStudent = async (studentData: Omit<NewStudent, 'id' | 'status' | 'enrollmentDate'>): Promise<string> => {
+export const addStudent = async (studentData: Omit<NewStudent, 'id' | 'status' | 'enrollmentDate' | 'idNumber'>): Promise<string> => {
   const batch = writeBatch(db);
   const studentId = await getNextStudentId();
   const newDocRef = doc(db, "students", studentId);
   
   const newStudentData = {
     ...studentData,
+    idNumber: studentId,
     id: studentId,
     status: "active" as const,
     enrollmentDate: serverTimestamp(),

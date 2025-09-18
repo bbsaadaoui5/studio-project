@@ -2,6 +2,7 @@
 
 export type Student = {
   id: string;
+  idNumber: string;
   name: string;
   email?: string; // Made optional
   gender: "male" | "female";
@@ -39,13 +40,14 @@ export type Course = {
 
 export type Staff = {
   id:string;
+  idNumber: string;
   name: string;
   position?: string; 
   department?: string; 
   email?: string;
   phone: string;
   altPhone?: string;
-  gender: "male" | "female" | "other";
+  gender: "male" | "female";
   address: string;
   dateOfBirth: string; // ISO Date String
   qualifications: string;

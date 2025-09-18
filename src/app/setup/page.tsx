@@ -77,7 +77,7 @@ export default function SetupPage() {
         role: 'admin',
         department: 'Administration',
         salary: 0,
-        gender: "other"
+        gender: "male"
       });
 
       toast({
@@ -117,7 +117,7 @@ export default function SetupPage() {
                 </div>
             </div>
             <CardTitle className="text-2xl">Initial Administrator Setup</CardTitle>
-            <CardDescription>Create the first admin account for CampusConnect.</CardDescription>
+            <CardDescription>Create the first admin account for Almawed.</CardDescription>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleCreateAdmin} className="space-y-4">
