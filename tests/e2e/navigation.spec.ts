@@ -30,14 +30,12 @@ test.describe('Smoke navigation', () => {
     await setupMocks(page)
     await page.goto('/communication/messages')
     // wait for the UI to settle: either the new-button or the messages list should appear
-    await Promise.all([
-      page.waitForLoadState('networkidle'),
-      page.waitForSelector('[data-testid="messages-new"], [data-testid="messages-list"], .messages-list, text=لا توجد محادثات بعد.', { timeout: 15000 })
-    ])
-    // expect a compose/new message button or message list
+    // wait for network idle, then assert one of the expected UI states is visible
+    await page.waitForLoadState('networkidle')
+    // expect a compose/new message button or message list or the localized empty-state
     const newBtn = page.locator('[data-testid="messages-new"]').first()
     const list = page.locator('[data-testid="messages-list"], .messages-list').first()
     const emptyMsg = page.getByText('لا توجد محادثات بعد.').first()
-    await expect(newBtn.or(list).or(emptyMsg)).toBeVisible()
+    await expect(newBtn.or(list).or(emptyMsg)).toBeVisible({ timeout: 15000 })
   })
 })
