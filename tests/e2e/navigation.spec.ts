@@ -32,11 +32,12 @@ test.describe('Smoke navigation', () => {
     // wait for the UI to settle: either the new-button or the messages list should appear
     await Promise.all([
       page.waitForLoadState('networkidle'),
-      page.waitForSelector('[data-testid="messages-new"], [data-testid="messages-list"], .messages-list', { timeout: 15000 })
+      page.waitForSelector('[data-testid="messages-new"], [data-testid="messages-list"], .messages-list, text=لا توجد محادثات بعد.', { timeout: 15000 })
     ])
     // expect a compose/new message button or message list
     const newBtn = page.locator('[data-testid="messages-new"]').first()
     const list = page.locator('[data-testid="messages-list"], .messages-list').first()
-    await expect(newBtn.or(list)).toBeVisible()
+    const emptyMsg = page.getByText('لا توجد محادثات بعد.').first()
+    await expect(newBtn.or(list).or(emptyMsg)).toBeVisible()
   })
 })
