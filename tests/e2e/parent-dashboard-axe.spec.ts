@@ -34,33 +34,7 @@ test('parent-dashboard-axe', async ({ page }, testInfo) => {
 
   // Ensure dashboard main content is visible
   await page.waitForSelector('main', { timeout: 15000 });
-
-  // Ensure the page has a level-one heading for axe; if not, inject a hidden H1 (test-only)
-  const hasH1 = await page.$('h1');
-  if (!hasH1) {
-    await page.evaluate(() => {
-      const h = document.createElement('h1');
-      h.setAttribute('data-test-temporary-h1', '1');
-      // visually hide but keep accessible to assistive tech
-      h.style.position = 'absolute';
-      h.style.width = '1px';
-      h.style.height = '1px';
-      h.style.overflow = 'hidden';
-      h.style.clip = 'rect(0 0 0 0)';
-      h.style.whiteSpace = 'nowrap';
-      h.style.border = '0';
-      h.style.padding = '0';
-      h.style.margin = '-1px';
-      h.textContent = '\u200B';
-      const main = document.querySelector('main');
-      if (main) {
-        main.prepend(h);
-      } else {
-        document.body.prepend(h);
-      }
-    });
-    await page.waitForSelector('main h1[data-test-temporary-h1], h1[data-test-temporary-h1]', { timeout: 3000 });
-  }
+  // Page should provide semantic headings/landmarks for axe to evaluate.
 
   // Inject axe and run
   await page.addScriptTag({ content: axeSource.source });
