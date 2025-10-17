@@ -29,8 +29,12 @@ test.describe('Smoke navigation', () => {
   test('communication/messages page loads', async ({ page }) => {
     await setupMocks(page)
     await page.goto('/communication/messages')
+    // wait for the UI to settle: either the new-button or the messages list should appear
+    await Promise.all([
+      page.waitForLoadState('networkidle'),
+      page.waitForSelector('[data-testid="messages-new"], [data-testid="messages-list"], .messages-list', { timeout: 15000 })
+    ])
     // expect a compose/new message button or message list
-    // Use data-testid for the new button to avoid English-only label matching
     const newBtn = page.locator('[data-testid="messages-new"]').first()
     const list = page.locator('[data-testid="messages-list"], .messages-list').first()
     await expect(newBtn.or(list)).toBeVisible()
