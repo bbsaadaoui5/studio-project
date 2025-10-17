@@ -181,12 +181,12 @@ export default function MessagesPage() {
                         <Input placeholder="بحث في المحادثات..." className="w-full rounded-lg bg-background pl-8" />
                     </div>
                      <Dialog open={isNewMessageOpen} onOpenChange={handleNewMessageOpen}>
-                        <DialogTrigger asChild>
-                             <Button variant="ghost" size="icon" className="ml-2" aria-label={t('messages.new') || 'New message'}>
-                                <PlusCircle />
-                                <span className="sr-only">{t('messages.new') || 'New message'}</span>
-                            </Button>
-                        </DialogTrigger>
+                         <DialogTrigger asChild>
+                                 <Button data-testid="messages-new" variant="ghost" size="icon" className="ml-2" aria-label={t('messages.new') || 'New message'}>
+                                    <PlusCircle />
+                                    <span className="sr-only">{t('messages.new') || 'New message'}</span>
+                                </Button>
+                            </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>رسالة جديدة</DialogTitle>
@@ -219,7 +219,7 @@ export default function MessagesPage() {
                 </div>
             </CardHeader>
             <ScrollArea className="flex-1">
-                <div className="p-2">
+                <div className="p-2" data-testid="messages-list">
                     {isLoadingConversations ? (
                         <div className="flex justify-center items-center h-full p-8">
                             <Loader2 className="animate-spin" />
