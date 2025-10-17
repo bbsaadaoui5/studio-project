@@ -30,8 +30,9 @@ test.describe('Smoke navigation', () => {
     await setupMocks(page)
     await page.goto('/communication/messages')
     // expect a compose/new message button or message list
-    const newBtn = page.getByRole('button', { name: /new|compose/i })
-    const list = page.locator('[data-testid="messages-list"], .messages-list')
-    await expect(newBtn.first().or(list.first())).toBeVisible()
+    // Use data-testid for the new button to avoid English-only label matching
+    const newBtn = page.locator('[data-testid="messages-new"]').first()
+    const list = page.locator('[data-testid="messages-list"], .messages-list').first()
+    await expect(newBtn.or(list)).toBeVisible()
   })
 })
