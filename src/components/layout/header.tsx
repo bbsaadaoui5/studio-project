@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +21,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslation } from "@/i18n/translation-provider";
 import { useState, useEffect, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -35,8 +35,8 @@ import { recordPayment } from "@/services/financeService";
 import { cn } from "@/lib/utils";
 
 const months = [
-  "January", "February", "March", "April", "May", "June", 
-  "July", "August", "September", "October", "November", "December"
+    "يناير", "فبراير", "مارس", "أبريل", "ماي", "يونيو", 
+    "يوليوز", "غشت", "شتنبر", "أكتوبر", "نونبر", "دجنبر"
 ];
 
 export function Header() {
@@ -44,6 +44,7 @@ export function Header() {
     const [selectedGrade, setSelectedGrade] = useState<string>("");
     const pathname = usePathname();
     const router = useRouter();
+    const { t } = useTranslation();
     const isMobile = useIsMobile();
     const { toast } = useToast();
     
@@ -97,16 +98,15 @@ export function Header() {
     }, [toast]);
 
     const pageTitle = useMemo(() => {
-       if (!isClient) return "Dashboard";
-       const pathParts = pathname.split('/').filter(Boolean);
-       const lastPart = pathParts[pathParts.length - 1];
-
-       if (pathParts.includes('directory') && pathParts.length > 2) {
-           if(pathParts.includes('student-management')) return 'Student Profile';
-           if(pathParts.includes('staff-management')) return 'Staff Profile';
-       }
-       
-       return lastPart?.replace(/-/g, ' ') || 'Dashboard';
+        if (!isClient) return "Dashboard";
+        if (!pathname || typeof pathname !== 'string') return "Dashboard";
+        const pathParts = pathname.split('/').filter(Boolean);
+        const lastPart = pathParts[pathParts.length - 1];
+        if (pathParts.includes('directory') && pathParts.length > 2) {
+            if(pathParts.includes('student-management')) return 'Student Profile';
+            if(pathParts.includes('staff-management')) return 'Staff Profile';
+        }
+        return lastPart?.replace(/-/g, ' ') || 'Dashboard';
     }, [pathname, isClient]);
 
 
@@ -137,7 +137,7 @@ export function Header() {
 
     const handleViewTeacherPortal = () => {
         if (!viewSelectedTeacher) return;
-        router.push(`/teacher/dashboard?teacherId=${viewSelectedTeacher}`);
+        window.open(`/teacher/portal/${viewSelectedTeacher}`, '_blank');
         setIsViewTeacherDialogOpen(false);
         setViewSelectedTeacher("");
     }
@@ -192,19 +192,19 @@ export function Header() {
             <div className="hidden md:flex items-center gap-1">
                              <Dialog open={isViewParentDialogOpen} onOpenChange={setIsViewParentDialogOpen}>
                                  <Tooltip>
-                                        <TooltipTrigger asChild>
-                                             <DialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="rounded-full">
-                                                                <User className="h-5 w-5" />
-                                                                <span className="sr-only">View as Parent</span>
-                                                        </Button>
-                                                </DialogTrigger>
-                                        </TooltipTrigger>
-                                        <TooltipContent>View as Parent</TooltipContent>
+                         <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full" aria-label={t("header.viewAsParent") || 'View as parent'}>
+                                <User className="h-5 w-5" />
+                                <span className="sr-only">{t("header.viewAsParent") || 'View as parent'}</span>
+                            </Button>
+                        </DialogTrigger>
+                    </TooltipTrigger>
+                                        <TooltipContent>{t("header.viewAsParent")}</TooltipContent>
                                 </Tooltip>
                                 <DialogContent>
                                         <DialogHeader>
-                                                <DialogTitle>View Parent Portal</DialogTitle>
+                                                <DialogTitle>{t("header.viewParentPortal")}</DialogTitle>
                                                 <DialogDescription>Select a grade, then a student to view their parent portal.</DialogDescription>
                                         </DialogHeader>
                                         <div className="space-y-4">
@@ -262,23 +262,23 @@ export function Header() {
                  <Tooltip>
                     <TooltipTrigger asChild>
                        <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full">
+                            <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('header.viewAsTeacher') || 'View as teacher'}>
                                 <Briefcase className="h-5 w-5" />
-                                <span className="sr-only">View as Teacher</span>
+                                <span className="sr-only">{t('header.viewAsTeacher') || 'View as teacher'}</span>
                             </Button>
                         </DialogTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>View as Teacher</TooltipContent>
+                    <TooltipContent>عرض كأستاذ</TooltipContent>
                 </Tooltip>
                  <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>View Teacher Portal</DialogTitle>
-                        <DialogDescription>Select a teacher to view their dashboard.</DialogDescription>
+                        <DialogTitle>عرض بوابة الأستاذ</DialogTitle>
+                        <DialogDescription>اختر أستاذاً لعرض لوحة تحكمه.</DialogDescription>
                     </DialogHeader>
                     <Command>
-                      <CommandInput placeholder="Search teachers..." />
+                      <CommandInput placeholder="ابحث عن المعلمين..." />
                       <CommandList>
-                        <CommandEmpty>No teacher found.</CommandEmpty>
+                        <CommandEmpty>لم يتم العثور على معلمين.</CommandEmpty>
                         <CommandGroup>
                            {isLoadingData ? <div className="p-4 text-center text-sm">Loading...</div> : staff.filter(s => s.role === 'teacher').map((teacher) => (
                               <CommandItem key={teacher.id} value={teacher.name} onSelect={() => setViewSelectedTeacher(teacher.id)}>
@@ -292,7 +292,7 @@ export function Header() {
                     <DialogFooter>
                       <Button onClick={handleViewTeacherPortal} disabled={!viewSelectedTeacher || isLoadingData}>
                         {isLoadingData ? <Loader2 className="animate-spin" /> : <Eye />}
-                        View Dashboard
+                        عرض لوحة التحكم
                       </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -301,52 +301,54 @@ export function Header() {
               <Separator orientation="vertical" className="h-6 mx-2" />
 
               <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="rounded-full" 
-                          onClick={() => router.push('/staff-management/directory/new')}
+                      <TooltipTrigger asChild>
+                      <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full"
+                                                    onClick={() => router.push('/staff-management/directory/new')}
+                                                    aria-label={t('header.addStaff') || 'Add staff'}
                       >
                           <UserPlus className="h-5 w-5" />
-                          <span className="sr-only">Add New Staff</span>
+                                                 <span className="sr-only">{t('header.addStaff') || 'Add staff'}</span>
                       </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Add New Staff</TooltipContent>
+                 <TooltipContent>إضافة موظف جديد</TooltipContent>
               </Tooltip>
               <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="rounded-full" 
-                          onClick={() => router.push('/academic-management/courses/new')}
+                      <TooltipTrigger asChild>
+                      <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full"
+                                                    onClick={() => router.push('/academic-management/courses/new')}
+                                                    aria-label={t('header.addCourse') || 'Add course'}
                       >
                           <BookOpenCheck className="h-5 w-5" />
-                          <span className="sr-only">Add New Course</span>
+                                                 <span className="sr-only">{t('header.addCourse') || 'Add course'}</span>
                       </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Add New Course</TooltipContent>
+                 <TooltipContent>إضافة مادة جديدة</TooltipContent>
               </Tooltip>
                <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
                  <Tooltip>
                     <TooltipTrigger asChild>
                        <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full">
+                            <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('header.quickPayments') || 'Quick payments'}>
                                 <Receipt />
                             </Button>
                         </DialogTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>Quick Fee Payment</TooltipContent>
+                     <TooltipContent>دفع سريع للرسوم</TooltipContent>
                 </Tooltip>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Quick Fee Payment</DialogTitle>
-                        <DialogDescription>Record a new fee payment for a student.</DialogDescription>
+                         <DialogTitle>دفع رسوم سريع</DialogTitle>
+                         <DialogDescription>سجل دفعة رسوم جديدة لطالب.</DialogDescription>
                     </DialogHeader>
                      <div className="grid gap-4 py-4">
                         <div className="space-y-2">
-                             <Label htmlFor="student-select">Student</Label>
+                             <Label htmlFor="student-select">الطالب</Label>
                              <Popover open={isStudentPopoverOpen} onOpenChange={setIsStudentPopoverOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -355,17 +357,17 @@ export function Header() {
                                     aria-expanded={isStudentPopoverOpen}
                                     className="w-full justify-between"
                                     >
-                                    {selectedStudent
-                                        ? students.find((s) => s.id === selectedStudent)?.name
-                                        : "Select student..."}
+                                     {selectedStudent
+                                         ? students.find((s) => s.id === selectedStudent)?.name
+                                         : "اختر الطالب..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                     <Command>
-                                    <CommandInput placeholder="Search students..." />
+                                     <CommandInput placeholder="ابحث عن الطلاب..." />
                                     <CommandList>
-                                      <CommandEmpty>No student found.</CommandEmpty>
+                                     <CommandEmpty>لم يتم العثور على طلاب.</CommandEmpty>
                                       <CommandGroup>
                                           {students.map((student) => (
                                           <CommandItem
@@ -392,33 +394,33 @@ export function Header() {
                             </Popover>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="amount">Amount</Label>
+                             <Label htmlFor="amount">المبلغ</Label>
                             <Input id="amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="month">Payment for Month</Label>
+                             <Label htmlFor="month">الدفع عن الشهر</Label>
                             <Select onValueChange={setPaymentMonth} value={paymentMonth}>
-                                <SelectTrigger id="month"><SelectValue placeholder="Select a month..." /></SelectTrigger>
+                                 <SelectTrigger id="month"><SelectValue placeholder="اختر الشهر..." /></SelectTrigger>
                                 <SelectContent>{months.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="method">Payment Method</Label>
-                            <Select onValueChange={(v) => setPaymentMethod(v as any)} defaultValue={paymentMethod}>
+                             <Label htmlFor="method">طريقة الدفع</Label>
+                            <Select onValueChange={(v: string) => setPaymentMethod(v as "card" | "cash" | "bank-transfer")} defaultValue={paymentMethod}>
                                 <SelectTrigger id="method"><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="card">Credit/Debit Card</SelectItem>
-                                    <SelectItem value="cash">Cash</SelectItem>
-                                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                                     <SelectItem value="card">بطاقة بنكية</SelectItem>
+                                     <SelectItem value="cash">نقدًا</SelectItem>
+                                     <SelectItem value="bank-transfer">تحويل بنكي</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button onClick={handleRecordPayment} disabled={isSubmitting || isLoadingData}>
-                            {isSubmitting && <Loader2 className="animate-spin" />}
-                            Record Payment
-                        </Button>
+                         <Button onClick={handleRecordPayment} disabled={isSubmitting || isLoadingData}>
+                             {isSubmitting && <Loader2 className="animate-spin" />}
+                             تسجيل الدفعة
+                         </Button>
                     </DialogFooter>
                 </DialogContent>
                </Dialog>
@@ -429,40 +431,40 @@ export function Header() {
         {isClient && (
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full relative">
+                    <Button variant="ghost" size="icon" className="rounded-full relative">
                     <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive" />
                     <Bell className="h-5 w-5" />
-                    <span className="sr-only">Toggle notifications</span>
+                    <span className="sr-only">{t('header.viewNotifications') || 'View notifications'}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                 <DropdownMenuLabel>الإشعارات</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-start gap-3">
-                <FileText className="mt-1" />
-                <div>
-                    <p className="font-medium">New Announcement</p>
-                    <p className="text-xs text-muted-foreground">"Parent-Teacher Meeting Schedule" has been published.</p>
-                </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-start gap-3">
-                <BookOpenCheck className="mt-1" />
-                <div>
-                    <p className="font-medium">Course Enrollment</p>
-                    <p className="text-xs text-muted-foreground">A new student has enrolled in "Advanced Mathematics".</p>
-                </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-start gap-3">
-                <Briefcase className="mt-1" />
-                <div>
-                    <p className="font-medium">Payroll Processed</p>
-                    <p className="text-xs text-muted-foreground">Monthly payroll for July 2024 has been successfully processed.</p>
-                </div>
-                </DropdownMenuItem>
+                 <DropdownMenuItem className="flex items-start gap-3">
+                 <FileText className="mt-1" />
+                 <div>
+                     <p className="font-medium">إعلان جديد</p>
+                     <p className="text-xs text-muted-foreground">تم نشر جدول اجتماع أولياء الأمور والمعلمين.</p>
+                 </div>
+                 </DropdownMenuItem>
+                 <DropdownMenuItem className="flex items-start gap-3">
+                 <BookOpenCheck className="mt-1" />
+                 <div>
+                     <p className="font-medium">تسجيل مادة</p>
+                     <p className="text-xs text-muted-foreground">تم تسجيل طالب جديد في "الرياضيات المتقدمة".</p>
+                 </div>
+                 </DropdownMenuItem>
+                 <DropdownMenuItem className="flex items-start gap-3">
+                 <Briefcase className="mt-1" />
+                 <div>
+                     <p className="font-medium">تمت معالجة الرواتب</p>
+                     <p className="text-xs text-muted-foreground">تمت معالجة رواتب شهر يوليوز 2024 بنجاح.</p>
+                 </div>
+                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-center text-muted-foreground">
-                    <Link href="#">View all notifications</Link>
-                </DropdownMenuItem>
+                 <DropdownMenuItem className="text-center text-muted-foreground">
+                     <Link href="#">عرض جميع الإشعارات</Link>
+                 </DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         )}
@@ -470,25 +472,25 @@ export function Header() {
         {isClient && (
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('header.userMenu') || 'User menu'}>
                 <Avatar className="h-8 w-8">
                     <AvatarImage src={`https://picsum.photos/seed/admin/100/100`} alt="Admin" data-ai-hint="profile picture" />
                     <AvatarFallback>A</AvatarFallback>
                 </Avatar>
-                <span className="sr-only">Toggle user menu</span>
+                <span className="sr-only">{t('header.userMenu') || 'User menu'}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                 <DropdownMenuLabel>حسابي</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/settings">Settings</Link>
-                </DropdownMenuItem>
+                 <DropdownMenuItem>الملف الشخصي</DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                     <Link href="/settings">الإعدادات</Link>
+                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                    <Link href="/login">Logout</Link>
-                </DropdownMenuItem>
+                 <DropdownMenuItem>
+                     <Link href="/login">تسجيل الخروج</Link>
+                 </DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         )}

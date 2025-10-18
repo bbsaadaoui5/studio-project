@@ -57,15 +57,19 @@ export function GlassModalExample() {
           />
         </div>
         <GlassModalFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => setIsOpen(false)}
+            aria-label="Cancel"
             className="transition-glass"
           >
             Cancel
           </Button>
-          <Button 
+          <Button
+            type="button"
             onClick={() => setIsOpen(false)}
+            aria-label="Save changes"
             className="btn-gradient"
           >
             Save Changes

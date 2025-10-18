@@ -32,6 +32,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getStaffMember, updateStaffMember } from "@/services/staffService";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Staff } from "@/lib/types";
@@ -39,34 +40,34 @@ import { getYear, getMonth, getDate } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 
 const staffSchema = z.object({
-  name: z.string().min(3, "Full name must be at least 3 characters."),
-  email: z.string().email("Please enter a valid email address."),
-  phone: z.string().min(10, "Please enter a valid phone number."),
+  name: z.string().min(3, "يجب أن يكون الاسم الكامل 3 أحرف على الأقل."),
+  email: z.string().email("يرجى إدخال بريد إلكتروني صحيح."),
+  phone: z.string().min(10, "يرجى إدخال رقم هاتف صحيح."),
   altPhone: z.string().optional(),
   gender: z.enum(["male", "female"]),
-  address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
-  qualifications: z.string().min(10, "Please enter qualifications."),
+  address: z.string().min(10, "يرجى إدخال عنوان صحيح."),
+  dateOfBirth: z.date({ required_error: "تاريخ الميلاد مطلوب." }),
+  qualifications: z.string().min(10, "يرجى إدخال المؤهلات."),
   role: z.enum(["teacher", "admin", "support"]),
-  department: z.string().min(1, "Please select a department."),
+  department: z.string().min(1, "يرجى اختيار القسم."),
   status: z.enum(["active", "inactive"]),
   paymentType: z.enum(["salary", "commission", "headcount"]).optional(),
-  paymentRate: z.coerce.number().positive("Payment rate must be a positive number.").optional(),
+  paymentRate: z.coerce.number().positive("يجب أن يكون معدل الدفع رقمًا موجبًا.").optional(),
 });
 
 const years = Array.from({ length: 70 }, (_, i) => new Date().getFullYear() - 18 - i);
 const months = [
-  { value: 0, label: 'January' }, { value: 1, label: 'February' }, { value: 2, label: 'March' },
-  { value: 3, label: 'April' }, { value: 4, label: 'May' }, { value: 5, label: 'June' },
-  { value: 6, label: 'July' }, { value: 7, label: 'August' }, { value: 8, label: 'September' },
-  { value: 9, label: 'October' }, { value: 10, label: 'November' }, { value: 11, label: 'December' },
+  { value: 0, label: 'يناير' }, { value: 1, label: 'فبراير' }, { value: 2, label: 'مارس' },
+  { value: 3, label: 'أبريل' }, { value: 4, label: 'ماي' }, { value: 5, label: 'يونيو' },
+  { value: 6, label: 'يوليوز' }, { value: 7, label: 'غشت' }, { value: 8, label: 'شتنبر' },
+  { value: 9, label: 'أكتوبر' }, { value: 10, label: 'نونبر' }, { value: 11, label: 'دجنبر' },
 ];
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditStaffPage() {
   const params = useParams();
   const id = params?.id as string;
-if (!id) { return <div>ID not found</div>; }
+  const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -81,10 +82,10 @@ if (!id) { return <div>ID not found</div>; }
 
   const getPaymentRateLabel = () => {
     switch(paymentType) {
-        case "salary": return "Monthly Salary";
-        case "commission": return "Commission Rate (%)";
-        case "headcount": return "Rate Per Student";
-        default: return "Payment Rate";
+        case "salary": return "الراتب الشهري";
+        case "commission": return "نسبة العمولة (%)";
+        case "headcount": return "الأجر لكل طالب";
+        default: return "معدل الدفع";
     }
   }
 
@@ -157,17 +158,17 @@ if (!id) { return <div>ID not found</div>; }
           <Link href={`/staff-management/directory/${id}`}>
             <div>
               <ArrowLeft />
-              <span className="sr-only">Back to Profile</span>
+              <span className="sr-only">{t("common.backToProfile") || 'Back to profile'}</span>
             </div>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Edit Staff Information</h1>
+  <h1 className="text-2xl font-bold">تعديل معلومات الطاقم</h1>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Editing: {staff.name}</CardTitle>
+          <CardTitle>تعديل: {staff.name}</CardTitle>
           <CardDescription>
-            Update the staff member's information below.
+            قم بتحديث معلومات عضو الطاقم أدناه.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -176,21 +177,21 @@ if (!id) { return <div>ID not found</div>; }
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
-              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="altPhone" render={({ field }) => (<FormItem><FormLabel>Alt. Phone (Optional)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-              
+              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>الاسم الكامل</FormLabel><FormControl><Input placeholder="مثال: محمد أحمد" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>البريد الإلكتروني</FormLabel><FormControl><Input placeholder="example@email.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>رقم الهاتف</FormLabel><FormControl><Input placeholder="05XXXXXXXX" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="altPhone" render={({ field }) => (<FormItem><FormLabel>هاتف بديل (اختياري)</FormLabel><FormControl><Input placeholder="05XXXXXXXX" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="gender" render={({ field }) => (<FormItem><FormLabel>الجنس</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>الحالة</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">نشط</SelectItem><SelectItem value="inactive">غير نشط</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                    <FormLabel>Date of Birth</FormLabel>
+                    <FormLabel>تاريخ الميلاد</FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                         <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
                           <>
                             <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setFullYear(parseInt(val)); dobField.onChange(d);}} value={String(getYear(dobField.value || Date.now()))}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger></FormControl>
+                              <FormControl><SelectTrigger><SelectValue placeholder="السنة" /></SelectTrigger></FormControl>
                               <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                             </Select>
                           </>
@@ -198,7 +199,7 @@ if (!id) { return <div>ID not found</div>; }
                         <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
                           <>
                             <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setMonth(parseInt(val)); dobField.onChange(d);}} value={String(getMonth(dobField.value || Date.now()))}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger></FormControl>
+                              <FormControl><SelectTrigger><SelectValue placeholder="الشهر" /></SelectTrigger></FormControl>
                               <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
                             </Select>
                           </>
@@ -206,7 +207,7 @@ if (!id) { return <div>ID not found</div>; }
                         <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
                           <>
                             <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setDate(parseInt(val)); dobField.onChange(d);}} value={String(getDate(dobField.value || Date.now()))}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Day" /></SelectTrigger></FormControl>
+                              <FormControl><SelectTrigger><SelectValue placeholder="اليوم" /></SelectTrigger></FormControl>
                               <SelectContent>{days.map(d => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}</SelectContent>
                             </Select>
                           </>
@@ -215,23 +216,23 @@ if (!id) { return <div>ID not found</div>; }
                     <FormMessage />
                 </FormItem>
               )}/>
-              
-              <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Admin</SelectItem><SelectItem value="support">Support</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="department" render={({ field }) => (<FormItem><FormLabel>Department</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Mathematics">Mathematics</SelectItem><SelectItem value="English">English</SelectItem><SelectItem value="Science">Science</SelectItem><SelectItem value="History">History</SelectItem><SelectItem value="Arts">Arts</SelectItem><SelectItem value="Administration">Administration</SelectItem><SelectItem value="Support">Support</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+
+              <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>العنوان</FormLabel><FormControl><Textarea placeholder="العنوان الكامل" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>الدور الوظيفي</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="teacher">أستاذ</SelectItem><SelectItem value="admin">إداري</SelectItem><SelectItem value="support">دعم</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="department" render={({ field }) => (<FormItem><FormLabel>القسم</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Mathematics">الرياضيات</SelectItem><SelectItem value="English">اللغة الإنجليزية</SelectItem><SelectItem value="Science">العلوم</SelectItem><SelectItem value="History">التاريخ</SelectItem><SelectItem value="Arts">الفنون</SelectItem><SelectItem value="Administration">الإدارة</SelectItem><SelectItem value="Support">الدعم</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
               <FormField control={form.control} name="paymentType" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Payment Type</FormLabel>
+                    <FormLabel>نوع الدفع</FormLabel>
                      <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a payment type" />
+                          <SelectValue placeholder="اختر نوع الدفع" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="salary">Salary</SelectItem>
-                        <SelectItem value="commission">Commission</SelectItem>
-                        <SelectItem value="headcount">Per Student (Headcount)</SelectItem>
+                        <SelectItem value="salary">راتب شهري</SelectItem>
+                        <SelectItem value="commission">عمولة</SelectItem>
+                        <SelectItem value="headcount">لكل طالب</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -241,16 +242,16 @@ if (!id) { return <div>ID not found</div>; }
                   <FormItem>
                     <FormLabel>{getPaymentRateLabel()}</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 10000" {...field} value={field.value ?? ""} />
+                      <Input type="number" placeholder="مثال: 10000" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
               )}/>
-              <FormField control={form.control} name="qualifications" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Qualifications</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="qualifications" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>المؤهلات</FormLabel><FormControl><Textarea rows={3} placeholder="مثال: إجازة في الرياضيات، دبلوم تربية..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="animate-spin" />}
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
                 </Button>
               </div>
             </form>

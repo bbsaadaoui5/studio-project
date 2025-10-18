@@ -2,6 +2,7 @@
 "use client";
 
 import { notFound, useParams } from "next/navigation";
+import { useTranslation } from "@/i18n/translation-provider";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,13 +18,13 @@ import { CourseDetailsClient } from "./CourseDetailsClient";
 import { Badge } from "@/components/ui/badge";
 
 export default function CourseDetailsPage() {
-    const params = useParams();
-    const id = params?.id as string;
-if (!id) { return <div>ID not found</div>; }
-    
-    const [course, setCourse] = useState<Course | null>(null);
-    const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+  const params = useParams();
+  const id = params?.id as string;
+  // Hooks must always run in the same order — declare them before early returns
+  const [course, setCourse] = useState<Course | null>(null);
+  const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
     useEffect(() => {
       if (!id) return;
@@ -78,12 +79,12 @@ if (!id) { return <div>ID not found</div>; }
       <div className="flex flex-col gap-6">
          <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" asChild>
-                  <Link href={`/academic-management/courses/grade/${course.grade}`}>
-                      <ArrowLeft />
-                      <span className="sr-only">Back to Courses</span>
-                  </Link>
-              </Button>
+        <Button variant="outline" size="icon" asChild aria-label={t('common.backToCourses')}>
+          <Link href={`/academic-management/courses/grade/${course.grade}`}>
+            <ArrowLeft />
+            <span className="sr-only">{t('common.backToCourses') || 'Back to courses'}</span>
+          </Link>
+        </Button>
               <h1 className="text-2xl font-bold">Course Details</h1>
           </div>
           <CourseDetailsClient course={course} />
@@ -95,7 +96,7 @@ if (!id) { return <div>ID not found</div>; }
                       <div className="flex justify-between items-start">
                         <div>
                             <CardTitle className="text-3xl">{course.name}</CardTitle>
-                            <CardDescription className="text-lg">Taught by {course.teacher}</CardDescription>
+                            <CardDescription className="text-lg">Taught by {course.teachers?.[0]?.name || 'TBA'}</CardDescription>
                         </div>
                         <Badge variant="secondary" className="text-base flex items-center gap-2">
                             <GraduationCap className="h-4 w-4" />

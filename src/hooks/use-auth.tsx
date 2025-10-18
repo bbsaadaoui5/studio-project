@@ -30,8 +30,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(user);
       setLoading(false);
       
-      const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/setup');
-      
+      const currentPath = pathname ?? '';
+      const isAuthPage = currentPath.startsWith('/login') || currentPath.startsWith('/setup');
+
       if (!user && !isAuthPage) {
         router.push('/login');
       }

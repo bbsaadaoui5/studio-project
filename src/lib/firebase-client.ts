@@ -30,17 +30,18 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-let analytics: any;
+let analytics: ReturnType<typeof getAnalytics> | undefined;
 
 export const initializeClientSideServices = async () => {
     if (typeof window !== 'undefined') {
         // Enable offline persistence
         try {
             await enableMultiTabIndexedDbPersistence(db);
-        } catch (err: any) {
-            if (err.code === 'failed-precondition') {
+        } catch (err: unknown) {
+            const e = err as { code?: string };
+            if (e.code === 'failed-precondition') {
                 console.warn('Firestore offline persistence failed: Multiple tabs open.');
-            } else if (err.code === 'unimplemented') {
+            } else if (e.code === 'unimplemented') {
                 console.warn('Firestore offline persistence not available in this browser.');
             }
         }

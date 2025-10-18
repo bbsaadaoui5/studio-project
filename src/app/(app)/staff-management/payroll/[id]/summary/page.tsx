@@ -4,6 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, notFound, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getPayroll } from "@/services/payrollService";
 import { getSettings } from "@/services/settingsService";
 import type { Payroll, Payslip, SchoolSettings } from "@/lib/types";
@@ -18,7 +19,8 @@ export default function PayrollSummaryPage() {
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
-    const payrollId = params.id as string;
+    const { t } = useTranslation();
+    const payrollId = params?.id as string | undefined;
 
     const [payroll, setPayroll] = useState<Payroll | null>(null);
     const [settings, setSettings] = useState<SchoolSettings | null>(null);
@@ -44,7 +46,7 @@ export default function PayrollSummaryPage() {
                 setSettings(settingsData);
 
             } catch (error) {
-                toast({ title: "Error", description: "Failed to fetch payroll data.", variant: "destructive" });
+                toast({ title: "خطأ", description: "فشل في جلب بيانات الرواتب", variant: "destructive" });
             } finally {
                 setIsLoading(false);
             }
@@ -70,11 +72,11 @@ export default function PayrollSummaryPage() {
             <div className="flex flex-col gap-6 no-print">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Button variant="outline" size="icon" onClick={() => router.back()}>
+                        <Button variant="outline" size="icon" onClick={() => router.back()} aria-label={t('common.back') || 'Back'}>
                             <ArrowLeft />
-                            <span className="sr-only">Back</span>
+                            <span className="sr-only">{t('common.back') || 'Back'}</span>
                         </Button>
-                        <h1 className="text-2xl font-bold">Payroll Summary</h1>
+                        <h1 className="text-2xl font-bold">ملخص الرواتب</h1>
                     </div>
                     <Button onClick={handlePrint}>
                         <Printer />
@@ -98,7 +100,7 @@ export default function PayrollSummaryPage() {
                                 <CardDescription>Payroll Summary for {payroll.period}</CardDescription>
                             </div>
                             <div className="text-right">
-                                <p className="font-semibold">Run Date</p>
+                                <p className="font-semibold">{t("staff.payroll.runDate")}</p>
                                 <p className="text-sm text-muted-foreground">{format(new Date(payroll.runDate), "PPP")}</p>
                             </div>
                         </div>
@@ -107,11 +109,11 @@ export default function PayrollSummaryPage() {
                     <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Staff Name</TableHead>
-                                    <TableHead>Base Salary</TableHead>
-                                    <TableHead>Bonus</TableHead>
-                                    <TableHead>Deductions</TableHead>
-                                    <TableHead className="text-right font-bold">Net Pay</TableHead>
+                                    <TableHead>{t("staff.payroll.staffName")}</TableHead>
+                                    <TableHead>{t("staff.payroll.baseSalary")}</TableHead>
+                                    <TableHead>{t("staff.payroll.bonus")}</TableHead>
+                                    <TableHead>{t("staff.payroll.deductionsTitle")}</TableHead>
+                                    <TableHead className="text-right font-bold">{t("staff.payroll.netPay")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -130,7 +132,7 @@ export default function PayrollSummaryPage() {
                     <div className="flex justify-end">
                             <div className="w-full max-w-xs space-y-2">
                                 <div className="flex justify-between font-semibold">
-                                    <span>Total Payroll Amount</span>
+                                    <span>{t("staff.payroll.totalPayrollAmount")}</span>
                                     <span>{formatCurrency(payroll.totalAmount)}</span>
                                 </div>
                             </div>

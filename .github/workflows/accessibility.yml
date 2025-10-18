@@ -1,0 +1,87 @@
+name: Accessibility Audit (Playwright + axe)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  accessibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000
+
+      - name: Run accessibility script on key routes
+        run: |
+          node scripts/run-axe.js \
+            http://localhost:3000/login \
+            http://localhost:3000/dashboard \
+            http://localhost:3000/parent-portal/test-token \
+            http://localhost:3000/communication/messages
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-audit
+          path: audit
+
+      - name: Post accessibility summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const auditDir = path.join(process.cwd(), 'audit')
+            if (!fs.existsSync(auditDir)) {
+              core.info('No audit directory found, skipping comment')
+              return
+            }
+            const files = fs.readdirSync(auditDir).filter(f=>f.endsWith('.json'))
+            if (files.length === 0) {
+              core.info('No audit reports found, skipping comment')
+              return
+            }
+            let body = '## Accessibility audit summary\n\n'
+            for (const f of files) {
+              try {
+                const r = JSON.parse(fs.readFileSync(path.join(auditDir, f), 'utf8'))
+                body += `### ${f}\n- Violations: **${r.violations?.length || 0}**\n`
+                for (const v of (r.violations || []).slice(0,5)) {
+                  body += `  - ${v.id} (${v.impact}): ${v.help} — ${v.nodes.length} node(s)\n`
+                }
+                body += '\n'
+              } catch (e) {
+                body += `Failed to parse ${f}: ${e.message}\n\n`
+              }
+            }
+            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number
+            if (!pr) {
+              core.info('Not a PR context, skipping comment')
+              return
+            }
+            await github.rest.issues.createComment({
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
+              issue_number: pr,
+              body
+            })

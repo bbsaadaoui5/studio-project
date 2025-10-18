@@ -7,8 +7,10 @@ import { BarChart, LineChart, DollarSign, TrendingUp, TrendingDown } from "lucid
 import { IncomeOverviewChart } from "@/components/charts/income-overview-chart";
 import { ExpenseBreakdownChart } from "@/components/charts/expense-breakdown-chart";
 import { getIncomeSummary, getExpenseSummaryWithSalaries } from "@/services/financeService";
+import { useTranslation } from "@/i18n/translation-provider";
 
 export default function FinancialReportsPage() {
+  const { t } = useTranslation();
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,59 +48,66 @@ export default function FinancialReportsPage() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Financial Reports</CardTitle>
+          <CardTitle>التقارير المالية</CardTitle>
           <CardDescription>
-            An overview of the school's financial performance, including income from fees and expenditures.
+            نظرة عامة على الدخل، المصروفات، وصافي الأرباح
           </CardDescription>
         </CardHeader>
       </Card>
-      
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">إجمالي الدخل</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {isLoading ? "Loading..." : formatCurrency(totalIncome)}
+              {isLoading ? 'جاري التحميل...' : formatCurrency(totalIncome)}
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {isLoading ? "Loading..." : formatCurrency(totalExpenses)}
+              {isLoading ? 'جاري التحميل...' : formatCurrency(totalExpenses)}
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit/Loss</CardTitle>
-            <DollarSign className={`h-4 w-4 ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">صافي الربح/الخسارة</CardTitle>
+              <DollarSign className={`h-4 w-4 ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {isLoading ? "Loading..." : formatCurrency(netProfit)}
+              {isLoading ? 'جاري التحميل...' : formatCurrency(netProfit)}
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">هامش الربح</CardTitle>
+              <BarChart className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "Loading..." : totalIncome > 0 ? `${((netProfit / totalIncome) * 100).toFixed(1)}%` : "0%"}
+              {isLoading ? 'جاري التحميل...' : totalIncome > 0 ? `${((netProfit / totalIncome) * 100).toFixed(1)}%` : "0%"}
             </div>
           </CardContent>
         </Card>
@@ -109,7 +118,7 @@ export default function FinancialReportsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LineChart className="h-5 w-5" />
-              Income Overview (Monthly)
+              نظرة شهرية على الدخل
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] w-full">
@@ -120,7 +129,7 @@ export default function FinancialReportsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart className="h-5 w-5" />
-              Expense Breakdown
+              توزيع المصروفات
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] w-full">

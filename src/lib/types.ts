@@ -7,6 +7,9 @@ export type Student = {
   email?: string; // Made optional
   gender: "male" | "female";
   studentType: "regular" | "support";
+  supportCourseId?: string;
+  teacher?: string;
+  teacherId?: string;
   grade: string;
   className: string;
   parentName: string;
@@ -23,6 +26,7 @@ export type Announcement = {
   id: string;
   title: string;
   content: string;
+  audience?: 'teachers' | 'parents' | 'both';
   createdAt: string;
 };
 

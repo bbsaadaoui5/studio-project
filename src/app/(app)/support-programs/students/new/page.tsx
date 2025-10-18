@@ -34,7 +34,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addStudent } from "@/services/studentService";
 import { getCoursesByType } from "@/services/courseService";
+import { Course } from '@/lib/types';
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "@/i18n/translation-provider";
 
 const supportStudentSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
@@ -44,17 +46,18 @@ const supportStudentSchema = z.object({
   contact: z.string().min(10, "Please enter a valid contact number."),
   altContact: z.string().optional(),
   address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
+  dateOfBirth: z.string().min(10, "A date of birth is required."),
   medicalNotes: z.string().optional(),
   supportCourseId: z.string().min(1, "Please select a support course."),
   teacher: z.string().min(1, "Teacher is required."),
 });
 
 export default function NewSupportStudentPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState("");
 
   const form = useForm<z.infer<typeof supportStudentSchema>>({
@@ -70,6 +73,7 @@ export default function NewSupportStudentPage() {
       medicalNotes: "",
       supportCourseId: "",
       teacher: "",
+      dateOfBirth: "",
     },
   });
 
@@ -82,8 +86,9 @@ export default function NewSupportStudentPage() {
     const courseId = form.watch("supportCourseId");
     const course = courses.find((c) => c.id === courseId);
     if (course) {
-      form.setValue("teacher", course.teacher || "");
-      setSelectedTeacher(course.teacher || "");
+      const firstTeacher = course.teachers?.[0]?.name || '';
+      form.setValue("teacher", firstTeacher);
+      setSelectedTeacher(firstTeacher);
     } else {
       form.setValue("teacher", "");
       setSelectedTeacher("");
@@ -96,9 +101,13 @@ export default function NewSupportStudentPage() {
     try {
       const newStudentData = {
         ...values,
-        studentType: "support",
-        dateOfBirth: values.dateOfBirth.toISOString(),
-      };
+        // narrow to the literal union expected by NewStudent
+        studentType: "support" as const,
+        dateOfBirth: values.dateOfBirth,
+        // Support students may not have a formal grade/class; provide safe defaults
+        grade: values.supportCourseId ? (values.supportCourseId as string) : "",
+        className: '',
+      } as Parameters<typeof addStudent>[0];
       await addStudent(newStudentData);
       toast({
         title: "Student Enrolled",
@@ -122,7 +131,7 @@ export default function NewSupportStudentPage() {
         <Button variant="outline" size="icon" asChild>
           <Link href="/support-programs/students">
             <ArrowLeft />
-            <span className="sr-only">Back to Directory</span>
+            <span className="sr-only">{t('common.backToDirectory') || 'Back to directory'}</span>
           </Link>
         </Button>
         <h1 className="text-2xl font-bold">Add Support Program Student</h1>
@@ -225,7 +234,15 @@ export default function NewSupportStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Date of Birth</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" type="date" {...field} />
+                      <Input
+                        className="glass-input"
+                        type="date"
+                        value={field.value ? new Date(field.value).toISOString().slice(0,10) : ''}
+                        onChange={(e) => {
+                          const iso = e.target.value ? new Date(e.target.value).toISOString() : '';
+                          field.onChange(iso);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -299,7 +316,7 @@ export default function NewSupportStudentPage() {
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
                   {isLoading && <Loader2 className="animate-spin" />}
-                  {isLoading ? "Enrolling..." : "Enroll Student"}
+                  {isLoading ? t('common.enrolling') : "Enroll Student"}
                 </Button>
               </div>
             </form>

@@ -37,6 +37,7 @@ import { ArrowLeft, Loader2, Wand2 } from "lucide-react";
 import { Course } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
 import { generateCourseDescription } from "@/ai/flows/generate-course-description-flow";
+import { useTranslation } from "@/i18n/translation-provider";
 
 const courseSchema = z.object({
   name: z.string().min(3, "Course name must be at least 3 characters."),
@@ -49,6 +50,7 @@ const courseSchema = z.object({
 
 export default function EditSupportCoursePage() {
   const params = useParams();
+  const { t } = useTranslation();
   const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined;
   const { toast } = useToast();
   const router = useRouter();
@@ -69,7 +71,7 @@ export default function EditSupportCoursePage() {
 
   useEffect(() => {
     if (!id) {
-      setErrorMsg('Invalid or missing course ID.');
+  setErrorMsg('معرّف المقرر غير صالح أو مفقود.');
       setIsLoading(false);
       return;
     }
@@ -78,20 +80,22 @@ export default function EditSupportCoursePage() {
     getCourse(id)
       .then((fetchedCourse) => {
         if (fetchedCourse && fetchedCourse.type === 'support') {
+          // Build a minimal safe object for the form to avoid duplicate-key
+          // object literal warnings and ensure fields exist for the controlled inputs.
           const safeCourse = {
-            name: '',
-            teacher: '',
-            department: '',
-            description: '',
-            ...fetchedCourse,
+            name: fetchedCourse.name ?? '',
+            // Derive a single teacher name from the teachers array if present
+            teacher: fetchedCourse.teachers?.[0]?.name || '',
+            department: fetchedCourse.department ?? '',
+            description: fetchedCourse.description ?? '',
           };
           form.reset(safeCourse);
         } else {
-          setErrorMsg('Support course not found.');
+          setErrorMsg('لم يتم العثور على مقرر الدعم.');
         }
       })
       .catch(() => {
-        setErrorMsg('Failed to fetch course data.');
+  setErrorMsg('فشل في جلب بيانات المقرر.');
       })
       .finally(() => {
         setIsLoading(false);
@@ -106,14 +110,14 @@ export default function EditSupportCoursePage() {
     try {
       await updateCourse(id, values);
       toast({
-        title: 'Course Updated',
-        description: `Successfully updated ${values.name}.`,
+        title: 'تم تحديث المقرر',
+        description: `تم تحديث ${values.name} بنجاح.`,
       });
       router.push(`/support-programs/courses/${id}`);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update the course. Please try again.',
+        title: 'خطأ',
+        description: 'فشل في تحديث المقرر. يرجى المحاولة مرة أخرى.',
         variant: 'destructive',
       });
     } finally {
@@ -125,7 +129,7 @@ export default function EditSupportCoursePage() {
   const handleGenerateDescription = async () => {
     const courseName = form.getValues('name');
     if (!courseName) {
-      toast({ title: 'Please enter a course name first.', variant: 'destructive' });
+  toast({ title: 'يرجى إدخال اسم المقرر أولاً.', variant: 'destructive' });
       return;
     }
     setIsGenerating(true);
@@ -134,7 +138,7 @@ export default function EditSupportCoursePage() {
       const result = { description: `This is a generated description for ${courseName}.` };
       form.setValue('description', result.description, { shouldValidate: true });
     } catch (error) {
-      toast({ title: 'Error generating description', variant: 'destructive' });
+  toast({ title: 'خطأ في توليد الوصف', variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
@@ -166,16 +170,16 @@ export default function EditSupportCoursePage() {
         <Button variant="outline" size="icon" asChild>
           <Link href={`/support-programs/courses/${id}`}>
             <ArrowLeft />
-            <span className="sr-only">Back to Course Details</span>
+            <span className="sr-only">{t('common.back') || 'Back'}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Edit Support Course</h1>
+        <h1 className="text-2xl font-bold">تعديل مقرر دعم</h1>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Editing: {form.watch('name') || 'Course'}</CardTitle>
+          <CardTitle>تعديل: {form.watch('name') || 'مقرر'}</CardTitle>
           <CardDescription>
-            Update the course's information below.
+            قم بتحديث بيانات المقرر أدناه.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -189,9 +193,9 @@ export default function EditSupportCoursePage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Course Name</FormLabel>
+                    <FormLabel>اسم المقرر</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Robotics Club" {...field} />
+                      <Input placeholder="مثال: نادي الروبوتات" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -202,9 +206,9 @@ export default function EditSupportCoursePage() {
                 name="teacher"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Instructor Name</FormLabel>
+                    <FormLabel>الأستاذ</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Fatima Al-Fihri" {...field} />
+                      <Input placeholder="مثال: فاطمة الفهري" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,20 +219,20 @@ export default function EditSupportCoursePage() {
                 name="department"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Department / Category</FormLabel>
+                    <FormLabel>القسم / التصنيف</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue placeholder="اختر التصنيف" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Tutoring">Tutoring</SelectItem>
-                        <SelectItem value="STEM">STEM</SelectItem>
-                        <SelectItem value="Arts & Music">Arts & Music</SelectItem>
-                        <SelectItem value="Sports">Sports</SelectItem>
-                        <SelectItem value="Languages">Languages</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Tutoring">الدروس الخصوصية</SelectItem>
+                        <SelectItem value="STEM">العلوم والتقنية</SelectItem>
+                        <SelectItem value="Arts & Music">الفنون والموسيقى</SelectItem>
+                        <SelectItem value="Sports">الرياضة</SelectItem>
+                        <SelectItem value="Languages">اللغات</SelectItem>
+                        <SelectItem value="Other">أخرى</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -241,20 +245,10 @@ export default function EditSupportCoursePage() {
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <div className="flex justify-between items-center">
-                      <FormLabel>Description</FormLabel>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateDescription}
-                        disabled={isGenerating}
-                      >
-                        {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                        {isGenerating ? "Generating..." : "Generate with AI"}
-                      </Button>
+                      <FormLabel>الوصف</FormLabel>
                     </div>
                     <FormControl>
-                      <Textarea rows={5} placeholder="Provide a brief summary of the course..." {...field} />
+                      <Textarea rows={5} placeholder="اكتب وصف المقرر هنا..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -263,7 +257,7 @@ export default function EditSupportCoursePage() {
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isSaving || isGenerating}>
                   {isSaving && <Loader2 className="animate-spin" />}
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
                 </Button>
               </div>
             </form>

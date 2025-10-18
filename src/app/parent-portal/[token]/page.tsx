@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useTranslation } from "@/i18n/translation-provider";
 
 type CourseWithGrade = Course & { finalGrade: number | null };
 type GeneratingState = "idle" | "fetching" | "compiling" | "writing" | "done";
@@ -44,8 +45,9 @@ const timeSlots = [
 ];
 
 export default function ParentPortalPage() {
-  const params = useParams();
-  const token = params.token as string;
+  const { t } = useTranslation();
+    const params = useParams();
+    const token = params?.token as string | undefined;
   const { toast } = useToast();
   
   const [student, setStudent] = useState<Student | null>(null);
@@ -73,11 +75,11 @@ export default function ParentPortalPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const studentId = await validateParentAccessToken(token);
-        if (!studentId) {
-          setIsValidToken(false);
-          return;
-        }
+                const studentId = await validateParentAccessToken(token as string);
+                if (!studentId) {
+                    setIsValidToken(false);
+                    return;
+                }
         setIsValidToken(true);
 
         const studentData = await getStudent(studentId);
@@ -135,10 +137,11 @@ export default function ParentPortalPage() {
         setGeneratingState("fetching");
         await new Promise(res => setTimeout(res, 500));
         setGeneratingState("compiling");
-        const report = { report: "Mock report card" };
-        setGeneratingState("writing");
-        await new Promise(res => setTimeout(res, 1500));
-        setGeneratedReport(report);
+    setGeneratingState("writing");
+    // Use the service to create a (mock) report card object matching the ReportCard type
+    const report = await generateReportCard(student.id, reportingPeriod);
+    await new Promise(res => setTimeout(res, 500));
+    setGeneratedReport(report);
         setGeneratingState("done");
     } catch (error) {
         console.error(error);
@@ -194,7 +197,7 @@ export default function ParentPortalPage() {
                     <div className="bg-primary rounded-md p-1.5">
                         <GraduationCap className="h-6 w-6 text-primary-foreground" />
                     </div>
-                    <span className="text-lg font-semibold">Almawed Parent Portal</span>
+                    <span className="text-lg font-semibold">{t('app.parentPortal')}</span>
                 </div>
                 <div className="text-right text-sm">
                     <p className="font-semibold">{student.name}</p>
@@ -395,7 +398,7 @@ export default function ParentPortalPage() {
                                 Support & Extracurricular Programs
                             </CardTitle>
                             <CardDescription>
-                                Browse available support programs and activities.
+                                {t('supportPrograms.browseAvailable')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -406,7 +409,7 @@ export default function ParentPortalPage() {
                                             <AccordionTrigger>
                                                 <div className="flex flex-col items-start text-left">
                                                     <p className="font-semibold">{course.name}</p>
-                                                    <p className="text-sm text-muted-foreground">Instructor: {course.teacher}</p>
+                                                    <p className="text-sm text-muted-foreground">Instructor: {course.teachers?.[0]?.name || 'TBA'}</p>
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent>
@@ -416,7 +419,7 @@ export default function ParentPortalPage() {
                                    ))}
                                </Accordion>
                            ): (
-                                <p className="text-sm text-muted-foreground text-center py-8">No support programs are available at this time.</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">{t('supportPrograms.noAvailable')}</p>
                            )}
                         </CardContent>
                     </Card>

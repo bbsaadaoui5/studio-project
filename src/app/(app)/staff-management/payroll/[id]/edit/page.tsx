@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getPayroll, updatePayroll } from "@/services/payrollService";
 import type { Payroll, Payslip } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,15 +19,15 @@ import { format } from "date-fns";
 export default function EditPayrollPage() {
     const params = useParams();
     const id = params?.id as string;
-if (!id) { return <div>ID not found</div>; }
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
 
     const [payroll, setPayroll] = useState<Payroll | null>(null);
     const [payslips, setPayslips] = useState<Payslip[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-
+    // hooks/effects before early return
     useEffect(() => {
         if (!id) return;
         const fetchPayroll = async () => {
@@ -40,13 +41,15 @@ if (!id) { return <div>ID not found</div>; }
                     notFound();
                 }
             } catch (error) {
-                toast({ title: "Error", description: "Failed to fetch payroll data.", variant: "destructive" });
+                toast({ title: "خطأ", description: "فشل في جلب بيانات الرواتب", variant: "destructive" });
             } finally {
                 setIsLoading(false);
             }
         };
         fetchPayroll();
     }, [id, toast]);
+
+    if (!id) { return <div>لم يتم العثور على رقم الهوية</div>; }
 
     const handlePayslipChange = (staffId: string, field: keyof Payslip, value: string) => {
         const numericValue = Number(value);
@@ -72,10 +75,10 @@ if (!id) { return <div>ID not found</div>; }
             const updatedPayroll = { ...payroll, payslips, totalAmount };
             
             await updatePayroll(id, updatedPayroll);
-            toast({ title: "Payroll Updated", description: "Changes have been saved successfully." });
+            toast({ title: "تم تحديث الرواتب", description: "تم حفظ التغييرات بنجاح" });
             router.push("/staff-management/payroll");
         } catch (error) {
-            toast({ title: "Error", description: "Failed to save changes.", variant: "destructive" });
+            toast({ title: "خطأ", description: "فشل في حفظ التغييرات.", variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
@@ -99,10 +102,10 @@ if (!id) { return <div>ID not found</div>; }
                 <Button variant="outline" size="icon" asChild>
                 <Link href="/staff-management/payroll">
                     <ArrowLeft />
-                    <span className="sr-only">Back to Payroll</span>
+                    <span className="sr-only">{t("common.backToPayroll") || 'Back to payroll'}</span>
                 </Link>
                 </Button>
-                <h1 className="text-2xl font-bold">Edit Payroll</h1>
+                <h1 className="text-2xl font-bold">{t("staff.payroll.editPayrollTitle")}</h1>
             </div>
             <Card>
                 <CardHeader>
@@ -116,12 +119,12 @@ if (!id) { return <div>ID not found</div>; }
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Staff Name</TableHead>
-                                    <TableHead>Base Salary</TableHead>
-                                    <TableHead>Bonus</TableHead>
-                                    <TableHead>Deductions</TableHead>
-                                    <TableHead>Net Pay</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>{t("staff.payroll.staffName")}</TableHead>
+                                    <TableHead>{t("staff.payroll.baseSalary")}</TableHead>
+                                    <TableHead>{t("staff.payroll.bonus")}</TableHead>
+                                    <TableHead>{t("staff.payroll.deductionsTitle")}</TableHead>
+                                    <TableHead>{t("staff.payroll.netPay")}</TableHead>
+                                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

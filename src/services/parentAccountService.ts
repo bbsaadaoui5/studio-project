@@ -9,10 +9,11 @@ export const getParent = async (id: string): Promise<Parent | null> => {
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
   const data = snap.data();
+  const normalized: Partial<Parent> = { ...data } as Partial<Parent>;
   if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-    data.createdAt = data.createdAt.toDate().toISOString();
+    normalized.createdAt = data.createdAt.toDate().toISOString();
   }
-  return { id: snap.id, ...(data as any) } as Parent;
+  return { id: snap.id, name: normalized.name || '', email: normalized.email || '', phone: normalized.phone, linkedStudentIds: normalized.linkedStudentIds || [], createdAt: normalized.createdAt || new Date().toISOString(), status: (normalized.status as Parent['status']) || 'active' } as Parent;
 }
 
 export const getParents = async (): Promise<Parent[]> => {
@@ -21,10 +22,11 @@ export const getParents = async (): Promise<Parent[]> => {
   const results: Parent[] = [];
   snap.forEach(d => {
     const data = d.data();
+    const normalized: Partial<Parent> = { ...data } as Partial<Parent>;
     if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-      data.createdAt = data.createdAt.toDate().toISOString();
+      normalized.createdAt = data.createdAt.toDate().toISOString();
     }
-    results.push({ id: d.id, ...(data as any) } as Parent);
+    results.push({ id: d.id, name: normalized.name || '', email: normalized.email || '', phone: normalized.phone, linkedStudentIds: normalized.linkedStudentIds || [], createdAt: normalized.createdAt || new Date().toISOString(), status: (normalized.status as Parent['status']) || 'active' } as Parent);
   });
   return results;
 }
@@ -43,8 +45,8 @@ export const linkStudentToParent = async (parentId: string, studentId: string): 
   if (!snap.exists()) {
     throw new Error("Parent not found");
   }
-  const data = snap.data() as any;
-  const linked: string[] = Array.isArray(data.linkedStudentIds) ? data.linkedStudentIds : [];
+  const data = snap.data();
+  const linked: string[] = Array.isArray(data?.linkedStudentIds) ? data.linkedStudentIds : [];
   if (!linked.includes(studentId)) linked.push(studentId);
   await updateDoc(ref, { linkedStudentIds: linked });
 }
@@ -53,8 +55,8 @@ export const unlinkStudentFromParent = async (parentId: string, studentId: strin
   const ref = doc(db, PARENTS_COLLECTION, parentId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return;
-  const data = snap.data() as any;
-  const linked: string[] = Array.isArray(data.linkedStudentIds) ? data.linkedStudentIds : [];
+  const data = snap.data();
+  const linked: string[] = Array.isArray(data?.linkedStudentIds) ? data.linkedStudentIds : [];
   await updateDoc(ref, { linkedStudentIds: linked.filter(id => id !== studentId) });
 }
 
