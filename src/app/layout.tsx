@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { FirebaseInitializer } from '@/components/firebase-initializer';
-import { InstallAppButton } from '@/components/install-app-button';
-import dynamic from 'next/dynamic';
-const ClientProviders = dynamic(() => import('@/components/ClientProviders'), { ssr: false });
+import ClientProviders from '@/components/ClientProviders';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', weight: ['400','500','600','700'] });
