@@ -2,10 +2,15 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { FirebaseInitializer } from '@/components/firebase-initializer';
 import { InstallAppButton } from '@/components/install-app-button';
+import dynamic from 'next/dynamic';
+const ClientProviders = dynamic(() => import('@/components/ClientProviders'), { ssr: false });
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', weight: ['400','500','600','700'] });
 
 export const metadata: Metadata = {
-  title: 'Almawed - Campus Management System',
-  description: 'Comprehensive school and campus management system',
+  title: 'مؤسسة الموعد - نظام إدارة الحرم الجامعي',
+  description: 'نظام إدارة مدرسي وجامعي شامل',
   icons: {
     icon: '/Almawed.png',
     apple: '/Almawed.png',
@@ -18,23 +23,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning>
+    <html lang="ar" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <meta name="theme-color" content="#4F46E5" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className="font-body antialiased">
-        <FirebaseInitializer />
-        {children}
-        <InstallAppButton />
+      <body className={`${inter.variable} font-body antialiased`}> 
+          <FirebaseInitializer />
+          <main role="main" aria-label="المحتوى الرئيسي">
+            {/* Server-rendered H1: use an inline off-screen style so it's present
+                in the server HTML even if Tailwind utilities or client CSS
+                haven't loaded yet. This guarantees axe finds a level-one
+                heading during scans without affecting layout. */}
+            <h1 id="site-heading" style={{position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden'}}>مؤسسة الموعد</h1>
+            <ClientProviders>
+              {children}
+            </ClientProviders>
+          </main>
       </body>
     </html>
   );
