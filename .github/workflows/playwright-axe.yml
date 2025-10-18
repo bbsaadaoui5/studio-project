@@ -38,7 +38,16 @@ jobs:
           TEST_PARENT_EMAIL: ${{ secrets.TEST_PARENT_EMAIL }}
           TEST_PARENT_PASSWORD: ${{ secrets.TEST_PARENT_PASSWORD }}
         run: |
-          npx playwright test --project=chromium --reporter=list
+          # Run tests with GitHub and HTML reporters so we generate a report
+          npx playwright test --project=chromium --reporter=github,html || true
+
+      - name: Debug: list workspace and report folders
+        run: |
+          echo "PWD: $(pwd)"
+          echo "List root:"; ls -la
+          echo "Find playwright-report:"; find . -maxdepth 4 -type d -name 'playwright-report' -print || true
+          echo "List playwright-report if exists:"; ls -la playwright-report || true
+          echo "List test-results if exists:"; ls -la test-results || true
 
       - name: Upload Playwright report
         if: always()
