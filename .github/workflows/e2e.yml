@@ -47,6 +47,16 @@ jobs:
           # Run tests with both GitHub annotations and HTML reporter so we have a downloadable report
           npx playwright test --reporter=github,html
 
+      - name: Debug: capture HTML report head (if present)
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "Found playwright-report/index.html - saving head to playwright-report/report-head.html"
+            head -n 200 playwright-report/index.html > playwright-report/report-head.html || true
+            echo "Report head:"; sed -n '1,120p' playwright-report/report-head.html || true
+          else
+            echo "No playwright-report/index.html found"
+          fi
+
       - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
