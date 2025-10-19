@@ -26,9 +26,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      // Prefer system Chrome on developer machines to avoid mismatched bundled
-      // chromium binaries on some macOS versions (dyld symbol errors).
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' }
+      // Prefer system Chrome on macOS developer machines to avoid mismatched
+      // bundled chromium binaries (dyld symbol errors). CI (linux) will use
+      // the default bundled browser.
+      use: process.platform === 'darwin'
+        ? { ...devices['Desktop Chrome'], channel: 'chrome' }
+        : { ...devices['Desktop Chrome'] }
     }
     ,
     {
