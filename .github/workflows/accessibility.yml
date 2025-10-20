@@ -41,11 +41,32 @@ jobs:
             http://localhost:3000/parent-portal/test-token \
             http://localhost:3000/communication/messages
 
+      - name: Debug: list workspace and audit folder
+        run: |
+          echo "PWD: $(pwd)"
+          echo "List root:"; ls -la
+          echo "List audit folder:"; ls -la audit || true
+          echo "Show a sample audit file head (if exists):"; head -n 200 $(ls audit/*.json 2>/dev/null | head -n1) || true
+
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
           name: accessibility-audit
           path: audit
+
+      - name: Upload Playwright HTML report (if present)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report || ''
+
+      - name: Upload test-results (traces / json) (if present)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results || ''
 
       - name: Post accessibility summary to PR
         if: github.event_name == 'pull_request'
