@@ -48,6 +48,17 @@ jobs:
           echo "List audit folder:"; ls -la audit || true
           echo "Show a sample audit file head (if exists):"; head -n 200 $(ls audit/*.json 2>/dev/null | head -n1) || true
 
+      - name: Debug: capture HTML report head (if present)
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "Found playwright-report/index.html - saving head to playwright-report/report-head.html"
+            mkdir -p playwright-report || true
+            head -n 200 playwright-report/index.html > playwright-report/report-head.html || true
+            echo "Report head:"; sed -n '1,120p' playwright-report/report-head.html || true
+          else
+            echo "No playwright-report/index.html found"
+          fi
+
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
