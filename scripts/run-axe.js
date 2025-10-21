@@ -10,7 +10,8 @@ const axeSource = require('axe-core')
   let preferredBrowser = null
   let outDir = path.resolve(process.cwd(), 'audit')
   let verbose = false
-  let navTimeout = 30000 // navigation timeout in ms
+  // increase default navigation timeout to be more robust on slower CI agents
+  let navTimeout = 60000 // navigation timeout in ms
   const targets = []
 
   for (let i = 0; i < rawArgs.length; i++) {
@@ -36,9 +37,12 @@ const axeSource = require('axe-core')
     if (!a.startsWith('-')) targets.push(a)
   }
 
+  const defaultOrder = process.platform === 'darwin'
+    ? ['firefox', 'chromium', 'webkit']
+    : ['chromium', 'firefox', 'webkit']
   const browsersToTry = preferredBrowser
     ? [preferredBrowser]
-    : ['chromium', 'firefox', 'webkit']
+    : defaultOrder
 
   let browser = null
   let usedBrowser = null
@@ -98,7 +102,21 @@ const axeSource = require('axe-core')
     if (verbose) console.log(`Using browser: ${usedBrowser} for ${url}`)
     try {
       if (verbose) console.log('Running axe on', url)
-      await page.goto(url, { waitUntil: 'networkidle', timeout: navTimeout })
+      // First attempt: networkidle
+      try {
+        await page.goto(url, { waitUntil: 'networkidle', timeout: navTimeout })
+      } catch (gotoErr) {
+        console.warn(`page.goto networkidle failed for ${url}: ${gotoErr.message || gotoErr}`)
+        // Second attempt: fall back to domcontentloaded + wait for main or h1
+        try {
+          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: navTimeout })
+          // wait for a main landmark or H1 to appear (give generous timeout)
+          await page.waitForSelector('main, #main-content, h1', { timeout: navTimeout }).catch(() => {})
+        } catch (secondErr) {
+          console.error(`Navigation failed for ${url} after retry:`, secondErr.message || secondErr)
+          throw secondErr
+        }
+      }
 
       // Wait briefly for a level-1 heading to appear (some pages render
       // heavy client components or redirect). This reduces false positives
