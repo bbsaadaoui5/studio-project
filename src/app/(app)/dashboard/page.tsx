@@ -80,7 +80,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">{t("dashboard.totalStudents")}</CardTitle>
+                        <CardTitle as="h2" className="text-sm font-medium">{t("dashboard.totalStudents")}</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -90,7 +90,7 @@ export default function DashboardPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">{t("dashboard.availableCourses")}</CardTitle>
+                        <CardTitle as="h2" className="text-sm font-medium">{t("dashboard.availableCourses")}</CardTitle>
                         <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">{t("dashboard.staffMembers")}</CardTitle>
+                        <CardTitle as="h2" className="text-sm font-medium">{t("dashboard.staffMembers")}</CardTitle>
                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
