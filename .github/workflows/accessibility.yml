@@ -125,14 +125,14 @@ jobs:
                 body += `Failed to parse ${f}: ${e.message}\\n\\n`
               }
             }
-            const pr = github.context.payload.pull_request && github.context.payload.pull_request.number
+            const pr = context.payload && context.payload.pull_request && context.payload.pull_request.number
             if (!pr) {
               console.log('Not a PR context, skipping comment')
               return
             }
             await github.rest.issues.createComment({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               issue_number: pr,
               body
             })
