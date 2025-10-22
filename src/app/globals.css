@@ -144,6 +144,30 @@
   }
 }
 
+/* Skip link utility: visible on keyboard focus */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 1000;
+}
+.skip-link:focus,
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: black;
+  border: 1px solid #ddd;
+  clip: auto;
+  overflow: visible;
+}
+
 @keyframes modalSlideIn {
   from {
     opacity: 0;
