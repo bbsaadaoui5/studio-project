@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -69,11 +69,7 @@ export function StudentProgressReport() {
     excellentProgress: 0
   });
 
-  useEffect(() => {
-    fetchProgressData();
-  }, [selectedGrade, selectedClass]);
-
-  const fetchProgressData = async () => {
+  const fetchProgressData = useCallback(async () => {
     setIsLoading(true);
     try {
       const students = await getStudents();
@@ -155,8 +151,11 @@ export function StudentProgressReport() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedGrade, selectedClass, toast]);
 
+  useEffect(() => {
+    void fetchProgressData();
+  }, [fetchProgressData]);
   const topImprovers = studentProgress
     .filter(s => s.improvement > 0)
     .sort((a, b) => b.improvement - a.improvement)
@@ -187,13 +186,15 @@ export function StudentProgressReport() {
         <div className="flex gap-4">
           <Select value={selectedGrade} onValueChange={setSelectedGrade}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Grade" />
+              <SelectValue placeholder="اختر المستوى" />
+  <SelectValue placeholder="اختر المستوى" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Grades</SelectItem>
+              <SelectItem value="all">جميع المستويات</SelectItem>
+  <SelectItem value="all">جميع المستويات</SelectItem>
               {Array.from({ length: 12 }, (_, i) => (
-                <SelectItem key={i + 1} value={`${i + 1}`}>
-                  Grade {i + 1}
+                <SelectItem key={i + 1} value={`${i + 1}`}> 
+                  المستوى {i + 1}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -201,19 +202,25 @@ export function StudentProgressReport() {
 
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Class" />
+              <SelectValue placeholder="اختر القسم" />
+  <SelectValue placeholder="اختر القسم" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Classes</SelectItem>
-              <SelectItem value="A">Class A</SelectItem>
-              <SelectItem value="B">Class B</SelectItem>
-              <SelectItem value="C">Class C</SelectItem>
+              <SelectItem value="all">جميع الأقسام</SelectItem>
+  <SelectItem value="all">جميع الأقسام</SelectItem>
+              <SelectItem value="A">القسم أ</SelectItem>
+  <SelectItem value="A">القسم أ</SelectItem>
+              <SelectItem value="B">القسم ب</SelectItem>
+  <SelectItem value="B">القسم ب</SelectItem>
+              <SelectItem value="C">القسم ج</SelectItem>
+  <SelectItem value="C">القسم ج</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <Button variant="outline">
           <Download className="mr-2 h-4 w-4" />
-          Export Report
+          تصدير التقرير
+  تصدير التقرير
         </Button>
       </div>
 
@@ -221,20 +228,23 @@ export function StudentProgressReport() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium">إجمالي الطلاب</CardTitle>
+  <CardTitle className="text-sm font-medium">إجمالي الطلاب</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.totalStudents}</div>
             <p className="text-xs text-muted-foreground">
-              Active students
+              الطلاب النشطون
+  الطلاب النشطون
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Improvement</CardTitle>
+            <CardTitle className="text-sm font-medium">متوسط التحسن</CardTitle>
+  <CardTitle className="text-sm font-medium">متوسط التحسن</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -242,33 +252,38 @@ export function StudentProgressReport() {
               +{overallStats.averageImprovement}%
             </div>
             <p className="text-xs text-muted-foreground">
-              Grade improvement
+              التحسن في المعدل
+  التحسن في المعدل
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Risk</CardTitle>
+            <CardTitle className="text-sm font-medium">طلاب بحاجة للدعم</CardTitle>
+  <CardTitle className="text-sm font-medium">طلاب بحاجة للدعم</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{overallStats.highRiskStudents}</div>
             <p className="text-xs text-muted-foreground">
-              Students needing attention
+              الطلاب المحتاجون للمتابعة
+  الطلاب المحتاجون للمتابعة
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Excellent Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">طلاب متفوقون</CardTitle>
+  <CardTitle className="text-sm font-medium">طلاب متفوقون</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{overallStats.excellentProgress}</div>
             <p className="text-xs text-muted-foreground">
-              +10% improvement
+              تحسن أكثر من 10%
+  تحسن أكثر من 10%
             </p>
           </CardContent>
         </Card>
@@ -279,8 +294,10 @@ export function StudentProgressReport() {
         {/* Grade Trends */}
         <Card>
           <CardHeader>
-            <CardTitle>Grade & Attendance Trends</CardTitle>
-            <CardDescription>6-month trend analysis</CardDescription>
+            <CardTitle>اتجاهات المعدل والحضور</CardTitle>
+  <CardTitle>اتجاهات المعدل والحضور</CardTitle>
+            <CardDescription>اتجاهات آخر 6 أشهر</CardDescription>
+  <CardDescription>اتجاهات آخر 6 أشهر</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -295,7 +312,7 @@ export function StudentProgressReport() {
                   stackId="1"
                   stroke="#8884d8" 
                   fill="#8884d8"
-                  name="Average Grade"
+                  name="متوسط المعدل"
                 />
                 <Area 
                   type="monotone" 
@@ -303,7 +320,7 @@ export function StudentProgressReport() {
                   stackId="2"
                   stroke="#82ca9d" 
                   fill="#82ca9d"
-                  name="Attendance Rate"
+                  name="نسبة الحضور"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -313,8 +330,8 @@ export function StudentProgressReport() {
         {/* Risk Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Student Risk Distribution</CardTitle>
-            <CardDescription>Students categorized by risk level</CardDescription>
+            <CardTitle>توزيع الطلاب حسب مستوى الخطورة</CardTitle>
+            <CardDescription>عدد الطلاب حسب مستوى الخطورة</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -325,7 +342,7 @@ export function StudentProgressReport() {
                       className="w-4 h-4 rounded-full" 
                       style={{ backgroundColor: risk.color }}
                     />
-                    <span className="font-medium">{risk.level}</span>
+                    <span className="font-medium">{risk.level === 'Low Risk' ? 'منخفضة' : risk.level === 'Medium Risk' ? 'متوسطة' : 'مرتفعة'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-bold">{risk.count}</span>
@@ -346,9 +363,9 @@ export function StudentProgressReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Top Improvers
+              الطلاب الأكثر تحسنًا
             </CardTitle>
-            <CardDescription>Students with highest grade improvements</CardDescription>
+            <CardDescription>قائمة الطلاب الذين حققوا أكبر تحسن في المعدل</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -359,7 +376,7 @@ export function StudentProgressReport() {
                     <div>
                       <p className="font-medium">{student.studentName}</p>
                       <p className="text-sm text-muted-foreground">
-                        Grade {student.grade} - {student.className}
+                        المستوى {student.grade} - {student.className}
                       </p>
                     </div>
                   </div>
@@ -379,15 +396,15 @@ export function StudentProgressReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              High Risk Students
+              الطلاب الأكثر عرضة للخطر
             </CardTitle>
-            <CardDescription>Students requiring immediate attention</CardDescription>
+            <CardDescription>قائمة الطلاب الذين يحتاجون إلى دعم إضافي</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {highRiskStudents.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
-                  No high-risk students identified
+                  لا يوجد طلاب بحاجة للدعم
                 </p>
               ) : (
                 highRiskStudents.map((student) => (
@@ -395,14 +412,14 @@ export function StudentProgressReport() {
                     <div>
                       <p className="font-medium">{student.studentName}</p>
                       <p className="text-sm text-muted-foreground">
-                        Grade {student.grade} - {student.className}
+                        المستوى {student.grade} - {student.className}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-red-600">{student.currentAverage}%</p>
                       <div className="flex items-center gap-2">
                         <Progress value={student.currentAverage} className="w-16 h-2" />
-                        <Badge variant="destructive">High Risk</Badge>
+                        <Badge variant="destructive">طلاب بحاجة للدعم</Badge>
                       </div>
                     </div>
                   </div>

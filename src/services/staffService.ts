@@ -1,7 +1,7 @@
 
 
 import { db } from "@/lib/firebase-client";
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, setDoc, writeBatch, query, where, runTransaction, getCountFromServer, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, setDoc, writeBatch, query, where, runTransaction, getCountFromServer, serverTimestamp, limit } from "firebase/firestore";
 import type { Staff } from "@/lib/types";
 import { createAuthUser } from "./authService";
 import { assignTeacherToCourses } from "./courseService";
@@ -43,8 +43,9 @@ export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' |
     }
     try {
       authUid = await createAuthUser(email, password);
-    } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
+    } catch (error: unknown) {
+      const e = error as { code?: string };
+      if (e.code === 'auth/email-already-in-use') {
         throw new Error("This email is already registered for a login account.");
       }
       console.error("Error creating auth user:", error);
@@ -85,7 +86,8 @@ export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' |
 // Function to get all staff members from Firestore
 export const getStaffMembers = async (): Promise<Staff[]> => {
   try {
-    const querySnapshot = await getDocs(collection(db, "staff"));
+    const staffQuery = query(collection(db, "staff"), limit(50));
+    const querySnapshot = await getDocs(staffQuery);
     const staff: Staff[] = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();

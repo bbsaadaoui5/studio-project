@@ -32,6 +32,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getCourse, updateCourse } from "@/services/courseService";
 import { ArrowLeft, Loader2, Wand2 } from "lucide-react";
 import { Course } from "@/lib/types";
@@ -52,18 +53,19 @@ const courseSchema = z.object({
 export default function EditCoursePage() {
   const params = useParams();
   const id = params?.id as string;
-if (!id) { return <div>ID not found</div>; }
   const { toast } = useToast();
+  const { t } = useTranslation();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
 
+  // declare form (hook) before any early return
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
   });
-
+  // Effects/hooks first
   useEffect(() => {
     if (!id) return;
     const fetchCourse = async () => {
@@ -88,6 +90,8 @@ if (!id) { return <div>ID not found</div>; }
     };
     fetchCourse();
   }, [id, form, toast]);
+
+  if (!id) { return <div>ID not found</div>; }
 
   async function onSubmit(values: z.infer<typeof courseSchema>) {
     setIsSaving(true);
@@ -138,9 +142,9 @@ if (!id) { return <div>ID not found</div>; }
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
-          <Link href={`/academic-management/courses/${id}`}>
+            <Link href={`/academic-management/courses/${id}`}>
             <ArrowLeft />
-            <span className="sr-only">Back to Course Details</span>
+            <span className="sr-only">{t('common.back') || 'Back'}</span>
           </Link>
         </Button>
         <h1 className="text-2xl font-bold">Edit Course Information</h1>

@@ -19,25 +19,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { getStaffMembers } from "@/services/staffService";
 import { addCourse } from "@/services/courseService";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/i18n/translation-provider";
 
-
-const courseSchema = z.object({
-  name: z.string().min(3, "Course name must be at least 3 characters."),
-  teacher: z.string().min(3, "Teacher name must be at least 3 characters."),
-  department: z.string().min(1, "Please select a department."),
-  description: z.string().min(10, "Description must be at least 10 characters."),
-});
 
 export default function NewSupportCoursePage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-
+  const courseSchema = z.object({
+    name: z.string().min(3, "Course name must be at least 3 characters."),
+  teacher: z.string().min(1, "يرجى اختيار الأستاذ."),
+    department: z.string().min(1, "يرجى اختيار القسم."),
+    description: z.string(),
+  });
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
@@ -47,79 +47,50 @@ export default function NewSupportCoursePage() {
       description: "",
     },
   });
+  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    getStaffMembers().then(staff => {
+      // جلب جميع الأساتذة (نظامي ودعم)
+      setTeachers(staff.filter(s => s.role === 'teacher').map(s => ({ id: s.id, name: s.name })));
+    });
+  }, []);
 
   async function onSubmit(values: z.infer<typeof courseSchema>) {
     setIsLoading(true);
     try {
       await addCourse({
         ...values,
+        teachers: [{ id: '', name: values.teacher }],
         type: "support",
         grade: "N/A", // Not applicable for support courses
         credits: 0, // Not applicable for support courses
       });
       toast({
-        title: "Support Course Created",
-        description: `The course "${values.name}" has been successfully created.`,
+        title: t('supportPrograms.courseCreated'),
+        description: t('supportPrograms.courseCreated'),
       });
       router.push(`/support-programs/courses`);
     } catch (error) {
-       toast({
-        title: "Error",
-        description: "Failed to create the course. Please try again.",
+      toast({
+        title: t('common.error'),
+        description: t('common.unexpectedError'),
         variant: "destructive",
       });
     } finally {
-       setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
-  const handleGenerateDescription = async () => {
-    const courseName = form.getValues("name");
-    const department = form.getValues("department");
-    if (!courseName) {
-      toast({ title: "Please enter a course name first.", variant: "destructive" });
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const prompt = `Generate a detailed course description for a ${department || 'support'} course called "${courseName}". The description should be educational, engaging, and suitable for a school environment. Include what students will learn, activities they'll participate in, and the benefits of taking this course. Keep it between 100-200 words.`;
-      
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success && data.response) {
-        form.setValue("description", data.response, { shouldValidate: true });
-        toast({ title: "Description generated successfully!" });
-      } else {
-        throw new Error(data.error?.message || 'Failed to generate description');
-      }
-    } catch (error) {
-      console.error('AI Generation Error:', error);
-      toast({ 
-        title: "Error generating description", 
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive" 
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
-       <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
-            <Link href="/support-programs/courses">
-                <ArrowLeft />
-                <span className="sr-only">Back to Courses</span>
-            </Link>
+          <Link href="/support-programs/courses">
+            <ArrowLeft />
+            <span className="sr-only">{t('common.back')}</span>
+          </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Add New Support Course</h1>
+  <h1 className="text-2xl font-bold">إضافة مقرر دعم جديد</h1>
       </div>
       <div className="glass-card p-6">
         <div className="mb-6">
@@ -128,97 +99,103 @@ export default function NewSupportCoursePage() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
-          }}>Course Details</h2>
+          }}>إضافة مقرر دعم جديد</h2>
           <p className="text-sm text-muted-foreground">
-            Fill out the form below to add a new support/extracurricular course.
+            يمكنك هنا إضافة مقرر دعم جديد وتحديد تفاصيله.
           </p>
         </div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course Name</FormLabel>
-                    <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Robotics Club" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="teacher"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instructor Name</FormLabel>
-                    <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Fatima Al-Fihri" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Department / Category</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* اسم المقرر */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>اسم المقرر</FormLabel>
+                  <FormControl>
+                    <Input className="glass-input" placeholder="اسم المقرر" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* الأستاذ */}
+            <FormField
+              control={form.control}
+              name="teacher"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>الأستاذ</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر الأستاذ" />
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Tutoring">Tutoring</SelectItem>
-                        <SelectItem value="STEM">STEM</SelectItem>
-                        <SelectItem value="Arts & Music">Arts & Music</SelectItem>
-                        <SelectItem value="Sports">Sports</SelectItem>
-                        <SelectItem value="Languages">Languages</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        {teachers.length > 0 ? (
+                          teachers.map(teacher => (
+                            <SelectItem key={teacher.id} value={teacher.name}>{teacher.name}</SelectItem>
+                          ))
+                        ) : null}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <div className="flex justify-between items-center">
-                        <FormLabel>Description</FormLabel>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleGenerateDescription}
-                            disabled={isGenerating}
-                        >
-                            {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                            {isGenerating ? "Generating..." : "Generate with AI"}
-                        </Button>
-                    </div>
-                    <FormControl>
-                      <Textarea className="glass-input" rows={5} placeholder="Provide a brief summary of the course..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="md:col-span-2 flex justify-end">
-                <Button type="submit" disabled={isLoading || isGenerating} className="btn-gradient btn-click-effect">
-                    {isLoading && <Loader2 className="animate-spin" />}
-                    {isLoading ? "Creating..." : "Create Course"}
-                </Button>
-              </div>
-            </form>
-          </Form>
+                  </FormControl>
+                  {teachers.length === 0 && (
+                    <div className="text-xs text-red-500 mt-1">لا يوجد أساتذة برامج الدعم حالياً، يرجى إضافة أستاذ أولاً.</div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* القسم */}
+            <FormField
+              control={form.control}
+              name="department"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>القسم</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر القسم" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tutoring">الدروس الخصوصية</SelectItem>
+                        <SelectItem value="STEM">العلوم والتقنية</SelectItem>
+                        <SelectItem value="Arts & Music">الفنون والموسيقى</SelectItem>
+                        <SelectItem value="Sports">الرياضة</SelectItem>
+                        <SelectItem value="Languages">اللغات</SelectItem>
+                        <SelectItem value="Other">أخرى</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* الوصف */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>الوصف</FormLabel>
+                  <FormControl>
+                    <Textarea className="glass-input" rows={5} placeholder="وصف المقرر" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="md:col-span-2 flex justify-end">
+              <Button type="submit" disabled={isLoading || isGenerating} className="btn-gradient btn-click-effect">
+                {isLoading && <Loader2 className="animate-spin" />}
+                {isLoading ? 'جاري الإضافة...' : 'إضافة مقرر دعم جديد'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </div>
     </div>
   );

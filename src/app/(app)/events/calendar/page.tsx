@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,21 +23,23 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-const eventSchema = z.object({
-  title: z.string().min(3, "Title is required."),
-  description: z.string().min(3, "Description is required."),
-  date: z.date({ required_error: "An event date is required." }),
-  category: z.enum(["holiday", "exam", "meeting", "activity"]),
-});
+import { useTranslation } from "@/i18n/translation-provider";
 
 export default function CalendarPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<SchoolEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const eventSchema = z.object({
+    title: z.string().min(3, t("events.titleRequired")),
+    description: z.string().min(3, t("events.descriptionRequired")),
+    date: z.date({ required_error: t("events.dateRequired") }),
+    category: z.enum(["holiday", "exam", "meeting", "activity"]),
+  });
 
   const form = useForm<z.infer<typeof eventSchema>>({
     resolver: zodResolver(eventSchema),
@@ -49,21 +51,21 @@ export default function CalendarPage() {
     },
   });
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     try {
       const fetchedEvents = await getEvents();
       setEvents(fetchedEvents);
     } catch (error) {
-      toast({ title: "Error", description: "Could not fetch events.", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("events.failedToLoad"), variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, t]);
 
   useEffect(() => {
     fetchEvents();
-  }, [toast]);
+  }, [fetchEvents]);
 
   const onSubmit = async (values: z.infer<typeof eventSchema>) => {
     setIsSubmitting(true);
@@ -72,7 +74,7 @@ export default function CalendarPage() {
         ...values,
         date: format(values.date, "yyyy-MM-dd"),
       });
-      toast({ title: "Event Created", description: "The new event has been added to the calendar." });
+      toast({ title: t("events.eventCreated"), description: t("events.eventCreatedDesc") });
       await fetchEvents();
       form.reset({
         title: "",
@@ -82,7 +84,7 @@ export default function CalendarPage() {
       });
       setIsDialogOpen(false);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to create event.", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("events.failedToCreate"), variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -107,31 +109,34 @@ export default function CalendarPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>School Calendar</CardTitle>
-            <CardDescription>View and manage all school events.</CardDescription>
+            <CardTitle>تقويم الفعاليات</CardTitle>
+            <CardDescription>إدارة جميع الفعاليات والمناسبات المدرسية</CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button><PlusCircle /> Add Event</Button>
-            </DialogTrigger>
+              <Button aria-label={t('events.add') || 'Add event'}>
+                <PlusCircle /> <span className="sr-only">{t('events.add') || 'Add event'}</span>
+                إضافة فعالية
+              </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New School Event</DialogTitle>
+                <DialogTitle>إضافة فعالية</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                   <FormField control={form.control} name="title" render={({ field }) => (
-                    <FormItem><FormLabel>Event Title</FormLabel><FormControl><Input placeholder="e.g., Parent-Teacher Meeting" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>عنوان الفعالية</FormLabel><FormControl><Input placeholder="عنوان الفعالية" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                   )} />
-                  <FormField control={form.control} name="description" render={({ field }) => (
-                     <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Describe the event..." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
-                  )} />
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem><FormLabel>الوصف</FormLabel><FormControl><Textarea placeholder="وصف الفعالية..." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+            )} />
                   <div className="grid grid-cols-2 gap-4">
                      <FormField control={form.control} name="date" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
+                        <FormItem className="flex flex-col"><FormLabel>تاريخ الفعالية</FormLabel>
                           <Popover><PopoverTrigger asChild>
                             <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                {field.value ? format(field.value, "PPP") : <span>اختر التاريخ</span>}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button></FormControl>
                           </PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
@@ -140,19 +145,19 @@ export default function CalendarPage() {
                         </FormItem>
                      )} />
                     <FormField control={form.control} name="category" render={({ field }) => (
-                        <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                        <FormItem><FormLabel>الفئة</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger></FormControl>
                             <SelectContent>
-                                <SelectItem value="holiday">Holiday</SelectItem>
-                                <SelectItem value="exam">Exam</SelectItem>
-                                <SelectItem value="meeting">Meeting</SelectItem>
-                                <SelectItem value="activity">School Activity</SelectItem>
+                                <SelectItem value="holiday">عطلة</SelectItem>
+                                <SelectItem value="exam">امتحان</SelectItem>
+                                <SelectItem value="meeting">اجتماع</SelectItem>
+                                <SelectItem value="activity">نشاط</SelectItem>
                             </SelectContent>
                         </Select><FormMessage /></FormItem>
                     )} />
                   </div>
                   <DialogFooter className="pt-4"><Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Create Event"}
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : "إنشاء الفعالية"}
                   </Button></DialogFooter>
                 </form>
               </Form>
@@ -194,7 +199,7 @@ export default function CalendarPage() {
         <div className="xl:col-span-2">
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>Events for {date ? format(date, "PPP") : "Today"}</CardTitle>
+              <CardTitle>الفعاليات ليوم {date ? format(date, "PPP") : "اليوم"}</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[280px]">
@@ -210,7 +215,7 @@ export default function CalendarPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground text-center pt-12">No events scheduled for this day.</p>
+                  <p className="text-muted-foreground text-center pt-12">لا توجد فعاليات لهذا اليوم</p>
                 )}
                 </div>
               </ScrollArea>

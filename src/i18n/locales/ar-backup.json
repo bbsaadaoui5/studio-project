@@ -1,0 +1,57 @@
+{
+  "app": {
+    "title": "مؤسسة الموعد"
+  },
+  "navigation": {
+    "dashboard": "لوحة التحكم",
+    "students": "الطلاب",
+    "staff": "الطاقم",
+    "academics": "الأكاديميات",
+    "finance": "المالية",
+    "reports": "التقارير",
+    "settings": "الإعدادات",
+    "examination": "الامتحانات",
+    "communication": "التواصل",
+    "events": "الفعاليات",
+    "resources": "الموارد",
+    "search": "البحث",
+    "studentManagement": "إدارة الطلاب",
+    "staffManagement": "إدارة الطاقم",
+    "supportPrograms": "برامج الدعم"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "search": "بحث",
+    "add": "إضافة",
+    "create": "إنشاء",
+    "update": "تحديث",
+    "noData": "لا توجد بيانات",
+    "actions": "الإجراءات",
+    "date": "التاريخ",
+    "name": "الاسم",
+    "status": "الحالة",
+    "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "totalStudents": "إجمالي الطلاب",
+    "activeStudents": "الطلاب النشطون حالياً",
+    "availableCourses": "المقررات المتاحة",
+    "totalCourses": "إجمالي المقررات في الكتالوج",
+    "staffMembers": "أعضاء الطاقم",
+    "activeStaff": "جميع الموظفين النشطين",
+    "studentEnrollment": "تسجيل الطلاب الجدد",
+    "enrollmentSubtitle": "تسجيل الطلاب الجدد شهرياً خلال الـ 6 أشهر الماضية",
+    "studentDistribution": "توزيع الطلاب",
+    "distributionSubtitle": "توزيع الطلاب حسب الصف",
+    "schoolCalendar": "التقويم المدرسي",
+    "calendarSubtitle": "الأحداث والأنشطة المدرسية",
+    "errorLoadingStats": "فشل في تحميل إحصائيات لوحة التحكم"
+  }
+}

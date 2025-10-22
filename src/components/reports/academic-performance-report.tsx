@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -69,11 +70,7 @@ export function AcademicPerformanceReport() {
     totalCourses: 0
   });
 
-  useEffect(() => {
-    fetchAcademicData();
-  }, [selectedGrade]);
-
-  const fetchAcademicData = async () => {
+  const fetchAcademicData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [students, courses] = await Promise.all([
@@ -90,21 +87,21 @@ export function AcademicPerformanceReport() {
         let passedCourses = 0;
         let failedCourses = 0;
 
-        for (const course of courses) {
-          try {
-            const grade = await getStudentGradeForCourse(course.id, student.id);
-            if (grade && grade.score !== null) {
-              studentGrades.push(grade.score);
-              if (grade.score >= 60) {
-                passedCourses++;
-              } else {
-                failedCourses++;
+          for (const course of courses) {
+            try {
+              const grade = await getStudentGradeForCourse(course.id, student.id);
+              if (grade !== null && typeof grade === 'number') {
+                studentGrades.push(grade);
+                if (grade >= 60) {
+                  passedCourses++;
+                } else {
+                  failedCourses++;
+                }
               }
+            } catch (error) {
+              // Course not taken by student
             }
-          } catch (error) {
-            // Course not taken by student
           }
-        }
 
         const averageGrade = studentGrades.length > 0 
           ? studentGrades.reduce((sum, grade) => sum + grade, 0) / studentGrades.length 
@@ -132,8 +129,8 @@ export function AcademicPerformanceReport() {
         for (const student of filteredStudents) {
           try {
             const grade = await getStudentGradeForCourse(course.id, student.id);
-            if (grade && grade.score !== null) {
-              courseGrades.push(grade.score);
+            if (grade !== null && typeof grade === 'number') {
+              courseGrades.push(grade);
             }
           } catch (error) {
             // Student not enrolled in course
@@ -189,15 +186,18 @@ export function AcademicPerformanceReport() {
 
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch academic data.",
+        title: "خطأ",
+        description: "فشل في جلب بيانات الأداء الأكاديمي.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedGrade, toast]);
 
+  useEffect(() => {
+    void fetchAcademicData();
+  }, [fetchAcademicData]);
   const topPerformers = gradeData
     .filter(s => s.averageGrade > 0)
     .sort((a, b) => b.averageGrade - a.averageGrade)
@@ -225,26 +225,26 @@ export function AcademicPerformanceReport() {
 
   return (
     <div className="space-y-6">
-      {/* Filters and Overview */}
+      {/* الفلاتر ونظرة عامة */}
       <div className="flex justify-between items-center">
         <div className="flex gap-4">
           <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select Grade" />
+            <SelectTrigger className="w-48 text-right">
+              <SelectValue placeholder="اختر المستوى" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Grades</SelectItem>
+              <SelectItem value="all">جميع المستويات</SelectItem>
               {Array.from({ length: 12 }, (_, i) => (
                 <SelectItem key={i + 1} value={`${i + 1}`}>
-                  Grade {i + 1}
+                  الصف {i + 1}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export Report
+        <Button variant="outline" className="text-right">
+          <Download className="ml-2 h-4 w-4" />
+          تصدير التقرير
         </Button>
       </div>
 
@@ -252,52 +252,52 @@ export function AcademicPerformanceReport() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
+            <CardTitle className="text-sm font-medium text-right">متوسط المعدل</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overallStats.averageGrade}%</div>
-            <p className="text-xs text-muted-foreground">
-              Across all students
+            <div className="text-2xl font-bold text-right">{overallStats.averageGrade}%</div>
+            <p className="text-xs text-muted-foreground text-right">
+              لجميع الطلاب
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-right">نسبة النجاح</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overallStats.passRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              Students passing (≥60%)
+            <div className="text-2xl font-bold text-right">{overallStats.passRate}%</div>
+            <p className="text-xs text-muted-foreground text-right">
+              الطلاب الناجحون
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium">إجمالي الطلاب</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.totalStudents}</div>
             <p className="text-xs text-muted-foreground">
-              Active students
+              الطلاب النشطون
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">عدد المقررات</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.totalCourses}</div>
             <p className="text-xs text-muted-foreground">
-              Available courses
+              عدد المقررات المتاحة
             </p>
           </CardContent>
         </Card>
@@ -308,8 +308,8 @@ export function AcademicPerformanceReport() {
         {/* Grade Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Grade Distribution</CardTitle>
-            <CardDescription>Distribution of student average grades</CardDescription>
+            <CardTitle>توزيع الدرجات</CardTitle>
+            <CardDescription>نسبة توزيع الدرجات على جميع الطلاب</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -337,8 +337,8 @@ export function AcademicPerformanceReport() {
         {/* Course Performance */}
         <Card>
           <CardHeader>
-            <CardTitle>Course Performance</CardTitle>
-            <CardDescription>Average grades by course</CardDescription>
+            <CardTitle>أداء المقررات</CardTitle>
+            <CardDescription>متوسط أداء الطلاب في كل مقرر دراسي</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -365,9 +365,9 @@ export function AcademicPerformanceReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              Top Performers
+              الطلاب المتفوقون
             </CardTitle>
-            <CardDescription>Students with highest average grades</CardDescription>
+            <CardDescription>قائمة الطلاب الأعلى أداءً في المؤسسة</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -378,14 +378,14 @@ export function AcademicPerformanceReport() {
                     <div>
                       <p className="font-medium">{student.studentName}</p>
                       <p className="text-sm text-muted-foreground">
-                        Grade {student.grade} - {student.className}
+                        الصف {student.grade} - {student.className}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold">{student.averageGrade}%</p>
                     <p className="text-xs text-muted-foreground">
-                      {student.passedCourses}/{student.totalCourses} courses
+                      {student.passedCourses}/{student.totalCourses} مقررات
                     </p>
                   </div>
                 </div>
@@ -398,15 +398,15 @@ export function AcademicPerformanceReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              Students Needing Support
+              الطلاب المحتاجون للدعم (10/20 أو أقل)
             </CardTitle>
-            <CardDescription>Students with grades below 60%</CardDescription>
+            <CardDescription>قائمة الطلاب الذين حصلوا على 10/20 أو أقل ويحتاجون إلى دعم إضافي</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {strugglingStudents.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
-                  No students currently below 60%
+                  لا يوجد طلاب حصلوا على 10/20 أو أقل
                 </p>
               ) : (
                 strugglingStudents.map((student) => (
@@ -414,7 +414,7 @@ export function AcademicPerformanceReport() {
                     <div>
                       <p className="font-medium">{student.studentName}</p>
                       <p className="text-sm text-muted-foreground">
-                        Grade {student.grade} - {student.className}
+                        الصف {student.grade} - {student.className}
                       </p>
                     </div>
                     <div className="text-right">

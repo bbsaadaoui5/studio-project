@@ -15,3 +15,5 @@ Once you have the Firebase CLI installed and you are logged in, you can deploy y
 ```bash
 firebase deploy
 ```
+
+CI trigger: test run

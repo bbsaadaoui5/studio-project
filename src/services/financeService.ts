@@ -1,3 +1,23 @@
+// تحديث مصروف
+export const updateExpense = async (expenseId: string, expenseData: Partial<Expense>): Promise<void> => {
+  try {
+    const docRef = doc(db, "expenses", expenseId);
+    await updateDoc(docRef, expenseData);
+  } catch (error) {
+    console.error("Error updating expense:", error);
+    throw new Error("Could not update expense.");
+  }
+}
+// حذف مصروف
+export const deleteExpense = async (expenseId: string): Promise<void> => {
+  try {
+    const docRef = doc(db, "expenses", expenseId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting expense:", error);
+    throw new Error("Could not delete expense.");
+  }
+}
 
 import { db } from "@/lib/firebase-client";
 import { 
@@ -58,11 +78,12 @@ export const addExpense = async (expenseData: Omit<Expense, 'id'>) => {
       ...expenseData,
       date: serverTimestamp() // Use server timestamp
     });
-     await updateDoc(docRef, { id: docRef.id });
+    await updateDoc(docRef, { id: docRef.id });
     return { 
       id: docRef.id, 
-      ...expenseData 
-    } as Omit<Expense, 'date'> & { date: any };
+      ...expenseData,
+      date: new Date().toISOString(),
+    } as Omit<Expense, 'date'> & { date: string };
   } catch (error) {
     console.error("Error adding expense:", error);
     throw new Error("Could not add expense.");

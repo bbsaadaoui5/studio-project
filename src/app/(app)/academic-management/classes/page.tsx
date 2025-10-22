@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useTranslation } from "@/i18n/translation-provider";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import Link from "next/link";
 export default function ClassesPage() {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -76,10 +78,8 @@ export default function ClassesPage() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Classes Overview</CardTitle>
-          <CardDescription>
-            A summary of all active classes in the school.
-          </CardDescription>
+          <CardTitle>نظرة عامة على الأقسام</CardTitle>
+          <CardDescription>جميع الأقسام والمستويات الدراسية في المؤسسة</CardDescription>
         </CardHeader>
         <CardContent>
              {isLoading ? (
@@ -87,36 +87,38 @@ export default function ClassesPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : classes.length === 0 ? (
-                <div className="py-12 text-center">
-                    <h3 className="text-lg font-medium">No classes found.</h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Once students are added to classes, they will appear here.
-                    </p>
-                </div>
+        <div className="py-12 text-center">
+          <h3 className="text-lg font-medium">لا توجد أقسام</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            عند إضافة طلاب إلى الأقسام ستظهر هنا تلقائيًا.
+          </p>
+        </div>
             ) : (
                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Grade</TableHead>
-                            <TableHead>Class Name</TableHead>
-                            <TableHead>Number of Students</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {classes.map(classInfo => (
-                            <TableRow key={classInfo.id}>
-                                <TableCell className="font-medium">Grade {classInfo.grade}</TableCell>
-                                <TableCell>{classInfo.className}</TableCell>
-                                <TableCell>{classInfo.studentCount}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="outline" asChild>
-                                        <Link href={`/academic-management/classes/${classInfo.id}/roster`}>View Roster</Link>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>المستوى</TableHead>
+                      <TableHead>القسم</TableHead>
+                      <TableHead>عدد الطلاب</TableHead>
+                      <TableHead className="text-right">إجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {classes.map(classInfo => (
+                      <TableRow key={classInfo.id}>
+                        <TableCell className="font-medium">المستوى {classInfo.grade}</TableCell>
+                        <TableCell>{classInfo.className}</TableCell>
+                        <TableCell>{classInfo.studentCount}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" asChild>
+                            <Link href={`/academic-management/classes/${classInfo.id}/roster`}>
+                              عرض التفاصيل
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
                 </Table>
             )}
         </CardContent>

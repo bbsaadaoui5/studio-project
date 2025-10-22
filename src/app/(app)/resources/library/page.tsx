@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getBooks, addBook, checkInBook, checkOutBook } from "@/services/libraryService";
 import { getActiveStudents } from "@/services/studentService";
 import type { Book, Student } from "@/lib/types";
@@ -47,6 +48,7 @@ import { debounce } from "@/lib/utils";
 
 export default function LibraryPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [books, setBooks] = useState<Book[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,7 +63,7 @@ export default function LibraryPage() {
   const [newBookAuthor, setNewBookAuthor] = useState("");
   const [newBookIsbn, setNewBookIsbn] = useState("");
 
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     setIsLoading(true);
     try {
       const [fetchedBooks, fetchedStudents] = await Promise.all([
@@ -72,24 +74,24 @@ export default function LibraryPage() {
       setStudents(fetchedStudents);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Could not fetch library data.",
+        title: t("common.error"),
+        description: t("resources.libraryManagement.errorFetchingBooks"),
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, t]);
 
   useEffect(() => {
-    fetchBooks();
-  }, [toast]);
+    void fetchBooks();
+  }, [fetchBooks]);
 
   const handleAddBook = async () => {
     if (!newBookTitle || !newBookAuthor) {
       toast({
-        title: "Missing Information",
-        description: "Please enter a title and author.",
+        title: t("common.error"),
+        description: t("resources.libraryManagement.enterBookDetails"),
         variant: "destructive",
       });
       return;
@@ -102,8 +104,8 @@ export default function LibraryPage() {
         isbn: newBookIsbn,
       });
       toast({
-        title: "Book Added",
-        description: `"${newBookTitle}" has been added to the library.`,
+        title: t("resources.libraryManagement.bookAdded"),
+        description: t("resources.libraryManagement.bookAddedDesc").replace("{title}", newBookTitle),
       });
       fetchBooks(); // Refresh book list
       setNewBookTitle("");
@@ -112,8 +114,8 @@ export default function LibraryPage() {
       setIsNewBookDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to add book.",
+        title: t("resources.libraryManagement.error"),
+        description: t("resources.libraryManagement.errorAddingBook"),
         variant: "destructive",
       });
     } finally {
@@ -122,10 +124,10 @@ export default function LibraryPage() {
   };
   
   const handleCheckOut = async () => {
-    if (!selectedBook || !selectedStudent) {
-        toast({ title: "Error", description: "A book and student must be selected.", variant: "destructive" });
-        return;
-    }
+  if (!selectedBook || !selectedStudent) {
+    toast({ title: t("resources.libraryManagement.error"), description: t("resources.libraryManagement.enterBookDetails"), variant: "destructive" });
+    return;
+  }
     
     const originalBooks = [...books];
     const dueDate = add(new Date(), { weeks: 2 }).toISOString();
@@ -140,16 +142,16 @@ export default function LibraryPage() {
     );
     setIsCheckOutDialogOpen(false);
 
-    try {
-        await checkOutBook(selectedBook.id, selectedStudent, dueDate);
-        toast({title: "Book Checked Out", description: "The book has been loaned."});
-    } catch (error) {
-        toast({ title: "Error Checking Out", description: "Failed to check out book. Reverting.", variant: "destructive" });
-        setBooks(originalBooks); // Rollback on error
-    } finally {
-        setSelectedBook(null);
-        setSelectedStudent("");
-    }
+  try {
+    await checkOutBook(selectedBook.id, selectedStudent, dueDate);
+  toast({title: t("resources.libraryManagement.checkOut"), description: t("resources.libraryManagement.bookAddedDesc").replace("{title}", selectedBook.title)});
+  } catch (error) {
+    toast({ title: t("resources.libraryManagement.errorCheckingOut"), description: t("resources.libraryManagement.errorCheckingOut"), variant: "destructive" });
+    setBooks(originalBooks); // Rollback on error
+  } finally {
+    setSelectedBook(null);
+    setSelectedStudent("");
+  }
   }
 
   const handleCheckIn = async (bookId: string) => {
@@ -168,9 +170,9 @@ export default function LibraryPage() {
 
     try {
         await checkInBook(bookId);
-        toast({title: "Book Checked In", description: "The book is now available."});
+        toast({title: t("resources.libraryManagement.bookCheckedIn"), description: "الكتاب متاح الآن"});
     } catch (error) {
-        toast({ title: "Error Checking In", description: "Failed to check in book. Reverting.", variant: "destructive" });
+        toast({ title: t("resources.libraryManagement.errorCheckingIn"), description: "فشل في إرجاع الكتاب. جاري التراجع.", variant: "destructive" });
         setBooks(originalBooks); // Rollback on error
     }
   }
@@ -195,29 +197,29 @@ export default function LibraryPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Library Catalog</CardTitle>
+            <CardTitle>مكتبة المدرسة</CardTitle>
             <CardDescription>
-              Browse, add, and manage your school's library books.
+              إدارة الكتب وإعارتها للطلاب.
             </CardDescription>
           </div>
           <Dialog open={isNewBookDialogOpen} onOpenChange={setIsNewBookDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <PlusCircle />
-                Add New Book
+                إضافة كتاب جديد
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add a New Book</DialogTitle>
+                <DialogTitle>إضافة كتاب جديد</DialogTitle>
                 <DialogDescription>
-                  Enter the details of the new book to add it to the catalog.
+                  أدخل تفاصيل الكتاب لإضافته إلى المكتبة.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="title" className="text-right">
-                    Title
+                    عنوان الكتاب
                   </Label>
                   <Input
                     id="title"
@@ -228,7 +230,7 @@ export default function LibraryPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="author" className="text-right">
-                    Author
+                    المؤلف
                   </Label>
                   <Input
                     id="author"
@@ -239,7 +241,7 @@ export default function LibraryPage() {
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="isbn" className="text-right">
-                    ISBN
+                    رقم الكتاب (ISBN)
                   </Label>
                   <Input
                     id="isbn"
@@ -252,7 +254,7 @@ export default function LibraryPage() {
               <DialogFooter>
                 <Button onClick={handleAddBook} disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="animate-spin" />}
-                  {isSubmitting ? "Adding..." : "Add Book"}
+                  {isSubmitting ? t("resources.libraryManagement.adding") : t("resources.libraryManagement.addBookButton")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -263,7 +265,7 @@ export default function LibraryPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Filter by title or author..."
+                  placeholder="بحث حسب العنوان أو المؤلف..."
                   onChange={(e) => debouncedSetSearchQuery(e.target.value)}
                   className="w-full rounded-lg bg-background pl-8 md:w-1/3"
                 />
@@ -277,11 +279,11 @@ export default function LibraryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>ISBN</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>العنوان</TableHead>
+                  <TableHead>المؤلف</TableHead>
+                  <TableHead>رقم الكتاب</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead className="text-right">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -300,22 +302,32 @@ export default function LibraryPage() {
                           }
                           className="capitalize"
                         >
-                          {book.status}
+                          {book.status === "available"
+                            ? "متاح"
+                            : "معار"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {book.status === 'available' ? (
-                            <Button variant="outline" size="sm" onClick={() => openCheckOutDialog(book)}>Check Out</Button>
-                        ) : (
-                            <Button variant="outline" size="sm" onClick={() => handleCheckIn(book.id)}>Check In</Button>
-                        )}
+            <div className="flex gap-2 justify-end">
+              {book.status === 'available' ? (
+                <Button variant="outline" size="sm" onClick={() => openCheckOutDialog(book)}>إعارة</Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => handleCheckIn(book.id)}>{t("resources.libraryManagement.checkIn")}</Button>
+              )}
+              <Button variant="destructive" size="sm" onClick={() => {
+                if (window.confirm('هل أنت متأكد أنك تريد حذف هذا الكتاب من النظام؟')) {
+                  // منطق الحذف الفعلي يجب أن يضاف هنا
+                  alert('تم حذف الكتاب بنجاح (مثال فقط)');
+                }
+              }}>حذف</Button>
+            </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center h-24">
-                      No books found.
+                      لا توجد كتب.
                     </TableCell>
                   </TableRow>
                 )}
@@ -329,16 +341,16 @@ export default function LibraryPage() {
         <Dialog open={isCheckOutDialogOpen} onOpenChange={setIsCheckOutDialogOpen}>
             <DialogContent>
                  <DialogHeader>
-                    <DialogTitle>Check Out: {selectedBook?.title}</DialogTitle>
+                    <DialogTitle>إعارة كتاب: {selectedBook?.title ?? ""}</DialogTitle>
                     <DialogDescription>
-                    Select the student who is borrowing this book. The due date will be set to two weeks from today.
+                    اختر الطالب لإعارة الكتاب إليه.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
-                    <Label htmlFor="student-select">Student</Label>
+                    <Label htmlFor="student-select">الطالب</Label>
                     <Select onValueChange={setSelectedStudent} value={selectedStudent}>
                         <SelectTrigger id="student-select">
-                            <SelectValue placeholder="Select a student..." />
+                            <SelectValue placeholder="اختر الطالب..." />
                         </SelectTrigger>
                         <SelectContent>
                             {students.map(student => (
@@ -350,9 +362,9 @@ export default function LibraryPage() {
                     </Select>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleCheckOut} disabled={!selectedStudent}>
-                        Confirm Check Out
-                    </Button>
+          <Button onClick={handleCheckOut} disabled={!selectedStudent}>
+            تأكيد الإعارة
+          </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -22,9 +22,11 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/i18n/translation-provider";
 
 export default function EnrollmentPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,8 +52,8 @@ export default function EnrollmentPage() {
         setStudents(fetchedStudents.filter(s => s.status === 'active'));
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to fetch initial data. Please try again.",
+          title: t("common.error"),
+          description: t("academics.failedToFetchInitialData"),
           variant: "destructive",
         });
       } finally {
@@ -59,7 +61,7 @@ export default function EnrollmentPage() {
       }
     };
     fetchData();
-  }, [toast]);
+  }, [toast, t]);
 
   // Effect for "Enroll by Course"
   useEffect(() => {
@@ -74,8 +76,8 @@ export default function EnrollmentPage() {
         setSelectedStudentsForCourse(enrollment?.studentIds || []);
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to fetch enrollment data for the selected course.",
+          title: t("common.error"),
+          description: t("academics.failedToFetchEnrollmentData"),
           variant: "destructive",
         });
         setSelectedStudentsForCourse([]);
@@ -84,7 +86,7 @@ export default function EnrollmentPage() {
       }
     };
     fetchEnrollmentData();
-  }, [selectedCourse, toast]);
+  }, [selectedCourse, toast, t]);
 
   // Effect for "Enroll by Student"
   useEffect(() => {
@@ -109,7 +111,7 @@ export default function EnrollmentPage() {
         }
     };
     fetchStudentCourses();
-  }, [selectedStudent, toast]);
+  }, [selectedStudent, toast, t]);
 
 
   const handleStudentSelectionForCourse = (studentId: string) => {
@@ -139,7 +141,7 @@ export default function EnrollmentPage() {
 
   async function handleEnrollByCourse() {
     if (!selectedCourse) {
-      toast({ title: "Please select a course.", variant: "destructive" });
+      toast({ title: t("academics.pleaseSelectCourse"), variant: "destructive" });
       return;
     }
    
@@ -147,13 +149,13 @@ export default function EnrollmentPage() {
     try {
       await enrollStudentsInCourse(selectedCourse, selectedStudentsForCourse);
       toast({
-        title: "Enrollment Updated",
-        description: `Student enrollment for ${courses.find(c=>c.id === selectedCourse)?.name} has been updated.`,
+        title: t("academics.enrollmentUpdated"),
+        description: `${t("academics.studentEnrollmentUpdated")} ${courses.find(c=>c.id === selectedCourse)?.name}.`,
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update enrollment. Please try again.",
+        title: t("common.error"),
+        description: t("academics.failedToUpdateEnrollment"),
         variant: "destructive",
       });
     } finally {
@@ -163,15 +165,15 @@ export default function EnrollmentPage() {
 
   async function handleEnrollByStudent() {
     if (!selectedStudent) {
-      toast({ title: "Please select a student.", variant: "destructive" });
+      toast({ title: t("academics.pleaseSelectStudent"), variant: "destructive" });
       return;
     }
     setIsSaving(true);
     try {
         await enrollStudentInCourses(selectedStudent.id, selectedCoursesForStudent);
         toast({
-            title: "Enrollment Updated",
-            description: `Course enrollment for ${selectedStudent.name} has been updated.`,
+            title: t("academics.enrollmentUpdated"),
+            description: `${t("academics.courseEnrollmentUpdated")} ${selectedStudent.name}.`,
         });
     } catch (error) {
         toast({
@@ -195,30 +197,30 @@ export default function EnrollmentPage() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Student Enrollment</CardTitle>
+          <CardTitle>تسجيل الطلاب في المقررات</CardTitle>
           <CardDescription>
-            Manage student course enrollments either by course or by individual student.
+            إدارة تسجيل الطلاب في المقررات الدراسية حسب الصف أو الطالب
           </CardDescription>
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="by-course">
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="by-course">Enroll by Course</TabsTrigger>
-                    <TabsTrigger value="by-student">Enroll by Student</TabsTrigger>
+                    <TabsTrigger value="by-course">تسجيل حسب المقرر</TabsTrigger>
+                    <TabsTrigger value="by-student">تسجيل حسب الطالب</TabsTrigger>
                 </TabsList>
                 <TabsContent value="by-course" className="mt-6">
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label>1. Select Course</Label>
+                            <Label>اختر المقرر</Label>
                             <Select onValueChange={setSelectedCourse} value={selectedCourse} disabled={isLoading}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select a course to manage enrollment" />
+                                <SelectValue placeholder="اختر المقرر لإدارته" />
                             </SelectTrigger>
                             <SelectContent>
                                 {courses.map((course) => (
-                                <SelectItem key={course.id} value={course.id}>
-                                    {course.name} (Grade {course.grade}) - {course.teacher}
-                                </SelectItem>
+                <SelectItem key={course.id} value={course.id}>
+                  {course.name} (المستوى {course.grade}) - {Array.isArray(course.teachers) && course.teachers.length > 0 ? course.teachers.map(t => t.name).join(', ') : 'لا يوجد معلم'}
+                </SelectItem>
                                 ))}
                             </SelectContent>
                             </Select>
@@ -226,15 +228,15 @@ export default function EnrollmentPage() {
                          {selectedCourse && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>2. Select Students</CardTitle>
-                                    <CardDescription>Check the box next to each student you want to enroll in this course.</CardDescription>
+                                    <CardTitle>اختر الطلاب</CardTitle>
+                                    <CardDescription>حدد الطلاب الذين تريد تسجيلهم في هذا المقرر</CardDescription>
                                     <div className="flex items-center space-x-2 pt-4">
                                         <Checkbox 
                                             id="select-all-students" 
                                             onCheckedChange={handleSelectAllStudents}
                                             checked={students.length > 0 && selectedStudentsForCourse.length === students.length}
                                         />
-                                        <Label htmlFor="select-all-students">Select All Students</Label>
+                                        <Label htmlFor="select-all-students">تحديد كل الطلاب</Label>
                                     </div>
                                 </CardHeader>
                                 <Separator />
@@ -251,7 +253,7 @@ export default function EnrollmentPage() {
                                             <Label htmlFor={`student-for-course-${student.id}`} className="flex-1 cursor-pointer">
                                                 <div className="flex justify-between">
                                                     <span>{student.name}</span>
-                                                    <span className="text-muted-foreground text-sm">Grade {student.grade}, Class {student.className}</span>
+                                                    <span className="text-muted-foreground text-sm">المستوى {student.grade}، القسم {student.className}</span>
                                                 </div>
                                             </Label>
                                             </div>
@@ -263,24 +265,24 @@ export default function EnrollmentPage() {
                          )}
                     </div>
                      <div className="flex justify-end mt-4">
-                        <Button onClick={handleEnrollByCourse} disabled={!selectedCourse || isSaving || isLoading}>
-                            {isSaving ? <Loader2 className="animate-spin" /> : null}
-                            Save Changes for Course
-                        </Button>
+            <Button onClick={handleEnrollByCourse} disabled={!selectedCourse || isSaving || isLoading}>
+              {isSaving ? <Loader2 className="animate-spin" /> : null}
+              حفظ التغييرات
+            </Button>
                     </div>
                 </TabsContent>
                 <TabsContent value="by-student" className="mt-6">
                     <div className="space-y-4">
                         <div className="space-y-2">
-                             <Label>1. Select Student</Label>
+                             <Label>اختر الطالب</Label>
                             <Select onValueChange={handleSelectStudent} value={selectedStudent?.id || ""} disabled={isLoading}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a student to manage their courses" />
+                                    <SelectValue placeholder="اختر الطالب لإدارته" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {students.map((student) => (
                                         <SelectItem key={student.id} value={student.id}>
-                                            {student.name} (Grade {student.grade} - {student.className})
+                                            {student.name} (المستوى {student.grade} - {student.className})
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -289,8 +291,8 @@ export default function EnrollmentPage() {
                         {selectedStudent && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>2. Select Courses for Grade {selectedStudent.grade}</CardTitle>
-                                    <CardDescription>Check the boxes to enroll {selectedStudent.name} in courses.</CardDescription>
+                                    <CardTitle>اختر المقررات للمستوى {selectedStudent.grade}</CardTitle>
+                                    <CardDescription>حدد المقررات التي تريد تسجيل {selectedStudent.name} فيها.</CardDescription>
                                 </CardHeader>
                                  <Separator />
                                 <CardContent className="pt-4">
@@ -306,11 +308,11 @@ export default function EnrollmentPage() {
                                             <Label htmlFor={`course-for-student-${course.id}`} className="flex-1 cursor-pointer">
                                                 <div className="flex justify-between">
                                                     <span>{course.name}</span>
-                                                    <span className="text-muted-foreground text-sm">{course.department} - {course.teacher}</span>
+                                                    <span className="text-muted-foreground text-sm">{course.department} - {Array.isArray(course.teachers) && course.teachers.length > 0 ? course.teachers.map(t => t.name).join(', ') : 'لا يوجد معلم'}</span>
                                                 </div>
                                             </Label>
                                             </div>
-                                        )) : <p className="text-center text-muted-foreground py-4">No courses found for Grade {selectedStudent.grade}.</p>}
+                                        )) : <p className="text-center text-muted-foreground py-4">لا توجد مقررات لهذا المستوى {selectedStudent.grade}.</p>}
                                         </div>
                                     </ScrollArea>
                                 </CardContent>
@@ -318,10 +320,10 @@ export default function EnrollmentPage() {
                         )}
                     </div>
                      <div className="flex justify-end mt-4">
-                        <Button onClick={handleEnrollByStudent} disabled={!selectedStudent || isSaving || isLoading}>
-                            {isSaving ? <Loader2 className="animate-spin" /> : null}
-                            Save Changes for Student
-                        </Button>
+            <Button onClick={handleEnrollByStudent} disabled={!selectedStudent || isSaving || isLoading}>
+              {isSaving ? <Loader2 className="animate-spin" /> : null}
+              حفظ التغييرات
+            </Button>
                     </div>
                 </TabsContent>
             </Tabs>

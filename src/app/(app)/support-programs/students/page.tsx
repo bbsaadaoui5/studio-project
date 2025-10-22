@@ -45,12 +45,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { type Student } from "@/lib/types";
 import { getStudents } from "@/services/studentService";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/i18n/translation-provider";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { debounce } from "@/lib/utils";
 
 export default function SupportStudentsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const [students, setStudents] = React.useState<Student[]>([]);
@@ -161,7 +163,7 @@ export default function SupportStudentsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">{t('common.openMenu') || 'Open menu'}</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -223,7 +225,7 @@ export default function SupportStudentsPage() {
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
                 <CardTitle>Support Program Students</CardTitle>
-                <CardDescription>A directory of all students enrolled in support programs.</CardDescription>
+                <CardDescription>{t('supportPrograms.studentsDirectory')}</CardDescription>
             </div>
              <Button asChild className="btn-glass-primary btn-click-effect">
                 <Link href="/student-management/directory/new">

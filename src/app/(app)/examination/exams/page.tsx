@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { addExam, getExams } from "@/services/examService";
 import type { Exam, Course } from "@/lib/types";
 import { Loader2, PlusCircle, CalendarPlus } from "lucide-react";
@@ -52,14 +53,15 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const examSchema = z.object({
-    courseId: z.string().min(1, "Please select a course."),
-    title: z.string().min(3, "Exam title is required."),
-    examDate: z.date({ required_error: "An exam date is required."}),
-    duration: z.coerce.number().positive("Duration must be a positive number."),
+    courseId: z.string().min(1, "يرجى اختيار مقرر"),
+    title: z.string().min(3, "عنوان الامتحان مطلوب"),
+    examDate: z.date({ required_error: "تاريخ الامتحان مطلوب"}),
+    duration: z.coerce.number().positive("المدة يجب أن تكون رقم موجب"),
 });
 
 export default function ExamsPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [exams, setExams] = useState<Exam[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function ExamsPage() {
     }
   });
 
-  const fetchPageData = async () => {
+  const fetchPageData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [fetchedExams, fetchedCourses] = await Promise.all([
@@ -93,11 +95,11 @@ export default function ExamsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchPageData();
-  }, [toast]);
+  }, [fetchPageData]);
 
   async function onSubmit(values: z.infer<typeof examSchema>) {
     setIsSubmitting(true);
@@ -123,8 +125,8 @@ export default function ExamsPage() {
       setIsDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to schedule exam.",
+        title: t("common.error"),
+        description: "فشل في جدولة الامتحان",
         variant: "destructive",
       });
     } finally {
@@ -137,23 +139,23 @@ export default function ExamsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Exam Schedule</CardTitle>
+            <CardTitle>جدول الامتحانات</CardTitle>
             <CardDescription>
-              Schedule and manage all upcoming exams.
+              جدولة وإدارة جميع الامتحانات القادمة
             </CardDescription>
           </div>
           <GlassModal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <GlassModalTrigger asChild>
               <Button className="btn-glass-primary btn-click-effect">
                 <PlusCircle />
-                Schedule New Exam
+                جدولة امتحان جديد
               </Button>
             </GlassModalTrigger>
             <GlassModalContent className="sm:max-w-[425px]">
               <GlassModalHeader>
-                <GlassModalTitle>Schedule a New Exam</GlassModalTitle>
+                <GlassModalTitle>جدولة امتحان جديد</GlassModalTitle>
                 <GlassModalDescription>
-                  Enter the details for the new exam.
+                  أدخل تفاصيل الامتحان الجديد.
                 </GlassModalDescription>
               </GlassModalHeader>
               <Form {...form}>
@@ -163,9 +165,9 @@ export default function ExamsPage() {
                     name="courseId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Course</FormLabel>
+                        <FormLabel>المقرر</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a course" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder="اختر مقرر" /></SelectTrigger></FormControl>
                             <SelectContent>
                                 {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                             </SelectContent>
@@ -179,8 +181,8 @@ export default function ExamsPage() {
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Exam Title</FormLabel>
-                        <FormControl><Input className="glass-input" placeholder="e.g., Midterm Exam" {...field} /></FormControl>
+                        <FormLabel>عنوان الامتحان</FormLabel>
+                        <FormControl><Input className="glass-input" placeholder="مثال: امتحان منتصف الفصل" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -190,7 +192,7 @@ export default function ExamsPage() {
                     name="examDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Exam Date</FormLabel>
+                        <FormLabel>تاريخ الامتحان</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -204,7 +206,7 @@ export default function ExamsPage() {
                                 {field.value ? (
                                   format(field.value, "PPP")
                                 ) : (
-                                  <span>Pick a date</span>
+                                  <span>اختر التاريخ</span>
                                 )}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
@@ -228,8 +230,8 @@ export default function ExamsPage() {
                     name="duration"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Duration (in minutes)</FormLabel>
-                        <FormControl><Input className="glass-input" type="number" placeholder="e.g., 60" {...field} /></FormControl>
+                        <FormLabel>المدة (بالدقائق)</FormLabel>
+                        <FormControl><Input className="glass-input" type="number" placeholder="مثال: 60" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -237,7 +239,7 @@ export default function ExamsPage() {
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={isSubmitting} className="btn-gradient btn-click-effect">
                       {isSubmitting && <Loader2 className="animate-spin" />}
-                      {isSubmitting ? "Scheduling..." : "Schedule Exam"}
+                      {isSubmitting ? "...يتم الجدولة" : "جدولة الامتحان"}
                     </Button>
                   </div>
                 </form>
@@ -254,10 +256,10 @@ export default function ExamsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Exam Title</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead className="text-right">Duration</TableHead>
+                  <TableHead>التاريخ</TableHead>
+                  <TableHead>عنوان الامتحان</TableHead>
+                  <TableHead>المقرر</TableHead>
+                  <TableHead className="text-right">المدة</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -267,13 +269,13 @@ export default function ExamsPage() {
                       <TableCell className="font-medium">{format(new Date(exam.examDate), "PPP")}</TableCell>
                       <TableCell>{exam.title}</TableCell>
                       <TableCell>{exam.courseName}</TableCell>
-                      <TableCell className="text-right">{exam.duration} mins</TableCell>
+                      <TableCell className="text-right">{exam.duration} دقيقة</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center h-24">
-                      No exams scheduled yet.
+                      لا يوجد امتحانات مجدولة بعد.
                     </TableCell>
                   </TableRow>
                 )}

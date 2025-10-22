@@ -1,17 +1,18 @@
 
 import { db } from "@/lib/firebase-client";
 import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  updateDoc,
-  serverTimestamp,
+    collection,
+    doc,
+    setDoc,
+    getDoc,
+    addDoc,
+    query,
+    where,
+    getDocs,
+    orderBy,
+    updateDoc,
+    serverTimestamp,
+    type FieldValue,
 } from "firebase/firestore";
 import type { Staff, Student } from "@/lib/types";
 
@@ -23,11 +24,11 @@ export interface Conversation {
       name: string;
       avatar: string;
   }[];
-  lastMessage: {
-    text: string;
-    timestamp: any;
-    senderId: string;
-  };
+        lastMessage: {
+            text: string;
+            timestamp: string | { toDate?: () => Date } | FieldValue;
+            senderId: string;
+        };
 }
 
 export interface Message {
@@ -35,7 +36,7 @@ export interface Message {
   conversationId: string;
   senderId: string;
   text: string;
-  timestamp: any;
+        timestamp: string | { toDate?: () => Date } | FieldValue;
 }
 
 const CONVERSATIONS_COLLECTION = "conversations";
@@ -99,6 +100,7 @@ export const sendMessage = async (conversationId: string, senderId: string, text
         };
         const docRef = await addDoc(collection(db, MESSAGES_COLLECTION), newMessageData);
         const newMessage = { id: docRef.id, ...newMessageData };
+        // Try to normalize timestamp if possible; otherwise keep FieldValue
         await updateDoc(docRef, { id: docRef.id });
 
         // 2. Update the conversation's lastMessage field
@@ -111,7 +113,7 @@ export const sendMessage = async (conversationId: string, senderId: string, text
             }
         });
         
-        return newMessage;
+        return newMessage as Message;
     } catch (error) {
          console.error("Error sending message:", error);
          throw new Error("Failed to send message.");

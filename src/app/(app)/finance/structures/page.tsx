@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,12 +48,18 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const structureSchema = z.object({
-    grade: z.string().min(1, "Please select a grade."),
-    monthlyAmount: z.coerce.number().positive("Amount must be a positive number."),
+    grade: z.string().min(1, "يرجى اختيار المستوى الدراسي."),
+    monthlyAmount: z.coerce.number().positive("يجب أن يكون المبلغ رقمًا موجبًا."),
 });
+// تعريب رؤوس الجداول
+const tableHeaders = {
+  grade: "المستوى الدراسي",
+  monthlyAmount: "المبلغ الشهري",
+  actions: "إجراءات"
+};
 
 const editStructureSchema = z.object({
-    monthlyAmount: z.coerce.number().positive("Amount must be a positive number."),
+  monthlyAmount: z.coerce.number().positive("يجب أن يكون المبلغ رقمًا موجبًا."),
 });
 
 
@@ -82,7 +88,7 @@ export default function FeeStructuresPage() {
     },
   });
 
-  const fetchPageData = async () => {
+  const fetchPageData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [fetchedStructures, settings] = await Promise.all([
@@ -100,11 +106,11 @@ export default function FeeStructuresPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchPageData();
-  }, [toast]);
+  }, [fetchPageData]);
 
   useEffect(() => {
     if (selectedStructure) {

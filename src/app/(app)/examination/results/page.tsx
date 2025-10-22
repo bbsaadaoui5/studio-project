@@ -123,17 +123,17 @@ export default function ExamResultsPage() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Exam Results</CardTitle>
+          <CardTitle>نتائج الامتحانات</CardTitle>
           <CardDescription>
-            Select an exam to view or enter student scores.
+            اختر الامتحان لعرض أو إدخال درجات الطلاب.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-w-md">
-            <Label>Select Exam</Label>
+            <Label>اختر الامتحان</Label>
             <Select onValueChange={setSelectedExam} value={selectedExam} disabled={isLoadingExams}>
               <SelectTrigger>
-                <SelectValue placeholder="Select an exam" />
+                <SelectValue placeholder="اختر الامتحان" />
               </SelectTrigger>
               <SelectContent>
                 {exams.map((exam) => (
@@ -154,48 +154,48 @@ export default function ExamResultsPage() {
       )}
 
       {!isLoadingStudents && selectedExam && (
-        <Card>
-            <CardHeader>
-                <CardTitle>{exams.find(e => e.id === selectedExam)?.title} - Score Sheet</CardTitle>
-                <CardDescription>
-                   Enter scores for each student.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {enrolledStudents.map(student => (
-                        <div key={student.id} className="flex items-center justify-between rounded-md border p-4">
-                            <p className="font-medium">{student.name}</p>
-                            <Input 
-                                type="text"
-                                className="w-24"
-                                placeholder="Score"
-                                value={scores[student.id]?.score ?? ""}
-                                onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                            />
-                        </div>
-                    ))}
-                </div>
-                 <div className="flex justify-end mt-6">
-                    <Button onClick={handleSaveScores} disabled={isSaving}>
-                        {isSaving && <Loader2 className="animate-spin" />}
-                        {isSaving ? "Saving..." : "Save Scores"}
-                        {!isSaving && <Save />}
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>{exams.find(e => e.id === selectedExam)?.title} - كشف الدرجات</CardTitle>
+        <CardDescription>
+           أدخل درجات كل طالب.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {enrolledStudents.map(student => (
+            <div key={student.id} className="flex items-center justify-between rounded-md border p-4">
+              <p className="font-medium">{student.name}</p>
+              <Input 
+                type="text"
+                className="w-24"
+                placeholder="الدرجة"
+                value={scores[student.id]?.score ?? ""}
+                onChange={(e) => handleScoreChange(student.id, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+         <div className="flex justify-end mt-6">
+          <Button onClick={handleSaveScores} disabled={isSaving}>
+            {isSaving && <Loader2 className="animate-spin" />}
+            {isSaving ? "...يتم الحفظ" : "حفظ الدرجات"}
+            {!isSaving && <Save />}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
       )}
 
       {!isLoadingStudents && selectedExam && enrolledStudents.length === 0 && (
-         <Card>
-            <CardContent className="py-12 text-center">
-                <h3 className="text-lg font-medium">No Students Enrolled</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                    Enroll students in this course to enter exam results.
-                </p>
-            </CardContent>
-        </Card>
+     <Card>
+      <CardContent className="py-12 text-center">
+        <h3 className="text-lg font-medium">لا يوجد طلاب مسجلين</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          قم بتسجيل الطلاب في هذا المقرر لإدخال نتائج الامتحان.
+        </p>
+      </CardContent>
+    </Card>
       )}
     </div>
   );

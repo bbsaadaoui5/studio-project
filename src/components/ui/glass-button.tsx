@@ -10,9 +10,10 @@ export interface GlassButtonProps
 }
 
 const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
-  ({ className, variant = "gradient", size = "default", ...props }, ref) => {
+  ({ className, variant = "gradient", size = "default", type = "button", ...props }, ref) => {
     return (
       <button
+        type={type}
         className={cn(
           "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
           "hover:scale-105 hover:shadow-lg active:scale-95",

@@ -1,7 +1,7 @@
-
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -39,14 +39,34 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const months = [
-  { value: 0, label: "January" }, { value: 1, label: "February" }, { value: 2, label: "March" },
-  { value: 3, label: "April" }, { value: 4, label: "May" }, { value: 5, label: "June" },
-  { value: 6, label: "July" }, { value: 7, label: "August" }, { value: 8, label: "September" },
-  { value: 9, label: "October" }, { value: 10, label: "November" }, { value: 11, label: "December" }
-];
+
 
 export default function FeesPage() {
+    const { t } = useTranslation();
+    // أسماء الشهور بالعربية
+        // عناوين وحقول معربة
+        const pageTitle = "إدارة الرسوم الدراسية"; // Title
+        const pageDescription = "إدارة وتتبع جميع الرسوم الدراسية للطلاب"; // Description
+        const selectStudent = "اختر الطالب"; // Select student
+        const selectStudentPlaceholder = "ابحث عن اسم الطالب..."; // Placeholder for student search
+        const startPeriod = "بداية الفترة"; // Start period
+        const endPeriod = "نهاية الفترة"; // End period
+        const monthLabel = "الشهر"; // Month label
+        const yearLabel = "السنة"; // Year label
+        const months = [
+            { value: 0, label: "يناير" }, { value: 1, label: "فبراير" }, { value: 2, label: "مارس" },
+            { value: 3, label: "أبريل" }, { value: 4, label: "ماي" }, { value: 5, label: "يونيو" },
+            { value: 6, label: "يوليوز" }, { value: 7, label: "غشت" }, { value: 8, label: "شتنبر" },
+            { value: 9, label: "أكتوبر" }, { value: 10, label: "نونبر" }, { value: 11, label: "دجنبر" }
+        ];
+    // مثال لتعريب بعض الحقول الثابتة (يمكنك تعريب المزيد حسب الحاجة)
+    const tableHeaders = {
+        student: "الطالب",
+        grade: "المستوى",
+        amount: "المبلغ",
+        status: "الحالة",
+        actions: "إجراءات"
+    };
     const { toast } = useToast();
     const [students, setStudents] = useState<Student[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -101,11 +121,18 @@ export default function FeesPage() {
         return { from, to };
     }, [startMonth, startYear, endMonth, endYear]);
 
-    const fetchStudentFeeData = async (studentId: string) => {
+    const fetchStudentFeeData = useCallback(async (studentId: string) => {
         setIsLoading(true);
         try {
             const student = students.find(s => s.id === studentId);
             if (!student) throw new Error("Student not found");
+
+            // تحقق من صحة القيم قبل جلب هيكل الرسوم
+            if (!student.grade || student.grade === "N/A" || !academicYear || academicYear === "N/A") {
+                toast({ title: "تنبيه", description: "لا يمكن جلب هيكل الرسوم بسبب نقص أو خطأ في بيانات المستوى أو السنة الدراسية.", variant: "destructive" });
+                setIsLoading(false);
+                return;
+            }
 
             const [structure, payments] = await Promise.all([
                 getFeeStructureForGrade(student.grade, academicYear),
@@ -116,11 +143,11 @@ export default function FeesPage() {
             setAllPayments(payments);
 
         } catch (error) {
-             toast({ title: "Error", description: "Could not fetch fee information for this student.", variant: "destructive" });
+             toast({ title: t('common.error'), description: t('finance.feeManagement.errorFetchingFeeInfo'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [students, academicYear, toast, t]);
 
 
     useEffect(() => {
@@ -130,7 +157,7 @@ export default function FeesPage() {
             return;
         };
         fetchStudentFeeData(selectedStudent.id);
-    }, [selectedStudent, academicYear, toast]);
+    }, [selectedStudent, fetchStudentFeeData]);
     
    const feeStatus = useMemo(() => {
     if (!feeStructure || !dateRange || !selectedStudent?.enrollmentDate) {
@@ -183,52 +210,20 @@ export default function FeesPage() {
         monthsInPeriod: monthsInPeriod.map(d => format(d, 'MMMM yyyy')),
         inPeriodPayments,
     };
-}, [feeStructure, allPayments, dateRange, academicYear, selectedStudent]);
+}, [feeStructure, allPayments, dateRange, selectedStudent]);
 
 
     const paymentsByMonth = useMemo(() => {
-         return allPayments.reduce((acc, p) => {
+        return allPayments.reduce((acc, p) => {
             const monthYear = p.month; // Use the month the payment was for
             acc[monthYear] = (acc[monthYear] || 0) + p.amount;
             return acc;
         }, {} as Record<string, number>);
     }, [allPayments]);
 
-
-    const handleRecordPayment = async () => {
-        if (!selectedStudent || !paymentAmount || paymentAmount <= 0 || !paymentMonth || !dateRange) {
-            toast({ title: "Invalid Input", description: "Please select a student, date range, payment month, and enter a valid amount.", variant: "destructive" });
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            await recordPayment({
-                studentId: selectedStudent.id,
-                amount: Number(paymentAmount),
-                date: new Date().toISOString(),
-                month: paymentMonth,
-                academicYear,
-                method: paymentMethod
-            });
-            toast({ title: "Payment Recorded", description: "The payment has been successfully recorded." });
-            
-            await fetchStudentFeeData(selectedStudent.id);
-
-            setIsDialogOpen(false);
-            setPaymentAmount("");
-            setPaymentMonth("");
-
-        } catch (error) {
-            toast({ title: "Error", description: "Failed to record payment.", variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
     const handleEditPayment = async () => {
         if (!paymentToEdit || !paymentAmount || paymentAmount <= 0 || !paymentMonth) {
-             toast({ title: "Invalid Input", description: "Please ensure all fields are filled correctly.", variant: "destructive" });
+             toast({ title: t('finance.feeManagement.invalidInput'), description: t('finance.feeManagement.invalidInput'), variant: "destructive" });
              return;
         }
         setIsSubmitting(true);
@@ -238,12 +233,12 @@ export default function FeesPage() {
                 month: paymentMonth,
                 method: paymentMethod
             });
-            toast({ title: "Payment Updated", description: "The payment has been successfully updated." });
+            toast({ title: t('finance.feeManagement.paymentUpdated'), description: t('finance.feeManagement.paymentUpdated') });
             await fetchStudentFeeData(paymentToEdit.studentId);
             setIsEditDialogOpen(false);
             setPaymentToEdit(null);
         } catch (error) {
-            toast({ title: "Error", description: "Failed to update payment.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('finance.feeManagement.errorUpdatingPayment'), variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -298,6 +293,34 @@ export default function FeesPage() {
         return Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
     }, [academicYear]);
 
+    // إضافة دالة تسجيل الدفع
+    const handleRecordPayment = async () => {
+        setIsSubmitting(true);
+        try {
+            if (!selectedStudent || !paymentAmount || !paymentMonth || !paymentMethod) {
+                toast({ title: "خطأ", description: "يرجى ملء جميع الحقول المطلوبة.", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
+            }
+            await recordPayment({
+                studentId: selectedStudent.id,
+                amount: Number(paymentAmount),
+                month: paymentMonth,
+                method: paymentMethod,
+                date: new Date().toISOString(),
+                academicYear: academicYear,
+            });
+            toast({ title: "تم تسجيل الدفع بنجاح", description: "تمت إضافة الدفعة للطالب." });
+            setIsDialogOpen(false);
+            setPaymentAmount("");
+            setPaymentMonth("");
+            setPaymentMethod("card");
+        } catch (error) {
+            toast({ title: "خطأ في تسجيل الدفع", description: "حدث خطأ أثناء تسجيل الدفعة.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <>
@@ -306,30 +329,30 @@ export default function FeesPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>Fee Management</CardTitle>
+                            <CardTitle>{t('finance.feeManagement.title')}</CardTitle>
                             <CardDescription>
-                                Select a student and date range to view their fee statement.
+                                إدارة الرسوم الدراسية، الفواتير، وجدولة الأقساط للطلاب.
                             </CardDescription>
                         </div>
                          {selectedStudent && dateRange && (
                             <Button onClick={handlePrint} variant="outline" className="btn-glass btn-click-effect">
                                 <Printer className="mr-2" />
-                                Print Statement
+                                {t('finance.feeManagement.printStatement')}
                             </Button>
                         )}
                     </div>
                 </CardHeader>
                 <CardContent className="flex flex-col md:flex-row gap-4 items-end">
                      <div className="flex-1 space-y-2">
-                        <Label htmlFor="student-select">Select Student</Label>
+                        <Label htmlFor="student-select">اختر الطالب</Label>
                         <Select onValueChange={handleSelectStudent} value={selectedStudent?.id || ""}>
                             <SelectTrigger id="student-select">
-                                <SelectValue placeholder="Select a student..." />
+                                <SelectValue placeholder="يرجى اختيار الطالب..." />
                             </SelectTrigger>
                             <SelectContent>
                                 {students.map(student => (
                                     <SelectItem key={student.id} value={student.id}>
-                                        {student.name} - Grade {student.grade}
+                                        {student.name} - {t('common.grade')} {student.grade}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -337,35 +360,36 @@ export default function FeesPage() {
                     </div>
                     <div className="flex-1 grid grid-cols-2 gap-2 border p-2 rounded-md">
                         <div>
-                            <Label>Start Period</Label>
+                            <Label>بداية الفترة</Label>
                             <div className="flex gap-2 mt-2">
                                 <Select onValueChange={(v) => setStartMonth(parseInt(v))} value={startMonth !== null ? String(startMonth) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="الشهر" /></SelectTrigger>
                                     <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
                                 </Select>
                                 <Select onValueChange={(v) => setStartYear(parseInt(v))} value={startYear !== null ? String(startYear) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="السنة" /></SelectTrigger>
                                     <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                         </div>
                          <div>
-                            <Label>End Period</Label>
+                            <Label>نهاية الفترة</Label>
                              <div className="flex gap-2 mt-2">
                                 <Select onValueChange={(v) => setEndMonth(parseInt(v))} value={endMonth !== null ? String(endMonth) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="الشهر" /></SelectTrigger>
                                     <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
                                 </Select>
                                 <Select onValueChange={(v) => setEndYear(parseInt(v))} value={endYear !== null ? String(endYear) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="السنة" /></SelectTrigger>
                                     <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                         </div>
                     </div>
                     {(dateRange) && (
-                         <Button variant="ghost" size="icon" onClick={clearFilters} className="btn-glass btn-click-effect">
+                         <Button variant="ghost" size="icon" onClick={clearFilters} className="btn-glass btn-click-effect" aria-label={t('common.clearFilters') || 'Clear filters'}>
                             <X className="h-4 w-4" />
+                            <span className="sr-only">{t('common.clearFilters') || 'Clear filters'}</span>
                         </Button>
                     )}
                 </CardContent>
@@ -380,7 +404,7 @@ export default function FeesPage() {
             {(!isLoading && selectedStudent && !dateRange) && (
                 <Card>
                     <CardContent className="text-center py-12 text-muted-foreground">
-                        <p>Please select a start and end period to view the fee statement.</p>
+                        <p>يرجى اختيار الفترة الزمنية لعرض كشف الحساب.</p>
                     </CardContent>
                 </Card>
             )}
@@ -388,9 +412,8 @@ export default function FeesPage() {
             {!isLoading && selectedStudent && dateRange && !feeStructure && (
                 <Card>
                     <CardContent className="text-center py-12">
-                        <p className="text-lg font-medium text-destructive">No Fee Structure Found</p>
-                        <p className="text-muted-foreground">Please set up a fee structure for Grade {selectedStudent.grade} for the {academicYear} academic year.</p>
-                        <Button variant="link" asChild><Link href="/finance/structures">Go to Fee Structures</Link></Button>
+                        <p className="text-lg font-medium text-destructive">لا توجد بيانات للفترة المختارة، ربما لم يقم الطالب بأي دفعات خلال هذه الفترة.</p>
+                        <p className="text-muted-foreground">يرجى اختيار فترة أخرى أو التأكد من وجود دفعات للطالب.</p>
                     </CardContent>
                 </Card>
             )}
@@ -400,10 +423,10 @@ export default function FeesPage() {
                 <div className="print-area">
                     <div className="hidden print:block mb-6 text-center">
                         <h1 className="text-xl font-bold">{schoolName}</h1>
-                        <h2 className="text-lg font-semibold">{selectedStudent.name} - Fee Statement</h2>
-                        <p>Academic Year: {academicYear}</p>
+                        <h2 className="text-lg font-semibold">{selectedStudent.name} - {t('finance.feeManagement.feeStatement')}</h2>
+                        <p>العام الأكاديمي: {academicYear}</p>
                          {dateRange?.from && <p className="text-muted-foreground">
-                            For period: {format(dateRange.from, "MMMM yyyy")} {dateRange.to && ` to ${format(dateRange.to, "MMMM yyyy")}`}
+                            للفترة: {format(dateRange.from, "MMMM yyyy")} {dateRange.to && ` إلى ${format(dateRange.to, "MMMM yyyy")}`}
                         </p>}
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -411,32 +434,32 @@ export default function FeesPage() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <DollarSign />
-                                    Fee Summary
+                                    {t('finance.feeManagement.feeSummary')}
                                 </CardTitle>
                                 <CardDescription>
-                                     Financial standing for the selected period.
+                                    {t('finance.feeManagement.financialStatusForPeriod')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                  <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Due (This Period)</span>
+                                    <span className="text-muted-foreground">{t('finance.feeManagement.dueThisPeriod')}</span>
                                     <span className="font-semibold">{formatCurrency(feeStatus.dueInPeriod)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Paid (This Period)</span>
+                                    <span className="text-muted-foreground">{t('finance.feeManagement.paidThisPeriod')}</span>
                                     <span className="font-semibold text-green-600">{formatCurrency(feeStatus.paidInPeriod)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Balance (This Period)</span>
+                                    <span className="text-muted-foreground">{t('finance.feeManagement.balanceThisPeriod')}</span>
                                     <span className={cn("font-semibold", feeStatus.balanceForPeriod < 0 ? 'text-red-600' : 'text-gray-600')}>{formatCurrency(feeStatus.balanceForPeriod)}</span>
                                 </div>
                                 <Separator />
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Carry-forward Balance</span>
+                                    <span className="text-muted-foreground">{t('finance.feeManagement.carryForwardBalance')}</span>
                                     <span className={cn("font-semibold", feeStatus.carryForwardBalance < 0 ? 'text-red-600' : 'text-gray-600')}>{formatCurrency(feeStatus.carryForwardBalance)}</span>
                                 </div>
                                 <div className="flex justify-between items-center rounded-lg border p-3 bg-muted/50">
-                                    <span className="font-bold flex items-center gap-2"><Scale /> Net Balance</span>
+                                    <span className="font-bold flex items-center gap-2"><Scale /> {t('finance.feeManagement.netBalance')}</span>
                                     <span className={cn("font-bold text-lg", feeStatus.netBalance < 0 ? 'text-red-600' : 'text-gray-600')}>{formatCurrency(feeStatus.netBalance)}</span>
                                 </div>
                             </CardContent>
@@ -445,36 +468,36 @@ export default function FeesPage() {
                                     <DialogTrigger asChild>
                                         <Button className="w-full btn-gradient btn-click-effect">
                                             <Receipt />
-                                            Record a Payment
+                                            {t('finance.feeManagement.addPayment')}
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent>
                                         <DialogHeader>
-                                            <DialogTitle>Record New Payment</DialogTitle>
+                                            <DialogTitle>{t('finance.feeManagement.addPayment')}</DialogTitle>
                                             <DialogDescription>
-                                                Enter payment details for {selectedStudent.name}.
+                                                أدخل تفاصيل الدفعة لـ {selectedStudent.name}.
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="grid gap-4 py-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="month">Payment for Month</Label>
+                                                <Label htmlFor="month">{t('finance.feeManagement.paymentMonth')}</Label>
                                                 <Select onValueChange={setPaymentMonth} value={paymentMonth}>
-                                                    <SelectTrigger id="month"><SelectValue placeholder="Select a month..." /></SelectTrigger>
+                                                    <SelectTrigger id="month"><SelectValue placeholder="اختر شهر..." /></SelectTrigger>
                                                     <SelectContent>{feeStatus.monthsInPeriod.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="amount">Amount</Label>
+                                                <Label htmlFor="amount">{t('finance.feeManagement.amount')}</Label>
                                                 <Input id="amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="method">Payment Method</Label>
-                                                <Select onValueChange={(v) => setPaymentMethod(v as any)} defaultValue={paymentMethod}>
+                                                <Label htmlFor="method">{t('finance.feeManagement.paymentMethod')}</Label>
+                                                <Select onValueChange={(v: string) => setPaymentMethod(v as "card" | "cash" | "bank-transfer")} defaultValue={paymentMethod}>
                                                     <SelectTrigger id="method"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="card">Credit/Debit Card</SelectItem>
-                                                        <SelectItem value="cash">Cash</SelectItem>
-                                                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                                                        <SelectItem value="card">{t('finance.feeManagement.creditCard')}</SelectItem>
+                                                        <SelectItem value="cash">{t('finance.feeManagement.cash')}</SelectItem>
+                                                        <SelectItem value="bank-transfer">{t('finance.feeManagement.bankTransfer')}</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -492,17 +515,17 @@ export default function FeesPage() {
 
                         <Card className="lg:col-span-2 print:border-none print:shadow-none">
                             <CardHeader>
-                                <CardTitle>Monthly Breakdown</CardTitle>
-                                <CardDescription>Detailed view of installments and payments for the selected period.</CardDescription>
+                                <CardTitle>{t('finance.feeManagement.monthlyBreakdown')}</CardTitle>
+                                <CardDescription>{t('finance.feeManagement.detailedInstallmentsView')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Month</TableHead>
-                                            <TableHead>Amount Due</TableHead>
-                                            <TableHead>Amount Paid</TableHead>
-                                            <TableHead className="text-right">Balance</TableHead>
+                                            <TableHead>{t('common.month')}</TableHead>
+                                            <TableHead>{t('finance.feeManagement.amountDue')}</TableHead>
+                                            <TableHead>{t('finance.feeManagement.amountPaid')}</TableHead>
+                                            <TableHead className="text-right">{t('finance.feeManagement.balance')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -522,15 +545,15 @@ export default function FeesPage() {
                                     </TableBody>
                                 </Table>
                                  <Separator className="my-4" />
-                                <h3 className="font-bold text-lg mt-4">Payment History in Period</h3>
+                                 <h3 className="font-bold text-lg mt-4">{t('finance.feeManagement.paymentHistoryInPeriod')}</h3>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Month Applied</TableHead>
-                                            <TableHead>Method</TableHead>
-                                            <TableHead>Amount</TableHead>
-                                            <TableHead className="text-right no-print">Actions</TableHead>
+                                            <TableHead>{t('common.date')}</TableHead>
+                                            <TableHead>{t('finance.feeManagement.monthApplied')}</TableHead>
+                                            <TableHead>{t('common.paymentMethod')}</TableHead>
+                                            <TableHead>{t('common.amount')}</TableHead>
+                                            <TableHead className="text-right no-print">{t('common.actions')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -571,7 +594,7 @@ export default function FeesPage() {
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={5} className="text-center h-24">No payments recorded for this period.</TableCell>
+                                                <TableCell colSpan={5} className="text-center h-24">{t('finance.feeManagement.noPaymentsForPeriod')}</TableCell>
                                             </TableRow>
                                         )}
                                     </TableBody>
@@ -585,45 +608,45 @@ export default function FeesPage() {
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Payment</DialogTitle>
+                        <DialogTitle>{t('finance.feeManagement.editPayment')}</DialogTitle>
                         <DialogDescription>
-                            Update the payment details for {selectedStudent?.name}.
+                            {t('finance.feeManagement.updatePaymentDetailsFor', { name: selectedStudent?.name })}
                         </DialogDescription>
                     </DialogHeader>
                     {paymentToEdit && (
                          <div className="grid gap-4 py-4">
                             <div className="space-y-2">
-                                <Label>Original Date: {format(new Date(paymentToEdit.date), "PPP")}</Label>
+                                <Label>{t('finance.feeManagement.originalDate')}: {format(new Date(paymentToEdit.date), "PPP")}</Label>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="edit-month">Payment for Month</Label>
+                                <Label htmlFor="edit-month">{t('finance.feeManagement.paymentForMonth')}</Label>
                                 <Select onValueChange={setPaymentMonth} value={paymentMonth}>
-                                    <SelectTrigger id="edit-month"><SelectValue placeholder="Select a month..." /></SelectTrigger>
+                                    <SelectTrigger id="edit-month"><SelectValue placeholder={t('header.selectAMonth')} /></SelectTrigger>
                                     <SelectContent>{feeStatus?.monthsInPeriod.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="edit-amount">Amount</Label>
+                                <Label htmlFor="edit-amount">{t('common.amount')}</Label>
                                 <Input id="edit-amount" type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="edit-method">Payment Method</Label>
-                                <Select onValueChange={(v) => setPaymentMethod(v as any)} value={paymentMethod}>
+                                <Label htmlFor="edit-method">{t('common.paymentMethod')}</Label>
+                                <Select onValueChange={(v: string) => setPaymentMethod(v as "card" | "cash" | "bank-transfer")} value={paymentMethod}>
                                     <SelectTrigger id="edit-method"><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="card">Credit/Debit Card</SelectItem>
-                                        <SelectItem value="cash">Cash</SelectItem>
-                                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                                        <SelectItem value="card">{t('common.creditCard')}</SelectItem>
+                                        <SelectItem value="cash">{t('common.cash')}</SelectItem>
+                                        <SelectItem value="bank-transfer">{t('common.bankTransfer')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
                     )}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="btn-glass btn-click-effect">Cancel</Button>
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="btn-glass btn-click-effect">{t('common.cancel')}</Button>
                         <Button onClick={handleEditPayment} disabled={isSubmitting} className="btn-gradient btn-click-effect">
                             {isSubmitting && <Loader2 className="animate-spin" />}
-                            Save Changes
+                            {t('common.saveChanges')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -632,6 +655,5 @@ export default function FeesPage() {
     )
 }
 
-    
 
-    
+

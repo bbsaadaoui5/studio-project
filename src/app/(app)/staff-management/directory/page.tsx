@@ -44,16 +44,20 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type Staff } from "@/lib/types";
 import { getStaffMembers } from "@/services/staffService";
+import { deleteStaffMember } from "@/services/deleteStaffService";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { debounce } from "@/lib/utils";
 
 export default function StaffDirectoryPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [staff, setStaff] = React.useState<Staff[]>([]);
+  const [roleFilter, setRoleFilter] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState(true);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -63,24 +67,30 @@ export default function StaffDirectoryPage() {
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
-   React.useEffect(() => {
-    const fetchStaff = async () => {
-      setIsLoading(true);
-      try {
-        const fetchedStaff = await getStaffMembers();
-        setStaff(fetchedStaff);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Could not fetch staff. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchStaff();
-  }, [toast]);
+  const fetchStaff = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedStaff = await getStaffMembers();
+      setStaff(fetchedStaff);
+    } catch (error) {
+      toast({
+        title: t("common.error"),
+        description: t("common.couldNotFetchStaff"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast, t]);
+
+  React.useEffect(() => {
+    void fetchStaff();
+  }, [fetchStaff]);
+
+  // تصفية حسب الدور باستخدام useMemo لتحسين الأداء
+  const filteredStaff = React.useMemo(() => {
+    return roleFilter ? staff.filter(s => s.role === roleFilter) : staff;
+  }, [staff, roleFilter]);
 
   const columns: ColumnDef<Staff>[] = [
     {
@@ -92,14 +102,14 @@ export default function StaffDirectoryPage() {
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
+          aria-label="تحديد الكل"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label="تحديد الصف"
         />
       ),
       enableSorting: false,
@@ -107,7 +117,7 @@ export default function StaffDirectoryPage() {
     },
     {
       accessorKey: "name",
-      header: "Name",
+      header: "الاسم",
       cell: ({ row }) => (
         <Button variant="link" asChild className="p-0">
           <Link href={`/staff-management/directory/${row.original.id}`} className="font-medium">
@@ -124,42 +134,48 @@ export default function StaffDirectoryPage() {
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Email
+            البريد الإلكتروني
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         );
       },
       cell: ({ row }) => {
         const email = row.getValue("email") as string | undefined;
-        return <div className="lowercase">{email ? email : 'N/A'}</div>;
+        return <div className="lowercase">{email ? email : 'غير متوفر'}</div>;
       },
     },
     {
       accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => <div className="capitalize">{row.getValue("role")}</div>,
+      header: "الدور",
+      cell: ({ row }) => {
+        const role = row.getValue("role");
+        if (role === "teacher") return "أستاذ أكاديمي";
+        if (role === "support") return "أستاذ دعم";
+        if (role === "admin") return "إداري";
+        return "-";
+      },
     },
     {
       accessorKey: "department",
-      header: "Department",
+      header: "القسم",
       cell: ({ row }) => <div>{row.getValue("department")}</div>,
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "الحالة",
       cell: ({ row }) => {
          const status = row.getValue("status") as string;
          const variant = status === "active" ? "default" : "destructive";
-         return <Badge variant={variant} className="capitalize">{status}</Badge>;
+         return <Badge variant={variant} className="capitalize">{status === 'active' ? 'نشط' : 'غير نشط'}</Badge>;
       },
     },
      {
       accessorKey: "hireDate",
-      header: "Hired On",
+      header: "تاريخ التوظيف",
       cell: ({ row }) => {
         const hireDate = row.getValue("hireDate") as string | undefined;
         return (
-            <div>{hireDate ? new Date(hireDate).toLocaleDateString() : 'N/A'}</div>
+            <div>{hireDate ? new Date(hireDate).toLocaleDateString() : 'غير متوفر'}</div>
         )
       },
     },
@@ -169,36 +185,54 @@ export default function StaffDirectoryPage() {
       cell: ({ row }) => {
         const staffMember = row.original;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(staffMember.id)}
-              >
-                Copy staff ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(`/staff-management/directory/${staffMember.id}`)}>
-                View profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(`/staff-management/directory/${staffMember.id}/edit`)}>
-                Edit record
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/staff-management/directory/${staffMember.id}`)}
+            >
+              عرض
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/staff-management/directory/${staffMember.id}/edit`)}
+            >
+              تعديل
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={async () => {
+                if (window.confirm("هل أنت متأكد أنك تريد حذف هذا الموظف/الأستاذ؟ لا يمكن التراجع عن هذا الإجراء.")) {
+                  try {
+                    await deleteStaffMember(staffMember.id);
+                    setStaff((prev) => prev.filter((s) => s.id !== staffMember.id));
+                    toast({
+                      title: "تم الحذف",
+                      description: "تم حذف الموظف/الأستاذ بنجاح.",
+                      variant: "default",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "خطأ",
+                      description: "حدث خطأ أثناء حذف الموظف/الأستاذ. حاول مرة أخرى.",
+                      variant: "destructive",
+                    });
+                  }
+                }
+              }}
+            >
+              حذف
+            </Button>
+          </div>
         );
       },
     },
   ];
 
   const table = useReactTable({
-    data: staff,
+    data: filteredStaff,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -233,132 +267,141 @@ export default function StaffDirectoryPage() {
   }
 
   return (
-     <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle>Staff Directory</CardTitle>
-                <CardDescription>Browse and manage staff records.</CardDescription>
-            </div>
-             <Button asChild className="btn-glass-primary btn-click-effect">
-                <Link href="/staff-management/directory/new">
-                    <PlusCircle />
-                    Add New Staff
-                </Link>
+   <Card>
+    <CardHeader className="flex flex-row items-center justify-between">
+      <div>
+        <CardTitle>دليل الموظفين والأساتذة</CardTitle>
+        <CardDescription>تصفح وإدارة جميع الموظفين والأساتذة (الأكاديميين والدعم)</CardDescription>
+      </div>
+       <Button asChild className="btn-glass-primary btn-click-effect">
+        <Link href="/staff-management/directory/new">
+          <PlusCircle />
+          إضافة موظف/أستاذ جديد
+        </Link>
+      </Button>
+    </CardHeader>
+    <CardContent>
+      <div className="w-full">
+        <div className="flex items-center py-4 gap-4">
+          <Input
+          placeholder="بحث..."
+          onChange={(event) => debouncedSetFilter(event.target.value)}
+          className="max-w-sm"
+          />
+          <select
+            className="border rounded px-2 py-1"
+            value={roleFilter}
+            onChange={e => setRoleFilter(e.target.value)}
+          >
+            <option value="">كل الأدوار</option>
+            <option value="teacher">أساتذة أكاديميون</option>
+            <option value="support">أساتذة دعم</option>
+            <option value="admin">إداريون</option>
+          </select>
+          <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto btn-glass btn-click-effect">
+            الأعمدة <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
-        </CardHeader>
-        <CardContent>
-            <div className="w-full">
-                <div className="flex items-center py-4">
-                    <Input
-                    placeholder="Filter by name..."
-                    onChange={(event) => debouncedSetFilter(event.target.value)}
-                    className="max-w-sm"
-                    />
-                    <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto btn-glass btn-click-effect">
-                        Columns <ChevronDown className="ml-2 h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table
-                        .getAllColumns()
-                        .filter((column) => column.getCanHide())
-                        .map((column) => {
-                            return (
-                            <DropdownMenuCheckboxItem
-                                key={column.id}
-                                className="capitalize"
-                                checked={column.getIsVisible()}
-                                onCheckedChange={(value) =>
-                                column.toggleVisibility(!!value)
-                                }
-                            >
-                                {column.id}
-                            </DropdownMenuCheckboxItem>
-                            );
-                        })}
-                    </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                <div className="rounded-md border">
-                    <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => {
-                            return (
-                                <TableHead key={header.id}>
-                                {header.isPlaceholder
-                                    ? null
-                                    : flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                    )}
-                                </TableHead>
-                            );
-                            })}
-                        </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                            <TableRow
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                            >
-                            {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id}>
-                                {flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext()
-                                )}
-                                </TableCell>
-                            ))}
-                            </TableRow>
-                        ))
-                        ) : (
-                        <TableRow>
-                            <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center"
-                            >
-                            No results.
-                            </TableCell>
-                        </TableRow>
-                        )}
-                    </TableBody>
-                    </Table>
-                </div>
-                <div className="flex items-center justify-end space-x-2 py-4">
-                    <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
-                    </div>
-                    <div className="space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                        className="btn-glass btn-click-effect"
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                        className="btn-glass btn-click-effect"
-                    >
-                        Next
-                    </Button>
-                    </div>
-                </div>
-            </div>
-        </CardContent>
-    </Card>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+            .getAllColumns()
+            .filter((column) => column.getCanHide())
+            .map((column) => {
+              return (
+              <DropdownMenuCheckboxItem
+                key={column.id}
+                className="capitalize"
+                checked={column.getIsVisible()}
+                onCheckedChange={(value) =>
+                column.toggleVisibility(!!value)
+                }
+              >
+                {column.id}
+              </DropdownMenuCheckboxItem>
+              );
+            })}
+          </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+              return (
+                <TableHead key={header.id}>
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </TableHead>
+              );
+              })}
+            </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+              key={row.id}
+              data-state={row.getIsSelected() && "selected"}
+              >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                {flexRender(
+                  cell.column.columnDef.cell,
+                  cell.getContext()
+                )}
+                </TableCell>
+              ))}
+              </TableRow>
+            ))
+            ) : (
+            <TableRow>
+              <TableCell
+              colSpan={columns.length}
+              className="h-24 text-center"
+              >
+              لا توجد نتائج
+              </TableCell>
+            </TableRow>
+            )}
+          </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} من {table.getFilteredRowModel().rows.length} صفوف محددة
+          </div>
+          <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="btn-glass btn-click-effect"
+          >
+            السابق
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="btn-glass btn-click-effect"
+          >
+            التالي
+          </Button>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
   );
 }

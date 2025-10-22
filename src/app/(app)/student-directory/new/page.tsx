@@ -34,7 +34,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addStudent } from "@/services/studentService";
 import { getCoursesByType } from "@/services/courseService";
+import { Course } from '@/lib/types';
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "@/i18n/translation-provider";
 
 const unifiedStudentSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
@@ -50,20 +52,21 @@ const unifiedStudentSchema = z.object({
   contact: z.string().min(10, "Please enter a valid contact number."),
   altContact: z.string().optional(),
   address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
+  dateOfBirth: z.string().min(10, "A date of birth is required."),
   medicalNotes: z.string().optional(),
 }).refine(data => data.programType === 'support' ? data.supportCourseId && data.teacher : data.grade && data.className, {
   message: "All required fields must be filled.",
 });
 
 export default function NewUnifiedStudentPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const form = useForm<z.infer<typeof unifiedStudentSchema>>({
     resolver: zodResolver(unifiedStudentSchema),
-    defaultValues: {
+  defaultValues: {
       name: "",
       email: "",
       gender: "male",
@@ -78,6 +81,7 @@ export default function NewUnifiedStudentPage() {
       altContact: "",
       address: "",
       medicalNotes: "",
+      dateOfBirth: "",
     },
   });
 
@@ -96,15 +100,15 @@ export default function NewUnifiedStudentPage() {
       return;
     }
 
-    const course = courses.find((c) => c.id === supportCourseId);
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
     if (course) {
-      const firstTeacher = (course as any).teachers?.[0];
+      const firstTeacher = course.teachers?.[0];
       if (firstTeacher) {
         form.setValue("teacher", firstTeacher.name);
         form.setValue("teacherId", firstTeacher.id || "");
       } else {
-        const teacherName = (course as any).teacher || "";
-        form.setValue("teacher", teacherName);
+        // No teachers array available, ensure we set empty defaults
+        form.setValue("teacher", "");
         form.setValue("teacherId", "");
       }
     } else {
@@ -116,11 +120,12 @@ export default function NewUnifiedStudentPage() {
   // Default teacher to first option when options exist but no teacher selected
   useEffect(() => {
     if (programType !== "support" || !supportCourseId) return;
-    const course: any = courses.find((c) => c.id === supportCourseId);
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
     if (!course) return;
-    const firstTeacher = course?.teachers?.[0]?.name || course?.teacher || '';
+    const firstTeacher = course?.teachers?.[0]?.name || '';
     if (firstTeacher && !form.getValues("teacher")) {
       form.setValue("teacher", firstTeacher);
+      form.setValue("teacherId", course.teachers?.[0]?.id || "");
     }
   }, [programType, supportCourseId, courses, form]);
 
@@ -130,8 +135,10 @@ export default function NewUnifiedStudentPage() {
       const newStudentData = {
         ...values,
         studentType: values.programType,
-        dateOfBirth: values.dateOfBirth.toISOString(),
+        dateOfBirth: values.dateOfBirth,
         teacherId: values.teacherId || "",
+        grade: values.grade || "",
+        className: values.className || "",
       };
       await addStudent(newStudentData);
       toast({
@@ -156,7 +163,7 @@ export default function NewUnifiedStudentPage() {
         <Button variant="outline" size="icon" asChild>
           <Link href="/student-directory">
             <ArrowLeft />
-            <span className="sr-only">Back to Directory</span>
+            <span className="sr-only">{t('common.backToDirectory') || 'Back to directory'}</span>
           </Link>
         </Button>
         <h1 className="text-2xl font-bold">Add New Student</h1>
@@ -290,10 +297,10 @@ export default function NewUnifiedStudentPage() {
                     control={form.control}
                     name="teacher"
                     render={({ field }) => {
-                      const selectedCourse = courses.find((c) => c.id === supportCourseId) as any;
+                      const selectedCourse: Course | undefined = courses.find((c) => c.id === supportCourseId);
                       const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
                         ? selectedCourse.teachers
-                        : (selectedCourse?.teacher ? [{ name: selectedCourse.teacher }] : []);
+                        : [];
                       const hasTeachers = teacherOptions.length > 0;
                       return (
                         <FormItem>
@@ -332,7 +339,14 @@ export default function NewUnifiedStudentPage() {
                   <FormItem className="md:col-span-2">
                     <FormLabel>Date of Birth</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input
+                        type="date"
+                        value={field.value ? new Date(field.value).toISOString().slice(0,10) : ''}
+                        onChange={(e) => {
+                          const iso = e.target.value ? new Date(e.target.value).toISOString() : '';
+                          field.onChange(iso);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -406,7 +420,7 @@ export default function NewUnifiedStudentPage() {
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="animate-spin" />}
-                  {isLoading ? "Enrolling..." : "Enroll Student"}
+                  {isLoading ? t('common.enrolling') : "Enroll Student"}
                 </Button>
               </div>
             </form>

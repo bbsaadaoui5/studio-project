@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Loader2, Save } from "lucide-react";
 
 type GradeRange = {
@@ -25,6 +26,7 @@ const initialGradingScale: GradeRange[] = [
 
 export function AttendanceExamSettings() {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [gradingScale, setGradingScale] = useState<GradeRange[]>(initialGradingScale);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -43,8 +45,8 @@ export function AttendanceExamSettings() {
         console.log("Saving grading scale:", gradingScale);
         setTimeout(() => {
             toast({
-                title: "Settings Saved",
-                description: "Grading scale has been updated.",
+                title: t('settings.attendanceExams.settingsSaved'),
+                description: t('settings.attendanceExams.gradingScaleUpdated'),
             });
             setIsSaving(false);
         }, 1000);
@@ -53,15 +55,15 @@ export function AttendanceExamSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Attendance & Exam Settings</CardTitle>
-        <CardDescription>
-          Configure grading systems, exam rules, and attendance policies.
+        <CardTitle className="text-right">{t('settings.attendanceExams.title')}</CardTitle>
+        <CardDescription className="text-right">
+          {t('settings.attendanceExams.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
         <div>
-            <h3 className="text-lg font-medium">Grading Scale (20-Point System)</h3>
-            <p className="text-sm text-muted-foreground">Define the score ranges for each mention.</p>
+                        <h3 className="text-lg font-semibold mb-4 text-right">{t('settings.attendanceExams.gradingScale')}</h3>
+            <p className="text-sm text-muted-foreground text-right">{t('settings.attendanceExams.defineScoreRanges')}</p>
             <div className="mt-4 space-y-4">
                 {gradingScale.map((grade, index) => (
                     <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
@@ -90,9 +92,9 @@ export function AttendanceExamSettings() {
         </div>
 
         <div className="flex justify-end">
-            <Button onClick={handleSaveChanges} disabled={isSaving}>
+            <Button onClick={handleSaveChanges} disabled={isSaving} className="text-right">
                 {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isSaving ? t('common.saving') : t('settings.attendanceExams.saveChanges')}
             </Button>
         </div>
       </CardContent>

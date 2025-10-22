@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getStaffMembers } from "@/services/staffService";
 import { getReviewsForStaff, addStaffReview } from "@/services/reviewService";
 import type { Staff, StaffReview } from "@/lib/types";
@@ -49,13 +50,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 const reviewSchema = z.object({
-  reviewerName: z.string().min(3, "Reviewer name is required."),
-  summary: z.string().min(10, "Summary must be at least 10 characters."),
+  reviewerName: z.string().min(3, "اسم المراجع مطلوب."),
+  summary: z.string().min(10, "يجب أن يكون الملخص 10 أحرف على الأقل."),
   rating: z.coerce.number().min(1).max(5),
 });
 
-export default function ReviewsPage() {
+export default function StaffReviewsPage() {
+  // ...existing code...
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [reviews, setReviews] = useState<StaffReview[]>([]);
@@ -72,44 +75,46 @@ export default function ReviewsPage() {
     },
   });
 
-  useEffect(() => {
-    const fetchStaff = async () => {
-      try {
-        const fetchedStaff = await getStaffMembers();
-        setStaffList(fetchedStaff.filter((s) => s.status === "active"));
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Could not fetch staff list.",
-          variant: "destructive",
-        });
-      }
-    };
-    fetchStaff();
-  }, [toast]);
+  const fetchStaff = useCallback(async () => {
+    try {
+      const fetchedStaff = await getStaffMembers();
+      setStaffList(fetchedStaff.filter((s) => s.status === "active"));
+    } catch (error) {
+      toast({
+        title: t('staff.reviews.error'),
+        description: t('staff.reviews.couldNotFetchStaff'),
+        variant: "destructive",
+      });
+    }
+  }, [toast, t]);
 
   useEffect(() => {
-    if (!selectedStaff) {
+    void fetchStaff();
+  }, [fetchStaff]);
+
+  const fetchReviews = useCallback(async (staffId?: string) => {
+    if (!staffId) {
       setReviews([]);
       return;
     }
-    const fetchReviews = async () => {
-      setIsLoading(true);
-      try {
-        const fetchedReviews = await getReviewsForStaff(selectedStaff.id);
-        setReviews(fetchedReviews);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Could not fetch reviews for this staff member.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchReviews();
-  }, [selectedStaff, toast]);
+    setIsLoading(true);
+    try {
+      const fetchedReviews = await getReviewsForStaff(staffId);
+      setReviews(fetchedReviews);
+    } catch (error) {
+      toast({
+        title: t('staff.reviews.error'),
+        description: t('staff.reviews.couldNotFetchReviews'),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast, t]);
+
+  useEffect(() => {
+    void fetchReviews(selectedStaff?.id);
+  }, [selectedStaff, fetchReviews]);
   
   async function onSubmit(values: z.infer<typeof reviewSchema>) {
     if (!selectedStaff) return;
@@ -121,13 +126,13 @@ export default function ReviewsPage() {
             staffName: selectedStaff.name,
             reviewDate: new Date().toISOString()
         });
-        toast({ title: "Review Added", description: "The performance review has been saved." });
+        toast({ title: t('staff.reviews.reviewAdded'), description: t('staff.reviews.reviewSaved') });
         const fetchedReviews = await getReviewsForStaff(selectedStaff.id);
         setReviews(fetchedReviews);
         form.reset({ reviewerName: "", summary: "", rating: 3 });
         setIsDialogOpen(false);
     } catch (error) {
-        toast({ title: "Error", description: "Failed to save the review.", variant: "destructive" });
+        toast({ title: t('staff.reviews.error'), description: t('staff.reviews.failedToSaveReview'), variant: "destructive" });
     } finally {
         setIsSubmitting(false);
     }
@@ -153,15 +158,15 @@ export default function ReviewsPage() {
       <div className="md:col-span-1">
         <Card>
           <CardHeader>
-            <CardTitle>Select Staff Member</CardTitle>
+            <CardTitle>اختر الموظف</CardTitle>
             <CardDescription>
-              Choose a staff member to view or add a performance review.
+              اختر الموظف الذي ترغب في عرض تقييماته أو إضافة تقييم جديد له
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Select onValueChange={handleSelectStaff} value={selectedStaff?.id || ''}>
               <SelectTrigger>
-                <SelectValue placeholder="Select staff..." />
+                <SelectValue placeholder="اختر موظف..." />
               </SelectTrigger>
               <SelectContent>
                 {staffList.map((staff) => (
@@ -179,23 +184,23 @@ export default function ReviewsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Performance Reviews</CardTitle>
+              <CardTitle>تقييمات الأداء</CardTitle>
               <CardDescription>
-                {selectedStaff ? `Showing reviews for ${selectedStaff.name}` : "Select a staff member to see their reviews."}
+                {selectedStaff ? `عرض التقييمات لـ ${selectedStaff.name}` : "يرجى اختيار موظف أولاً"}
               </CardDescription>
             </div>
              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                     <Button disabled={!selectedStaff}>
                         <PlusCircle />
-                        Add Review
+                        إضافة تقييم
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Add New Review for {selectedStaff?.name}</DialogTitle>
-                        <DialogDescription>
-                            Fill out the performance review details below.
+            <DialogTitle>إضافة تقييم جديد لـ {selectedStaff?.name}</DialogTitle>
+            <DialogDescription>
+              يرجى تعبئة تفاصيل التقييم أدناه
                         </DialogDescription>
                     </DialogHeader>
                     <Form {...form}>
@@ -205,8 +210,8 @@ export default function ReviewsPage() {
                                 name="reviewerName"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Your Name (Reviewer)</FormLabel>
-                                    <FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl>
+                                    <FormLabel>اسم المراجع</FormLabel>
+                                    <FormControl><Input placeholder="اسم المراجع" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -216,13 +221,13 @@ export default function ReviewsPage() {
                                 name="rating"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Overall Rating</FormLabel>
+                                    <FormLabel>التقييم العام</FormLabel>
                                     <Select onValueChange={(val) => field.onChange(parseInt(val))} value={String(field.value)}>
                                         <FormControl>
                                             <SelectTrigger><SelectValue/></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {[...Array(5)].map((_, i) => <SelectItem key={i+1} value={String(i+1)}>{i+1} Star(s)</SelectItem>)}
+                                            {[...Array(5)].map((_, i) => <SelectItem key={i+1} value={String(i+1)}>{i+1} نجوم</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -234,10 +239,10 @@ export default function ReviewsPage() {
                                 name="summary"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Review Summary</FormLabel>
-                                    <FormControl>
-                                        <Textarea rows={5} placeholder="Provide constructive feedback..." {...field} />
-                                    </FormControl>
+                  <FormLabel>ملخص التقييم</FormLabel>
+                  <FormControl>
+                    <Textarea rows={5} placeholder="اكتب ملخص التقييم هنا..." {...field} />
+                  </FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -245,7 +250,7 @@ export default function ReviewsPage() {
                             <DialogFooter className="pt-4">
                                 <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="animate-spin" />}
-                                    Submit Review
+                                    {isSubmitting ? "جاري الإرسال..." : "إرسال التقييم"}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -275,7 +280,7 @@ export default function ReviewsPage() {
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <p>
-                  {selectedStaff ? "No reviews found for this staff member." : "Please select a staff member to begin."}
+                  {selectedStaff ? "لا توجد تقييمات لهذا الموظف" : "اختر موظفًا للبدء"}
                 </p>
               </div>
             )}

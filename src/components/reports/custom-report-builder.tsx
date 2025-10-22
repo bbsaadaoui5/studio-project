@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ interface ReportConfig {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export function CustomReportBuilder() {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<ReportConfig>({
     name: "",
     description: "",
@@ -75,19 +77,20 @@ export function CustomReportBuilder() {
     sortOrder: 'desc'
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [reportData, setReportData] = useState<any[]>([]);
+  const [reportData, setReportData] = useState<Array<Record<string, unknown>>>([]);
   const [showPreview, setShowPreview] = useState(false);
 
-  const availableFields = [
-    { id: 'student_name', name: 'Student Name', type: 'text' },
-    { id: 'grade', name: 'Grade', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
-    { id: 'class_name', name: 'Class Name', type: 'select', options: ['A', 'B', 'C', 'D'] },
-    { id: 'average_grade', name: 'Average Grade', type: 'number' },
-    { id: 'attendance_rate', name: 'Attendance Rate', type: 'number' },
-    { id: 'enrollment_date', name: 'Enrollment Date', type: 'date' },
-    { id: 'teacher_name', name: 'Teacher Name', type: 'text' },
-    { id: 'course_name', name: 'Course Name', type: 'text' },
-    { id: 'pass_rate', name: 'Pass Rate', type: 'number' }
+  type AvailableField = { id: string; name: string; type: ReportField['type']; options?: string[] };
+  const availableFields: AvailableField[] = [
+    { id: 'student_name', name: 'اسم الطالب', type: 'text' },
+    { id: 'grade', name: 'المستوى', type: 'select', options: ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة', 'الحادية عشر', 'الثانية عشر'] },
+    { id: 'class_name', name: 'القسم', type: 'select', options: ['أ', 'ب', 'ج', 'د'] },
+    { id: 'average_grade', name: 'متوسط المعدل', type: 'number' },
+    { id: 'attendance_rate', name: 'نسبة الحضور', type: 'number' },
+    { id: 'enrollment_date', name: 'تاريخ التسجيل', type: 'date' },
+    { id: 'teacher_name', name: 'اسم المعلم', type: 'text' },
+    { id: 'course_name', name: 'اسم المادة', type: 'text' },
+    { id: 'pass_rate', name: 'نسبة النجاح', type: 'number' }
   ];
 
   const addField = () => {
@@ -158,12 +161,12 @@ export function CustomReportBuilder() {
     }
   };
 
-  const generateMockData = () => {
-    const data = [];
+  const generateMockData = (): Array<Record<string, unknown>> => {
+    const data: Array<Record<string, unknown>> = [];
     const count = Math.floor(Math.random() * 50) + 20; // 20-70 records
     
     for (let i = 0; i < count; i++) {
-      const record: any = {};
+      const record: Record<string, unknown> = {};
       
       config.fields.forEach(field => {
         switch (field.id) {
@@ -209,8 +212,8 @@ export function CustomReportBuilder() {
     if (reportData.length === 0) return null;
 
     const chartData = reportData.slice(0, 10); // Limit to 10 items for readability
-    const dataKey = config.fields[0]?.name || 'value';
-    const nameKey = config.fields[1]?.name || 'name';
+  const dataKey = config.fields[0]?.name || 'value';
+  const nameKey = config.fields[1]?.name || 'name';
 
     switch (config.chartType) {
       case 'bar':
@@ -246,7 +249,7 @@ export function CustomReportBuilder() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ [nameKey]: name, [dataKey]: value }) => `${name}: ${value}`}
+                label={(entry: Record<string, unknown>) => `${String(entry[nameKey])}: ${String(entry[dataKey])}`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey={dataKey}
@@ -262,7 +265,7 @@ export function CustomReportBuilder() {
       default:
         return (
           <div className="space-y-2">
-            {reportData.slice(0, 20).map((row, index) => (
+            {reportData.slice(0, 20).map((row: Record<string, unknown>, index) => (
               <div key={index} className="flex justify-between items-center p-2 border rounded">
                 {Object.entries(row).map(([key, value]) => (
                   <span key={key} className="text-sm">{String(value)}</span>
@@ -280,62 +283,64 @@ export function CustomReportBuilder() {
         {/* Report Configuration */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-right">
               <Settings className="h-5 w-5" />
-              Report Configuration
+              {t('reports.reportConfiguration')}
             </CardTitle>
-            <CardDescription>Configure your custom report parameters</CardDescription>
+            <CardDescription className="text-right">{t('reports.configureParameters')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="report-name">Report Name</Label>
+              <Label htmlFor="report-name" className="text-right">{t('reports.reportName')}</Label>
               <Input
                 id="report-name"
                 value={config.name}
                 onChange={(e) => setConfig(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter report name"
+                placeholder={t('reports.enterReportName')}
+                className="text-right"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="report-description">Description</Label>
+              <Label htmlFor="report-description" className="text-right">{t('reports.reportDescription')}</Label>
               <Textarea
                 id="report-description"
                 value={config.description}
                 onChange={(e) => setConfig(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter report description"
+                placeholder={t('reports.enterReportDescription')}
+                className="text-right"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Chart Type</Label>
-              <Select value={config.chartType} onValueChange={(value: any) => setConfig(prev => ({ ...prev, chartType: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
+              <Label className="text-right">{t('reports.chartType')}</Label>
+              <Select value={config.chartType} onValueChange={(value: ReportConfig['chartType']) => setConfig(prev => ({ ...prev, chartType: value }))}>
+                <SelectTrigger className="text-right">
+                  <SelectValue placeholder={t('reports.selectChartType')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bar">
                     <div className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4" />
-                      Bar Chart
+                      {t('reports.barChart')}
                     </div>
                   </SelectItem>
                   <SelectItem value="line">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" />
-                      Line Chart
+                      {t('reports.lineChart')}
                     </div>
                   </SelectItem>
                   <SelectItem value="pie">
                     <div className="flex items-center gap-2">
                       <PieChartIcon className="h-4 w-4" />
-                      Pie Chart
+                      {t('reports.pieChart')}
                     </div>
                   </SelectItem>
                   <SelectItem value="table">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Table
+                      {t('reports.table')}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -343,11 +348,12 @@ export function CustomReportBuilder() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Fields to Include</Label>
-                <Button onClick={addField} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Field
+                <div className="flex items-center justify-between">
+                <Label className="text-right">{t('reports.fieldsToInclude')}</Label>
+                <Button onClick={addField} size="sm" className="text-right" aria-label={t('reports.addField') || 'Add field'}>
+                  <Plus className="h-4 w-4 ml-1" />
+                  <span className="sr-only">{t('reports.addField') || 'Add field'}</span>
+                  {t('reports.addField')}
                 </Button>
               </div>
               <div className="space-y-2">
@@ -358,17 +364,17 @@ export function CustomReportBuilder() {
                       onValueChange={(value) => {
                         const selectedField = availableFields.find(f => f.id === value);
                         if (selectedField) {
-                          updateField(field.id, {
-                            id: selectedField.id,
-                            name: selectedField.name,
-                            type: selectedField.type as any,
-                            options: selectedField.options
-                          });
+                                updateField(field.id, {
+                                  id: selectedField.id,
+                                  name: selectedField.name,
+                                  type: selectedField.type,
+                                  options: selectedField.options
+                                });
                         }
                       }}
                     >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select field" />
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="اختر الحقل" />
                       </SelectTrigger>
                       <SelectContent>
                         {availableFields.map((f) => (
@@ -382,8 +388,10 @@ export function CustomReportBuilder() {
                       onClick={() => removeField(field.id)}
                       variant="outline"
                       size="sm"
+                      aria-label={t('reports.removeField') || 'Remove field'}
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">{t('reports.removeField') || 'Remove field'}</span>
                     </Button>
                   </div>
                 ))}
@@ -392,10 +400,10 @@ export function CustomReportBuilder() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Filters</Label>
+                <Label>الفلاتر</Label>
                 <Button onClick={addFilter} size="sm">
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Filter
+                  إضافة فلتر
                 </Button>
               </div>
               <div className="space-y-2">
@@ -405,8 +413,8 @@ export function CustomReportBuilder() {
                       value={filter.field}
                       onValueChange={(value) => updateFilter(filter.id, { field: value })}
                     >
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Field" />
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="الحقل" />
                       </SelectTrigger>
                       <SelectContent>
                         {availableFields.map((f) => (
@@ -418,23 +426,23 @@ export function CustomReportBuilder() {
                     </Select>
                     <Select
                       value={filter.operator}
-                      onValueChange={(value: any) => updateFilter(filter.id, { operator: value })}
+                      onValueChange={(value: ReportFilter['operator']) => updateFilter(filter.id, { operator: value })}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="equals">Equals</SelectItem>
-                        <SelectItem value="contains">Contains</SelectItem>
-                        <SelectItem value="greater_than">Greater Than</SelectItem>
-                        <SelectItem value="less_than">Less Than</SelectItem>
-                        <SelectItem value="between">Between</SelectItem>
+                        <SelectItem value="equals">يساوي</SelectItem>
+                        <SelectItem value="contains">يحتوي</SelectItem>
+                        <SelectItem value="greater_than">أكبر من</SelectItem>
+                        <SelectItem value="less_than">أقل من</SelectItem>
+                        <SelectItem value="between">بين</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
                       value={filter.value}
                       onChange={(e) => updateFilter(filter.id, { value: e.target.value })}
-                      placeholder="Value"
+                      placeholder="القيمة"
                       className="flex-1"
                     />
                     <Button
@@ -454,19 +462,19 @@ export function CustomReportBuilder() {
                 {isGenerating ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Generating...
+                    جاري الإنشاء...
                   </>
                 ) : (
                   <>
                     <Eye className="h-4 w-4 mr-2" />
-                    Generate Report
+                    إنشاء التقرير
                   </>
                 )}
               </Button>
               {showPreview && (
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  Export
+                  تصدير
                 </Button>
               )}
             </div>
@@ -478,16 +486,16 @@ export function CustomReportBuilder() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Report Preview
+              معاينة التقرير
             </CardTitle>
-            <CardDescription>Preview of your custom report</CardDescription>
+            <CardDescription>معاينة التقرير المخصص</CardDescription>
           </CardHeader>
           <CardContent>
             {showPreview && reportData.length > 0 ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">{config.name}</h3>
-                  <Badge variant="outline">{reportData.length} records</Badge>
+                  <Badge variant="outline">{reportData.length} سجل</Badge>
                 </div>
                 {config.description && (
                   <p className="text-sm text-muted-foreground">{config.description}</p>
@@ -499,7 +507,7 @@ export function CustomReportBuilder() {
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                 <FileText className="h-12 w-12 mb-4" />
-                <p>Generate a report to see the preview</p>
+                <p>أنشئ تقريرًا لمشاهدة المعاينة</p>
               </div>
             )}
           </CardContent>

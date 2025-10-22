@@ -11,58 +11,46 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wand2, Save, ClipboardCopy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { addAnnouncement } from '@/services/announcementService';
+import { useTranslation } from "@/i18n/translation-provider";
 
 export default function AnnouncementsPage() {
   const [topic, setTopic] = useState('');
-  const [generatedAnnouncement, setGeneratedAnnouncement] = useState<GenerateAnnouncementOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [content, setContent] = useState('');
+  const [audience, setAudience] = useState<'teachers' | 'parents' | 'both'>('both');
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const [generatedAnnouncement, setGeneratedAnnouncement] = useState<GenerateAnnouncementOutput | null>(null);
 
-  const handleGenerate = async () => {
-    if (!topic) {
+  // حذف التوليد بالذكاء الاصطناعي
+
+  const handleSave = async () => {
+    if (!topic || !content) {
       toast({
-        title: 'Error',
-        description: 'Please enter a topic for the announcement.',
+        title: 'خطأ',
+        description: 'يرجى إدخال عنوان ونص الإعلان',
         variant: 'destructive',
       });
       return;
     }
-    setIsLoading(true);
-    setGeneratedAnnouncement(null);
+    setIsSaving(true);
     try {
-      const result = { announcement: "Mock announcement" };
-      setGeneratedAnnouncement(result);
-    } catch (error) {
-      console.error(error);
+      await addAnnouncement({ title: topic, content, audience });
       toast({
-        title: 'Error Generating Announcement',
-        description: 'An unexpected error occurred. Please try again.',
+        title: 'تم الحفظ',
+        description: 'تم حفظ الإعلان بنجاح.'
+      });
+      setTopic('');
+      setContent('');
+      setAudience('both');
+    } catch (error) {
+      toast({
+        title: 'خطأ',
+        description: 'حدث خطأ أثناء الحفظ.',
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!generatedAnnouncement) return;
-
-    setIsSaving(true);
-    try {
-        await addAnnouncement(generatedAnnouncement);
-        toast({
-            title: "Announcement Saved",
-            description: "The announcement has been successfully saved and published."
-        });
-    } catch (error) {
-         toast({
-            title: 'Error Saving Announcement',
-            description: 'Could not save the announcement. Please try again.',
-            variant: 'destructive',
-      });
-    } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   }
 
@@ -71,88 +59,59 @@ export default function AnnouncementsPage() {
     const textToCopy = `Title: ${generatedAnnouncement.title}\n\nContent: ${generatedAnnouncement.content}`;
     navigator.clipboard.writeText(textToCopy);
     toast({
-        title: "Copied!",
-        description: "The announcement has been copied to your clipboard.",
+        title: t("communication.copySuccess"),
+        description: t("communication.copySuccessDesc"),
     });
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="glass-card p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2" style={{
-            background: 'var(--primary-gradient)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>Generate Announcement</h2>
-          <p className="text-sm text-muted-foreground">
-            Enter a topic, and the AI will generate a professional announcement for you.
-          </p>
-        </div>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="topic">Topic</Label>
-              <Textarea
-                className="glass-input"
-                id="topic"
-                placeholder="e.g., Upcoming parent-teacher conference"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-              />
-            </div>
+    <div className="max-w-2xl mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>إضافة إعلان جديد</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="topic">عنوان الإعلان</Label>
+            <Input
+              className="glass-input"
+              id="topic"
+              placeholder="اكتب عنوان الإعلان هنا..."
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+            />
           </div>
-        <div className="pt-4">
-          <Button onClick={handleGenerate} disabled={isLoading} className="btn-glass-primary btn-click-effect">
-            {isLoading ? <Loader2 className="animate-spin" /> : <Wand2 />}
-            {isLoading ? 'Generating...' : 'Generate'}
+          <div className="space-y-2">
+            <Label htmlFor="content">نص الإعلان</Label>
+            <Textarea
+              className="glass-input"
+              id="content"
+              placeholder="اكتب نص الإعلان هنا..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={8}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="audience">الفئة المستهدفة</Label>
+            <select
+              id="audience"
+              className="glass-input w-full rounded-md border px-3 py-2"
+              value={audience}
+              onChange={e => setAudience(e.target.value as 'teachers' | 'parents' | 'both')}
+            >
+              <option value="both">الجميع (المعلمين وأولياء الأمور)</option>
+              <option value="teachers">المعلمين فقط</option>
+              <option value="parents">أولياء الأمور فقط</option>
+            </select>
+          </div>
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button onClick={handleSave} disabled={isSaving} className="btn-gradient btn-click-effect">
+            {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
+            {isSaving ? 'جاري الحفظ...' : 'حفظ الإعلان'}
           </Button>
-        </div>
-      </div>
-      
-      <Card className={!generatedAnnouncement && !isLoading ? "flex items-center justify-center" : ""}>
-        {isLoading && (
-           <div className="flex flex-col items-center justify-center h-full gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Generating your announcement...</p>
-          </div>
-        )}
-        {!isLoading && !generatedAnnouncement && (
-          <div className="text-center p-6">
-             <Wand2 className="mx-auto h-12 w-12 text-muted-foreground" />
-             <h3 className="mt-4 text-lg font-medium">Your generated announcement will appear here.</h3>
-             <p className="mt-1 text-sm text-muted-foreground">
-                Enter a topic on the left and click "Generate".
-             </p>
-          </div>
-        )}
-        {generatedAnnouncement && (
-          <>
-            <CardHeader>
-              <CardTitle>Generated Announcement</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-1.5">
-                    <Label htmlFor="generated-title">Title</Label>
-                    <Input className="glass-input" id="generated-title" value={generatedAnnouncement.title} readOnly />
-                </div>
-                 <div className="space-y-1.5">
-                    <Label htmlFor="generated-content">Content</Label>
-                    <Textarea className="glass-input" id="generated-content" value={generatedAnnouncement.content} readOnly rows={8} />
-                </div>
-            </CardContent>
-            <CardFooter className="justify-end gap-2">
-                <Button variant="outline" onClick={handleCopy} className="btn-glass btn-click-effect">
-                    <ClipboardCopy />
-                    Copy to Clipboard
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving} className="btn-gradient btn-click-effect">
-                    {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-                    {isSaving ? "Saving..." : "Save & Publish"}
-                </Button>
-            </CardFooter>
-          </>
-        )}
+        </CardFooter>
       </Card>
     </div>
   );

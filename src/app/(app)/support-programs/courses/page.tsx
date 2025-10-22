@@ -17,8 +17,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/i18n/translation-provider";
 
 export default function SupportCoursesPage() {
+  const { t } = useTranslation();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -45,15 +47,15 @@ export default function SupportCoursesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-2xl font-bold">Support Program Courses</h1>
-            <p className="text-muted-foreground">Manage all non-academic, support, and extracurricular courses.</p>
+            <h1 className="text-2xl font-bold">مقررات الدعم</h1>
+            <p className="text-muted-foreground">إدارة مقررات الدعم</p>
         </div>
-        <Button asChild className="btn-glass-primary btn-click-effect">
-            <Link href="/support-programs/courses/new">
-                <PlusCircle />
-                <span>Add New Support Course</span>
-            </Link>
-        </Button>
+    <Button asChild className="btn-glass-primary btn-click-effect">
+      <Link href="/support-programs/courses/new">
+        <PlusCircle />
+        <span>إضافة مقرر دعم جديد</span>
+      </Link>
+    </Button>
       </div>
 
       {isLoading ? (
@@ -63,10 +65,10 @@ export default function SupportCoursesPage() {
       ) : courses.length === 0 ? (
          <Card>
             <CardContent className="py-12 text-center">
-                <h3 className="text-lg font-medium">No support courses found.</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                    Get started by adding a new course for your support programs.
-                </p>
+        <h3 className="text-lg font-medium">لا توجد مقررات دعم متاحة</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          ابدأ بإضافة مقرر دعم جديد من خلال الزر أعلاه.
+        </p>
             </CardContent>
         </Card>
       ) : (
@@ -77,7 +79,7 @@ export default function SupportCoursesPage() {
                     <div className="flex items-start justify-between">
                     <div>
                         <CardTitle className="text-xl">{course.name}</CardTitle>
-                        <CardDescription>{course.teacher}</CardDescription>
+                        <CardDescription>{course.teachers && course.teachers.length > 0 ? course.teachers[0].name : ''}</CardDescription>
                     </div>
                     <Badge variant="secondary" className="capitalize">
                         {course.department}
@@ -91,7 +93,7 @@ export default function SupportCoursesPage() {
                 </CardContent>
                 <CardFooter className="flex justify-end p-4 pt-0">
                     <Button variant="outline" asChild className="btn-glass btn-click-effect">
-                    <Link href={`/support-programs/courses/${course.id}`}>View Details</Link>
+                    <Link href={`/support-programs/courses/${course.id}`}>{t('common.viewDetails')}</Link>
                     </Button>
                 </CardFooter>
                 </Card>

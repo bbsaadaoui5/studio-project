@@ -96,6 +96,11 @@ export default function NewCoursePage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
+      <div className="mb-4">
+        <Button variant="outline" onClick={() => window.history.back()}>
+          العودة
+        </Button>
+      </div>
       <div className="glass-card p-6">
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2" style={{
@@ -103,9 +108,9 @@ export default function NewCoursePage() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
-          }}>Add New Course</h2>
+          }}>إضافة مقرر جديد</h2>
           <p className="text-sm text-muted-foreground">
-            Fill out the form to create a new course.
+            يرجى تعبئة النموذج لإضافة مقرر جديد.
           </p>
         </div>
           <Form {...form}>
@@ -115,9 +120,9 @@ export default function NewCoursePage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Course Name</FormLabel>
+                    <FormLabel>اسم المقرر</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Mathematics" {...field} />
+                      <Input className="glass-input" placeholder="مثال: الرياضيات" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -128,9 +133,9 @@ export default function NewCoursePage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>الوصف</FormLabel>
                     <FormControl>
-                      <Textarea className="glass-input" placeholder="Course description..." {...field} />
+                      <Textarea className="glass-input" placeholder="وصف المقرر..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -141,9 +146,9 @@ export default function NewCoursePage() {
                 name="credits"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Credits</FormLabel>
+                    <FormLabel>عدد الساعات</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" type="number" min={1} {...field} />
+                      <Input className="glass-input" type="number" min={1} placeholder="مثال: 3" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -154,9 +159,9 @@ export default function NewCoursePage() {
                 name="department"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Department</FormLabel>
+                    <FormLabel>القسم الأكاديمي</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Science" {...field} />
+                      <Input className="glass-input" placeholder="مثال: العلوم" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,9 +172,9 @@ export default function NewCoursePage() {
                 name="grade"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Grade</FormLabel>
+                    <FormLabel>المستوى الدراسي</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., 5" {...field} />
+                      <Input className="glass-input" placeholder="مثال: 5" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -180,7 +185,7 @@ export default function NewCoursePage() {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>نوع المقرر</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -188,8 +193,8 @@ export default function NewCoursePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="academic">Academic</SelectItem>
-                        <SelectItem value="support">Support</SelectItem>
+                        <SelectItem value="academic">أكاديمي</SelectItem>
+                        <SelectItem value="support">دعم</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -201,7 +206,7 @@ export default function NewCoursePage() {
                 name="teachers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teachers</FormLabel>
+                    <FormLabel>المعلمين</FormLabel>
                     <FormControl>
                       <div className="flex flex-col gap-2 max-h-48 overflow-y-auto border rounded p-2">
                         {staff.map((teacher) => (
@@ -228,7 +233,7 @@ export default function NewCoursePage() {
                 )}
               />
               <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
-                {isLoading ? "Creating..." : "Create Course"}
+                {isLoading ? "جاري الإنشاء..." : "إنشاء المقرر"}
               </Button>
             </form>
           </Form>

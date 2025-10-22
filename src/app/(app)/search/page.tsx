@@ -2,19 +2,22 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Briefcase, BookOpen, Search } from "lucide-react";
 import { getActiveStudents } from "@/services/studentService";
 import { getStaffMembers } from "@/services/staffService";
 import { getCourses } from "@/services/courseService";
+import { Student, Staff, Course } from '@/lib/types';
 import Link from "next/link";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const [results, setResults] = useState({ students: [], staff: [], courses: [] });
+  const query = searchParams?.get('q') || '';
+  const [results, setResults] = useState<{ students: Student[]; staff: Staff[]; courses: Course[] }>({ students: [], staff: [], courses: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const performSearch = async () => {
@@ -91,21 +94,21 @@ export default function SearchPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Search className="h-5 w-5" />
-        <h1 className="text-2xl font-bold">Search Results</h1>
-        {query && <Badge variant="outline">for "{query}"</Badge>}
+        <h1 className="text-2xl font-bold">{t('search.title')}</h1>
+        {query && <Badge variant="outline">{t('search.for')} "{query}"</Badge>}
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8">Searching...</div>
+        <div className="text-center py-8">{t('search.searching')}</div>
       ) : (
         <>
           {!query.trim() ? (
             <div className="text-center py-8 text-muted-foreground">
-              Enter a search term to find students, staff, or courses
+              {t('search.noQueryMessage')}
             </div>
           ) : totalResults === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No results found for "{query}"
+              {t('search.noResultsMessage')} "{query}"
             </div>
           ) : (
             <div className="space-y-6">
@@ -114,7 +117,7 @@ export default function SearchPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="h-5 w-5" />
-                      Students ({results.students.length})
+                      {t('search.students')} ({results.students.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -123,7 +126,7 @@ export default function SearchPage() {
                         <div className="p-3 border rounded-lg hover:bg-muted cursor-pointer">
                           <div className="font-medium">{student.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            Grade: {student.grade} • {student.email}
+                            {t('search.grade')}: {student.grade} • {student.email}
                           </div>
                         </div>
                       </Link>
@@ -137,7 +140,7 @@ export default function SearchPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Briefcase className="h-5 w-5" />
-                      Staff ({results.staff.length})
+                      {t('search.staff')} ({results.staff.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -160,7 +163,7 @@ export default function SearchPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BookOpen className="h-5 w-5" />
-                      Courses ({results.courses.length})
+                      {t('search.courses')} ({results.courses.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -169,7 +172,7 @@ export default function SearchPage() {
                         <div className="p-3 border rounded-lg hover:bg-muted cursor-pointer">
                           <div className="font-medium">{course.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {course.code} • {course.description}
+                            {course.name} • {course.description}
                           </div>
                         </div>
                       </Link>

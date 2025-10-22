@@ -37,13 +37,21 @@ export default function ReportCardsPage() {
   const [generatedReport, setGeneratedReport] = useState<ReportCard | null>(null);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
   const [generatingState, setGeneratingState] = useState<GeneratingState>("idle");
+  // توليد الفترات الدراسية ديناميكياً حسب السنة الحالية والسنة السابقة
+  const currentYear = new Date().getFullYear();
+  const reportingPeriods = [
+    `الفصل الأول ${currentYear}`,
+    `الفصل الثاني ${currentYear}`,
+    `الفصل الأول ${currentYear - 1}`,
+    `الفصل الثاني ${currentYear - 1}`
+  ];
 
   const generatingMessages: Record<GeneratingState, string> = {
-    idle: "Generate with AI",
-    fetching: "Fetching data...",
-    compiling: "Compiling grades...",
-    writing: "Writing comments...",
-    done: "Done!",
+  idle: "إنشاء التقرير بالذكاء الاصطناعي",
+  fetching: "جاري جلب البيانات...",
+  compiling: "جاري تجميع الدرجات...",
+  writing: "جاري كتابة التعليقات...",
+  done: "تم!",
   };
 
   useEffect(() => {
@@ -71,10 +79,17 @@ export default function ReportCardsPage() {
         setGeneratingState("fetching");
         await new Promise(res => setTimeout(res, 500));
         setGeneratingState("compiling");
-        const report = { report: "Mock report card" };
+        const report: ReportCard = {
+          studentId: selectedStudent,
+          studentName: students.find(s => s.id === selectedStudent)?.name || 'Unknown',
+          class: students.find(s => s.id === selectedStudent)?.className || '',
+          reportingPeriod,
+          overallSummary: 'هذا ملخص تجريبي لنتيجة الطالب.',
+          courses: []
+        };
         setGeneratingState("writing");
         await new Promise(res => setTimeout(res, 1500)); // Simulate AI writing time
-        setGeneratedReport(report);
+  setGeneratedReport(report);
         setGeneratingState("done");
     } catch (error) {
         console.error(error);
@@ -92,17 +107,17 @@ export default function ReportCardsPage() {
       <div className="lg:col-span-1">
         <Card>
           <CardHeader>
-            <CardTitle>Generate Report Card</CardTitle>
+            <CardTitle>إنشاء كشف الدرجات</CardTitle>
             <CardDescription>
-              Select a student and reporting period to generate their report card with AI-powered comments.
+              اختر الطالب والفترة لإصدار كشف الدرجات مع تعليقات ذكية.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="student-select">Student</Label>
+                <Label htmlFor="student-select">الطالب</Label>
                 <Select onValueChange={setSelectedStudent} value={selectedStudent} disabled={isLoadingStudents}>
                     <SelectTrigger id="student-select">
-                        <SelectValue placeholder="Select a student..." />
+                        <SelectValue placeholder="اختر الطالب..." />
                     </SelectTrigger>
                     <SelectContent>
                         {students.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
@@ -110,13 +125,17 @@ export default function ReportCardsPage() {
                 </Select>
             </div>
             <div className="space-y-2">
-                <Label htmlFor="reporting-period">Reporting Period</Label>
-                <Input 
-                    id="reporting-period" 
-                    placeholder="e.g., Semestre d'automne 2024"
-                    value={reportingPeriod}
-                    onChange={e => setReportingPeriod(e.target.value)}
-                />
+                <Label htmlFor="reporting-period">الفترة الدراسية</Label>
+                <Select onValueChange={setReportingPeriod} value={reportingPeriod}>
+                  <SelectTrigger id="reporting-period">
+                    <SelectValue placeholder="اختر الفترة الدراسية..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportingPeriods.map((period, idx) => (
+                      <SelectItem key={idx} value={period}>{period}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
             </div>
           </CardContent>
           <CardFooter>
@@ -129,70 +148,74 @@ export default function ReportCardsPage() {
       </div>
 
       <div className="lg:col-span-2">
-         <Card className="min-h-[600px]">
-             {isGenerating && (
-                <div className="flex flex-col items-center justify-center h-full gap-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground">{generatingMessages[generatingState]}</p>
-                </div>
-            )}
-             {!isGenerating && !generatedReport && (
-                <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                    <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">Your generated report card will appear here.</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Select a student and a reporting period to begin.
-                    </p>
-                </div>
-            )}
-            {generatedReport && (
-                <>
-                <CardHeader className="bg-muted/30">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-2xl">Report Card</CardTitle>
-                            <CardDescription>Official academic performance record.</CardDescription>
-                        </div>
-                        <div className="text-right">
-                             <p className="font-bold">{generatedReport.studentName}</p>
-                             <p className="text-sm text-muted-foreground">{generatedReport.class}</p>
-                             <p className="text-sm text-muted-foreground">{generatedReport.reportingPeriod}</p>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-lg font-semibold border-b pb-2">Overall Summary</h3>
-                            <p className="text-muted-foreground pt-3 text-sm italic">
-                                {generatedReport.overallSummary}
-                            </p>
-                        </div>
+     <Card className="min-h-[600px]">
+       {isGenerating && (
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">{generatingMessages[generatingState]}</p>
+        </div>
+      )}
+       {!isGenerating && !generatedReport && (
+        <div className="flex flex-col items-center justify-center h-full text-center p-6">
+          <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-medium">سيظهر كشف الدرجات هنا بعد إنشائه.</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            اختر الطالب والفترة الدراسية للبدء.
+          </p>
+        </div>
+      )}
+      {generatedReport && (
+        <>
+        <CardHeader className="bg-muted/30">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl">كشف الدرجات</CardTitle>
+              <CardDescription>سجل الأداء الأكاديمي الرسمي.</CardDescription>
+            </div>
+            <div className="text-right">
+               <p className="font-bold">{generatedReport.studentName}</p>
+               <p className="text-sm text-muted-foreground">{generatedReport.class}</p>
+               <p className="text-sm text-muted-foreground">{generatedReport.reportingPeriod}</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold border-b pb-2">الملخص العام</h3>
+              <p className="text-muted-foreground pt-3 text-sm italic">
+                {generatedReport.overallSummary || "لا يوجد ملخص متاح."}
+              </p>
+            </div>
 
-                        <div>
-                            <h3 className="text-lg font-semibold border-b pb-2">Course Performance</h3>
-                            <div className="space-y-4 pt-3">
-                                {generatedReport.courses.map((course, index) => (
-                                    <div key={index} className="p-4 border rounded-lg">
-                                        <div className="flex justify-between items-center">
-                                            <h4 className="font-semibold">{course.courseName}</h4>
-                                            <div className="text-right">
-                                                <p className="font-bold text-lg">{course.finalGrade}</p>
-                                                <p className="text-xs text-muted-foreground">Final Grade</p>
-                                            </div>
-                                        </div>
-                                         <p className="text-xs text-muted-foreground">Teacher: {course.teacherName}</p>
-                                         <Separator className="my-2" />
-                                        <p className="text-sm text-muted-foreground mt-2">{course.comments}</p>
-                                    </div>
-                                ))}
-                            </div>
+            <div>
+              <h3 className="text-lg font-semibold border-b pb-2">أداء المواد</h3>
+              <div className="space-y-4 pt-3">
+                {Array.isArray(generatedReport.courses) && generatedReport.courses.length > 0 ? (
+                  generatedReport.courses.map((course, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-semibold">{course.courseName}</h4>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">{course.finalGrade}</p>
+                          <p className="text-xs text-muted-foreground">الدرجة النهائية</p>
                         </div>
+                      </div>
+                       <p className="text-xs text-muted-foreground">المعلم: {course.teacherName}</p>
+                       <Separator className="my-2" />
+                      <p className="text-sm text-muted-foreground mt-2">{course.comments}</p>
                     </div>
-                </CardContent>
-                </>
-            )}
-         </Card>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground">لا توجد بيانات مواد متاحة.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+        </>
+      )}
+     </Card>
       </div>
     </div>
   );

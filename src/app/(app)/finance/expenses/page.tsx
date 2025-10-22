@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { getExpenses, addExpense } from "@/services/financeService";
+import { useTranslation } from "@/i18n/translation-provider";
+import { getExpenses, addExpense, deleteExpense } from "@/services/financeService";
+import { updateExpense } from "@/services/financeService";
 import { getSettings } from "@/services/settingsService";
 import type { Expense } from "@/lib/types";
 import { Loader2, PlusCircle, Printer, Calendar as CalendarIcon } from "lucide-react";
@@ -40,29 +42,48 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 const expenseSchema = z.object({
-    category: z.enum(["salaries", "utilities", "supplies", "maintenance", "other"]),
-    description: z.string().min(3, "Description is required."),
-    amount: z.coerce.number().positive("Amount must be a positive number."),
+        category: z.enum([
+            "salaries", // الرواتب
+            "utilities", // الخدمات
+            "supplies", // الخدمات
+            "maintenance", // الصيانة
+            "other" // أخرى
+        ]),
+        description: z.string().min(3, "الوصف مطلوب"),
+        amount: z.coerce.number().positive("المبلغ يجب أن يكون رقمًا موجبًا"),
 });
 
 export default function ExpensesPage() {
-    const { toast } = useToast();
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [schoolName, setSchoolName] = useState("");
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+        const { toast } = useToast();
+        const { t } = useTranslation();
+        const [expenses, setExpenses] = useState<Expense[]>([]);
+        const [dateRange, setDateRange] = useState<DateRange | undefined>();
+        const [schoolName, setSchoolName] = useState("");
+        const [isLoading, setIsLoading] = useState(true);
+        const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+    const [editForm, setEditForm] = useState<{ description: string; amount: number; category: Expense['category'] }>({ description: '', amount: 0, category: 'other' });
 
-    const form = useForm<z.infer<typeof expenseSchema>>({
-        resolver: zodResolver(expenseSchema),
+        // تعريب أسماء الفئات
+        const categoryLabels: Record<string, string> = {
+            salaries: "الرواتب",
+            utilities: "الخدمات (كهرباء، ماء، إنترنت)",
+            supplies: "الخدمات (نظافة، أمن، نقل)",
+            maintenance: "الصيانة",
+            other: "أخرى"
+        };
+
+        const form = useForm<z.infer<typeof expenseSchema>>({
+                resolver: zodResolver(expenseSchema),
         defaultValues: {
             description: "",
             amount: 0,
         },
     });
 
-    const fetchExpenses = async () => {
+    const fetchExpenses = useCallback(async () => {
         setIsLoading(true);
         try {
             const [fetchedExpenses, settings] = await Promise.all([
@@ -76,11 +97,11 @@ export default function ExpensesPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [dateRange, toast]);
 
     useEffect(() => {
         fetchExpenses();
-    }, [toast, dateRange]);
+    }, [fetchExpenses]);
     
     async function onSubmit(values: z.infer<typeof expenseSchema>) {
         setIsSubmitting(true);
@@ -100,25 +121,83 @@ export default function ExpensesPage() {
         }
     }
 
+    // عند الضغط على تحرير
+    const handleEditClick = (expense: Expense) => {
+        setExpenseToEdit(expense);
+        setEditForm({
+            description: expense.description,
+            amount: expense.amount,
+            category: expense.category
+        });
+        setEditDialogOpen(true);
+    };
+
+
+    // طباعة
     const handlePrint = () => {
         window.print();
     };
-    
+
+    // عند حفظ التعديل
+    const handleEditSave = async () => {
+        if (!expenseToEdit || !expenseToEdit.id) return;
+        try {
+            await updateExpense(expenseToEdit.id, editForm as Partial<Expense>);
+            setExpenses(expenses.map(e =>
+                e.id === expenseToEdit.id
+                    ? {
+                        ...e,
+                        description: editForm.description,
+                        amount: editForm.amount,
+                        category: editForm.category as Expense['category']
+                    }
+                    : e
+            ));
+            toast({ title: "تم التعديل", description: "تم تحديث بيانات المصروف بنجاح" });
+            setEditDialogOpen(false);
+            setExpenseToEdit(null);
+        } catch (error) {
+            toast({ title: "خطأ", description: "فشل في تعديل المصروف", variant: "destructive" });
+        }
+    };
+
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('ar-MA', { style: 'currency', currency: 'MAD' }).format(amount);
-    }
-    
-    const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+    };
 
+    // Group expenses by month and year
+    const expensesByMonth: { [key: string]: number } = {};
+    expenses.forEach(e => {
+        const d = new Date(e.date);
+        const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+        expensesByMonth[key] = (expensesByMonth[key] || 0) + e.amount;
+    });
+
+    // حذف مصروف
+    const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+    const handleDeleteExpense = async () => {
+        if (!expenseToDelete || !expenseToDelete.id) return;
+        try {
+            await deleteExpense(expenseToDelete.id as string);
+            setExpenses(expenses.filter(e => e.id !== expenseToDelete.id));
+            toast({ title: "تم الحذف", description: "تم حذف المصروف بنجاح" });
+        } catch (error) {
+            toast({ title: "خطأ", description: "فشل في حذف المصروف", variant: "destructive" });
+        } finally {
+            setExpenseToDelete(null);
+        }
+    };
+
+    // يجب أن يكون return هنا فقط في نهاية الدالة الرئيسية
     return (
         <>
             <div className="flex flex-col gap-6 no-print">
                 <Card>
                     <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <CardTitle>Expense Tracker</CardTitle>
+                            <CardTitle>تتبع المصروفات</CardTitle>
                             <CardDescription>
-                                Log and view all school expenditures.
+                                راقب جميع مصروفات المدرسة وسجل النفقات الجديدة بسهولة
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
@@ -143,7 +222,7 @@ export default function ExpensesPage() {
                                         format(dateRange.from, "LLL dd, y")
                                         )
                                     ) : (
-                                        <span>Pick a date range</span>
+                                        <span>اختر فترة زمنية</span>
                                     )}
                                     </Button>
                                 </PopoverTrigger>
@@ -163,14 +242,14 @@ export default function ExpensesPage() {
                                 <GlassModalTrigger asChild>
                                     <Button className="btn-glass-primary btn-click-effect">
                                         <PlusCircle />
-                                        Add Expense
+                                        إضافة مصروف
                                     </Button>
                                 </GlassModalTrigger>
                                 <GlassModalContent>
                                     <GlassModalHeader>
-                                        <GlassModalTitle>Record New Expense</GlassModalTitle>
+                                        <GlassModalTitle>تسجيل مصروف جديد</GlassModalTitle>
                                         <GlassModalDescription>
-                                            Enter the details of the expense below.
+                                            أدخل تفاصيل المصروف أدناه
                                         </GlassModalDescription>
                                     </GlassModalHeader>
                                     <Form {...form}>
@@ -180,9 +259,9 @@ export default function ExpensesPage() {
                                                 name="description"
                                                 render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Description</FormLabel>
+                                                    <FormLabel>الوصف</FormLabel>
                                                     <FormControl>
-                                                        <Textarea className="glass-input" placeholder="e.g., Monthly electricity bill" {...field} />
+                                                        <Textarea className="glass-input" placeholder="الوصف" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -193,9 +272,9 @@ export default function ExpensesPage() {
                                                 name="amount"
                                                 render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Amount</FormLabel>
+                                                    <FormLabel>المبلغ</FormLabel>
                                                     <FormControl>
-                                                        <Input className="glass-input" type="number" placeholder="0.00" {...field} />
+                                                        <Input className="glass-input" type="number" placeholder="المبلغ" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -206,19 +285,19 @@ export default function ExpensesPage() {
                                                 name="category"
                                                 render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Category</FormLabel>
+                                                    <FormLabel>الفئة</FormLabel>
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Select a category" />
+                                                                <SelectValue placeholder="اختر الفئة (مثال: كهرباء، ماء، نظافة، نقل)" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
-                                                            <SelectItem value="salaries">Salaries</SelectItem>
-                                                            <SelectItem value="utilities">Utilities</SelectItem>
-                                                            <SelectItem value="supplies">Supplies</SelectItem>
-                                                            <SelectItem value="maintenance">Maintenance</SelectItem>
-                                                            <SelectItem value="other">Other</SelectItem>
+                                                            <SelectItem value="salaries">الرواتب</SelectItem>
+                                                            <SelectItem value="utilities">الخدمات (كهرباء، ماء، إنترنت)</SelectItem>
+                                                            <SelectItem value="supplies">الخدمات (نظافة، أمن، نقل)</SelectItem>
+                                                            <SelectItem value="maintenance">الصيانة</SelectItem>
+                                                            <SelectItem value="other">أخرى</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     <FormMessage />
@@ -228,7 +307,7 @@ export default function ExpensesPage() {
                                             <div className="flex justify-end pt-4">
                                                 <Button type="submit" disabled={isSubmitting} className="btn-gradient btn-click-effect">
                                                     {isSubmitting && <Loader2 className="animate-spin" />}
-                                                    {isSubmitting ? "Adding..." : "Add Expense"}
+                                                    {isSubmitting ? 'جاري الإضافة...' : 'إضافة'}
                                                 </Button>
                                             </div>
                                         </form>
@@ -237,7 +316,7 @@ export default function ExpensesPage() {
                             </GlassModal>
                             <Button variant="outline" onClick={handlePrint} className="btn-glass btn-click-effect">
                                 <Printer />
-                                Print
+                                طباعة
                             </Button>
                         </div>
                     </CardHeader>
@@ -247,9 +326,9 @@ export default function ExpensesPage() {
             <div className="print-area">
                  <div className="print-header hidden print:block text-center mb-4">
                     <h1 className="text-xl font-bold">{schoolName}</h1>
-                    <h2 className="text-lg font-semibold">Expense Report</h2>
+                    <h2 className="text-lg font-semibold">تقرير المصروفات</h2>
                     {dateRange?.from && <p className="text-muted-foreground">
-                        For period: {format(dateRange.from, "PPP")} {dateRange.to && ` to ${format(dateRange.to, "PPP")}`}
+                        للفترة {format(dateRange.from, "PPP")} {dateRange.to && ` - ${format(dateRange.to, "PPP")}`}
                     </p>}
                 </div>
                 <Card>
@@ -259,13 +338,15 @@ export default function ExpensesPage() {
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             </div>
                         ) : (
+                            <>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Category</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
+                                        <TableHead>التاريخ</TableHead>
+                                        <TableHead>الوصف</TableHead>
+                                        <TableHead>الفئة</TableHead>
+                                        <TableHead className="text-right">المبلغ</TableHead>
+                                        <TableHead className="text-center">الإجراءات</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -274,25 +355,97 @@ export default function ExpensesPage() {
                                             <TableRow key={e.id}>
                                                 <TableCell>{format(new Date(e.date), 'PPP')}</TableCell>
                                                 <TableCell className="font-medium">{e.description}</TableCell>
-                                                <TableCell className="capitalize">{e.category}</TableCell>
+                                                <TableCell className="capitalize">{categoryLabels[e.category]}</TableCell>
                                                 <TableCell className="text-right">{formatCurrency(e.amount)}</TableCell>
+                                                <TableCell className="text-center flex gap-2 justify-center">
+                                                    <Button size="sm" variant="outline" className="text-blue-600 border-blue-400" onClick={() => handleEditClick(e)}>
+                                                        تحرير
+                                                    </Button>
+            {/* حوار تحرير المصروف */}
+            {editDialogOpen && expenseToEdit && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+                        <h2 className="font-bold text-lg mb-2">تعديل المصروف</h2>
+                        <div className="mb-4">
+                            <label className="block mb-1">الوصف</label>
+                            <Input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} />
+                        </div>
+                        <div className="mb-4">
+                            <label className="block mb-1">المبلغ</label>
+                            <Input type="number" value={editForm.amount} onChange={e => setEditForm(f => ({ ...f, amount: Number(e.target.value) }))} />
+                        </div>
+                        <div className="mb-4">
+                            <label className="block mb-1">الفئة</label>
+                            <Select value={editForm.category} onValueChange={val => setEditForm(f => ({ ...f, category: val as Expense['category'] }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="اختر الفئة" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="salaries">الرواتب</SelectItem>
+                                    <SelectItem value="utilities">الخدمات (كهرباء، ماء، إنترنت)</SelectItem>
+                                    <SelectItem value="supplies">الخدمات (نظافة، أمن، نقل)</SelectItem>
+                                    <SelectItem value="maintenance">الصيانة</SelectItem>
+                                    <SelectItem value="other">أخرى</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => { setEditDialogOpen(false); setExpenseToEdit(null); }}>إلغاء</Button>
+                            <Button variant="default" onClick={handleEditSave}>حفظ</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+                                                    <Button size="sm" variant="destructive" onClick={() => setExpenseToDelete(e)}>
+                                                        حذف
+                                                    </Button>
+                                                </TableCell>
                                             </TableRow>
                                         ))
-                                    ) : (
+                                    ) : null}
+                                    {expenses.length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-center h-24">No expenses recorded for this period.</TableCell>
+                                            <TableCell colSpan={5} className="text-center h-24">لا توجد مصروفات مسجلة</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
+                            {/* Monthly totals */}
+                            {/* حوار تأكيد الحذف */}
+                            {expenseToDelete && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                                    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+                                        <h2 className="font-bold text-lg mb-2">تأكيد الحذف</h2>
+                                        <p className="mb-4">هل أنت متأكد أنك تريد حذف هذا المصروف؟</p>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="outline" onClick={() => setExpenseToDelete(null)}>إلغاء</Button>
+                                            <Button variant="destructive" onClick={handleDeleteExpense}>حذف</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="mt-6">
+                                <h3 className="font-bold text-lg mb-2">إجمالي المصروفات الشهرية</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {Object.keys(expensesByMonth).length > 0 ? (
+                                        Object.entries(expensesByMonth).map(([key, value]) => {
+                                            const [year, month] = key.split('-');
+                                            const date = new Date(Number(year), Number(month) - 1);
+                                            return (
+                                                <div key={key} className="border rounded p-3 flex flex-col items-center">
+                                                    <span className="font-semibold">{t('months.' + date.toLocaleString('en-US', { month: 'long' }).toLowerCase())} {year}</span>
+                                                    <span className="text-green-700 font-bold text-xl">{formatCurrency(value)}</span>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <span>لا توجد مصروفات مسجلة</span>
+                                    )}
+                                </div>
+                            </div>
+                            </>
                         )}
                     </CardContent>
-                    <CardFooter className="flex justify-end font-bold text-lg border-t pt-4">
-                        <div className="flex items-center gap-4">
-                            <span>Total Expenses:</span>
-                            <span>{formatCurrency(totalExpenses)}</span>
-                        </div>
-                    </CardFooter>
                 </Card>
             </div>
         </>

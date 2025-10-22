@@ -28,9 +28,16 @@ export function StudentClassDistributionChart() {
         const fetchStudentData = async () => {
             try {
                 const { classDistribution } = await getStudentStats();
-                
+                // Map English keys to Arabic labels for grades
+                const gradeLabel = (key: string) => {
+                  const match = key.match(/Grade (\d+)/);
+                  if (match) {
+                    return `الصف ${match[1]}`;
+                  }
+                  return key;
+                };
                 const data = Object.keys(classDistribution).map((key, index) => ({
-                    name: key,
+                    name: gradeLabel(key),
                     value: classDistribution[key],
                     fill: `hsl(var(--chart-${index + 1}))`
                 }));
@@ -38,7 +45,7 @@ export function StudentClassDistributionChart() {
 
                 const config = {
                     value: {
-                        label: "Students",
+                        label: "عدد الطلاب",
                     },
                     ...data.reduce((acc, entry) => {
                         acc[entry.name as keyof typeof acc] = {
@@ -52,8 +59,8 @@ export function StudentClassDistributionChart() {
 
             } catch (error) {
                  toast({
-                    title: "Error",
-                    description: "Could not fetch student data for charts.",
+                    title: "خطأ",
+                    description: "تعذر جلب بيانات توزيع الطلاب.",
                     variant: "destructive",
                 });
             } finally {
@@ -69,30 +76,38 @@ export function StudentClassDistributionChart() {
 
     return (
         <ChartContainer
-        config={chartConfig}
-        className="mx-auto aspect-square h-full"
+            config={chartConfig}
+            className="mx-auto h-full"
         >
-        <PieChart>
-            <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent hideLabel />}
-            />
-            <Pie
-            data={chartData}
-            dataKey="value"
-            nameKey="name"
-            innerRadius={60}
-            strokeWidth={5}
-            >
-            {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-            </Pie>
-            <ChartLegend
-            content={<ChartLegendContent nameKey="name" />}
-            className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
-            />
-        </PieChart>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 w-full">
+                <div className="w-full md:w-2/3">
+                    <PieChart width={320} height={320}>
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent nameKey="name" />}
+                        />
+                        <Pie
+                            data={chartData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={60}
+                            strokeWidth={5}
+                        >
+                            {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </div>
+                <div className="w-full md:w-1/3 flex justify-center">
+                    <ChartLegend
+                        content={<ChartLegendContent nameKey="name" />}
+                        verticalAlign="middle"
+                        layout="vertical"
+                        className="flex-col items-start gap-3"
+                    />
+                </div>
+            </div>
         </ChartContainer>
     )
 }

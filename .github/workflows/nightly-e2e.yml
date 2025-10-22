@@ -1,0 +1,88 @@
+name: Nightly E2E Regression
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # daily at 02:00 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: nightly-e2e
+  cancel-in-progress: true
+
+jobs:
+  nightly-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000
+
+      - name: Run full Playwright tests
+        run: npx playwright test --reporter=html
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-nightly
+          path: playwright-report
+
+      - name: Run accessibility axe checks (optional)
+        if: always()
+        run: |
+          node scripts/run-axe.js \
+            http://localhost:3000/login \
+            http://localhost:3000/dashboard \
+            http://localhost:3000/communication/messages
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-audit-nightly
+          path: audit
+
+      - name: Notify Slack on failure with audit summary
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK" ]; then
+            echo "No SLACK_WEBHOOK secret set, skipping Slack notification"
+            exit 0
+          fi
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          ARTIFACTS_URL="$RUN_URL/artifacts"
+          # Build a short accessibility summary from audit JSON files
+          SUMMARY=""
+          if [ -d audit ]; then
+            for f in audit/*.json; do
+              if [ -f "$f" ]; then
+                name=$(basename "$f")
+                violations=$(jq '.violations | length' "$f" 2>/dev/null || echo 0)
+                SUMMARY="$SUMMARY\n- $name: $violations violations"
+              fi
+            done
+          fi
+          BODY="Nightly E2E failure for ${{ github.repository }}\nRun: $RUN_URL\nArtifacts: $ARTIFACTS_URL\nAccessibility summary:$SUMMARY"
+          PAYLOAD=$(jq -n --arg text "$BODY" '{text: $text}')
+          curl -s -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK" || true

@@ -34,38 +34,39 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getStaffMember, updateStaffMember } from "@/services/staffService";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Staff } from "@/lib/types";
 import { getYear, getMonth, getDate } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 
 const staffSchema = z.object({
-  name: z.string().min(3, "Full name must be at least 3 characters."),
-  email: z.string().email("Please enter a valid email address."),
-  phone: z.string().min(10, "Please enter a valid phone number."),
+  name: z.string().min(3, "يجب أن يكون الاسم الكامل 3 أحرف على الأقل."),
+  email: z.string().email("يرجى إدخال بريد إلكتروني صحيح."),
+  phone: z.string().min(10, "يرجى إدخال رقم هاتف صحيح."),
   altPhone: z.string().optional(),
   gender: z.enum(["male", "female"]),
-  address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
-  qualifications: z.string().min(10, "Please enter qualifications."),
+  address: z.string().min(10, "يرجى إدخال عنوان صحيح."),
+  dateOfBirth: z.date({ required_error: "تاريخ الميلاد مطلوب." }),
+  qualifications: z.string().min(10, "يرجى إدخال المؤهلات."),
   role: z.enum(["teacher", "admin", "support"]),
-  department: z.string().min(1, "Please select a department."),
-  salary: z.coerce.number().positive("Salary must be a positive number."),
+  department: z.string().min(1, "يرجى اختيار القسم."),
+  salary: z.coerce.number().positive("يجب أن يكون الراتب رقمًا موجبًا."),
   status: z.enum(["active", "inactive"]),
 });
 
 const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - 18 - i);
 const months = [
-  { value: 0, label: 'January' }, { value: 1, label: 'February' }, { value: 2, label: 'March' },
-  { value: 3, label: 'April' }, { value: 4, label: 'May' }, { value: 5, label: 'June' },
-  { value: 6, label: 'July' }, { value: 7, label: 'August' }, { value: 8, label: 'September' },
-  { value: 9, label: 'October' }, { value: 10, label: 'November' }, { value: 11, label: 'December' },
+  { value: 0, label: 'يناير' }, { value: 1, label: 'فبراير' }, { value: 2, label: 'مارس' },
+  { value: 3, label: 'أبريل' }, { value: 4, label: 'ماي' }, { value: 5, label: 'يونيو' },
+  { value: 6, label: 'يوليوز' }, { value: 7, label: 'غشت' }, { value: 8, label: 'شتنبر' },
+  { value: 9, label: 'أكتوبر' }, { value: 10, label: 'نونبر' }, { value: 11, label: 'دجنبر' },
 ];
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditStaffPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const id = params?.id as string;
-if (!id) { return <div>ID not found</div>; }
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -141,16 +142,16 @@ if (!id) { return <div>ID not found</div>; }
         <Button variant="outline" size="icon" asChild>
           <Link href={`/staff-management/directory/${id}`}>
             <ArrowLeft />
-            <span className="sr-only">Back to Profile</span>
+            <span className="sr-only">{t('common.backToProfile') || 'Back to profile'}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Edit Staff Information</h1>
+  <h1 className="text-2xl font-bold">تعديل معلومات الطاقم</h1>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Editing: {staff.name}</CardTitle>
+          <CardTitle>تعديل: {staff.name}</CardTitle>
           <CardDescription>
-            Update the staff member's information below.
+            قم بتحديث معلومات عضو الطاقم أدناه.
           </CardDescription>
         </CardHeader>
         <CardContent>

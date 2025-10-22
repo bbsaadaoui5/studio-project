@@ -1,41 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+
+// Fixed imports
+import { BookOpen, Download, Users, Star, Clock, Award } from "lucide-react";
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, PieChart, Pie, Cell 
 } from "recharts";
-import { 
-  Users, 
-  BookOpen, 
-  TrendingUp, 
-  Award,
-  AlertTriangle,
-  Clock,
-  Loader2,
-  Download,
-  Star
-} from "lucide-react";
+
 import { getStaffMembers } from "@/services/staffService";
 import { getCourses } from "@/services/courseService";
 import { getStudentGradeForCourse } from "@/services/gradeService";
 import { getAttendance } from "@/services/attendanceService";
 import { useToast } from "@/hooks/use-toast";
+
+// Types
+interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+  status: string;
+  department?: string;
+}
+
+interface Course {
+  id: string;
+  name: string;
+  teachers: { id: string; name: string }[];
+}
+
+interface Student {
+  id: string;
+  name: string;
+  grade?: string;
+  className?: string;
+}
 
 interface TeacherPerformance {
   teacherId: string;
@@ -60,6 +65,37 @@ interface CourseWorkload {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
+// Arabic translation function
+const t = (key: string): string => {
+  const arabicTranslations: Record<string, string> = {
+    'reports.exportReport': 'تصدير التقرير',
+    'reports.totalTeachers': 'إجمالي المعلمين',
+    'reports.activeTeachers': 'المعلمين النشطين',
+    'reports.averageRating': 'متوسط التقييم',
+    'reports.performanceRating': 'تقييم الأداء العام',
+    'reports.totalCourses': 'إجمالي المواد',
+    'reports.coursesTaught': 'المواد التي يتم تدريسها',
+    'reports.avgWorkload': 'متوسط الحمل',
+    'reports.coursesPerTeacher': 'مواد لكل معلم',
+    'reports.teacherPerformance': 'أداء المعلمين',
+    'reports.performanceRatingsByTeacher': 'تقييمات الأداء حسب المعلم',
+    'reports.workloadDistribution': 'توزيع الحمل الدراسي',
+    'reports.coursesPerTeacherCount': 'عدد المواد لكل معلم',
+    'reports.topPerformingTeachers': 'أفضل المعلمين أداءً',
+    'reports.topPerformingTeachersDesc': 'المعلمين بأعلى تقييمات الأداء',
+    'reports.courses': 'مواد',
+    'reports.students': 'طلاب',
+    'reports.avgGrade': 'معدل',
+    'reports.courseWorkload': 'حمل المواد الدراسية',
+    'reports.coursesWithMostStudents': 'المواد بعدد الطلاب الأكبر',
+    'common.loading': 'جاري التحميل...',
+    'common.department': 'القسم',
+    'common.allDepartments': 'جميع الأقسام',
+    'common.selectDepartment': 'اختر القسم'
+  };
+  return arabicTranslations[key] || key;
+};
+
 export function TeacherPerformanceReport() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -73,11 +109,17 @@ export function TeacherPerformanceReport() {
     averageWorkload: 0
   });
 
-  useEffect(() => {
-    fetchTeacherData();
-  }, [selectedDepartment]);
+  const getStudentsForCourse = useCallback(async (courseId: string): Promise<Student[]> => {
+    // This would typically come from enrollment service
+    // Returning mock data for demonstration
+    return [
+      { id: '1', name: 'طالب ١', grade: '10', className: 'أ' },
+      { id: '2', name: 'طالب ٢', grade: '10', className: 'أ' },
+      { id: '3', name: 'طالب ٣', grade: '10', className: 'ب' },
+    ];
+  }, []);
 
-  const fetchTeacherData = async () => {
+  const fetchTeacherData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [staff, courses] = await Promise.all([
@@ -85,13 +127,13 @@ export function TeacherPerformanceReport() {
         getCourses()
       ]);
 
-      const teachers = staff.filter(s => s.role === 'teacher' && s.status === 'active');
+      const teachers = (staff as StaffMember[]).filter(s => s.role === 'teacher' && s.status === 'active');
       const filteredTeachers = selectedDepartment === "all" 
         ? teachers
         : teachers.filter(t => t.department === selectedDepartment);
 
       const performancePromises = filteredTeachers.map(async (teacher) => {
-        const teacherCourses = courses.filter(c => 
+        const teacherCourses = (courses as Course[]).filter(c => 
           c.teachers.some(t => t.id === teacher.id)
         );
 
@@ -111,10 +153,11 @@ export function TeacherPerformanceReport() {
           for (const student of courseStudents) {
             try {
               const grade = await getStudentGradeForCourse(course.id, student.id);
-              if (grade && grade.score !== null) {
-                totalGrades += grade.score;
+              // getStudentGradeForCourse returns number | null
+              if (typeof grade === 'number' && !Number.isNaN(grade)) {
+                totalGrades += grade;
                 gradeCount++;
-                if (grade.score >= 60) {
+                if (grade >= 60) {
                   passedStudents++;
                 }
               }
@@ -124,8 +167,12 @@ export function TeacherPerformanceReport() {
 
             // Calculate attendance for this student in this course
             try {
-              const attendance = await getAttendance(student.grade, student.className, new Date().toISOString().split('T')[0]);
-              if (attendance && attendance.studentRecords[student.id]) {
+              const attendance = await getAttendance(
+                student.grade || '10', 
+                student.className || 'أ', 
+                new Date().toISOString().split('T')[0]
+              );
+              if (attendance && attendance.studentRecords && typeof attendance.studentRecords[student.id] !== 'undefined') {
                 totalAttendanceDays++;
                 if (attendance.studentRecords[student.id] === 'present') {
                   presentDays++;
@@ -167,7 +214,7 @@ export function TeacherPerformanceReport() {
 
       // Calculate course workload
       const workloadData: CourseWorkload[] = [];
-      for (const course of courses) {
+      for (const course of courses as Course[]) {
         if (course.teachers.length > 0) {
           const courseStudents = await getStudentsForCourse(course.id);
           let totalGrades = 0;
@@ -177,10 +224,10 @@ export function TeacherPerformanceReport() {
           for (const student of courseStudents) {
             try {
               const grade = await getStudentGradeForCourse(course.id, student.id);
-              if (grade && grade.score !== null) {
-                totalGrades += grade.score;
+              if (typeof grade === 'number' && !Number.isNaN(grade)) {
+                totalGrades += grade;
                 gradeCount++;
-                if (grade.score >= 60) {
+                if (grade >= 60) {
                   passedStudents++;
                 }
               }
@@ -224,62 +271,60 @@ export function TeacherPerformanceReport() {
 
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch teacher data.",
+        title: "خطأ",
+        description: "فشل في تحميل بيانات المعلمين.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDepartment, toast, getStudentsForCourse]);
 
-  // Mock function to get students for a course
-  const getStudentsForCourse = async (courseId: string) => {
-    // This would typically come from enrollment service
-    // For now, return empty array
-    return [];
-  };
+  useEffect(() => {
+    void fetchTeacherData();
+  }, [fetchTeacherData]);
 
   const topPerformers = teacherPerformance
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 5);
 
   const workloadDistribution = [
-    { range: '1-2 courses', count: teacherPerformance.filter(t => t.workload <= 2).length },
-    { range: '3-4 courses', count: teacherPerformance.filter(t => t.workload >= 3 && t.workload <= 4).length },
-    { range: '5+ courses', count: teacherPerformance.filter(t => t.workload >= 5).length }
+    { range: '١-٢ مادة', count: teacherPerformance.filter(t => t.workload <= 2).length },
+    { range: '٣-٤ مواد', count: teacherPerformance.filter(t => t.workload >= 3 && t.workload <= 4).length },
+    { range: '٥+ مواد', count: teacherPerformance.filter(t => t.workload >= 5).length }
   ];
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center min-h-64" dir="rtl">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">{t('common.loading')}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
+    <div className="space-y-6" dir="rtl">
       <div className="flex justify-between items-center">
-        <div className="flex gap-4">
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              <SelectItem value="Mathematics">Mathematics</SelectItem>
-              <SelectItem value="Science">Science</SelectItem>
-              <SelectItem value="Languages">Languages</SelectItem>
-              <SelectItem value="Arts">Arts</SelectItem>
-              <SelectItem value="Physical Education">Physical Education</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t('common.selectDepartment')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('common.allDepartments')}</SelectItem>
+            <SelectItem value="math">الرياضيات</SelectItem>
+            <SelectItem value="science">العلوم</SelectItem>
+            <SelectItem value="english">اللغة الإنجليزية</SelectItem>
+            <SelectItem value="arabic">اللغة العربية</SelectItem>
+            <SelectItem value="history">التاريخ</SelectItem>
+          </SelectContent>
+        </Select>
+        
         <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export Report
+          <Download className="ml-2 h-4 w-4" />
+          {t('reports.exportReport')}
         </Button>
       </div>
 
@@ -287,52 +332,52 @@ export function TeacherPerformanceReport() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.totalTeachers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.totalTeachers}</div>
             <p className="text-xs text-muted-foreground">
-              Active teachers
+              {t('reports.activeTeachers')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.averageRating')}</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.averageRating}/5</div>
             <p className="text-xs text-muted-foreground">
-              Performance rating
+              {t('reports.performanceRating')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.totalCourses')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.totalCourses}</div>
             <p className="text-xs text-muted-foreground">
-              Courses taught
+              {t('reports.coursesTaught')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Workload</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('reports.avgWorkload')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStats.averageWorkload}</div>
             <p className="text-xs text-muted-foreground">
-              Courses per teacher
+              {t('reports.coursesPerTeacher')}
             </p>
           </CardContent>
         </Card>
@@ -343,8 +388,8 @@ export function TeacherPerformanceReport() {
         {/* Teacher Performance */}
         <Card>
           <CardHeader>
-            <CardTitle>Teacher Performance</CardTitle>
-            <CardDescription>Performance ratings by teacher</CardDescription>
+            <CardTitle>{t('reports.teacherPerformance')}</CardTitle>
+            <CardDescription>{t('reports.performanceRatingsByTeacher')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -354,11 +399,12 @@ export function TeacherPerformanceReport() {
                   dataKey="teacherName" 
                   angle={-45}
                   textAnchor="end"
-                  height={100}
+                  height={80}
+                  fontSize={12}
                 />
-                <YAxis />
+                <YAxis domain={[0, 5]} />
                 <Tooltip />
-                <Bar dataKey="rating" fill="#8884d8" />
+                <Bar dataKey="rating" fill="#8884d8" name="التقييم" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -367,8 +413,8 @@ export function TeacherPerformanceReport() {
         {/* Workload Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Workload Distribution</CardTitle>
-            <CardDescription>Number of courses per teacher</CardDescription>
+            <CardTitle>توزيع الحمل الدراسي</CardTitle>
+            <CardDescription>عدد المواد لكل معلم</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -377,9 +423,9 @@ export function TeacherPerformanceReport() {
                   data={workloadDistribution}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
+                  labelLine={true}
                   label={({ range, count }) => `${range}: ${count}`}
-                  outerRadius={80}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="count"
                 >
@@ -387,7 +433,7 @@ export function TeacherPerformanceReport() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => [`${value} معلم`, 'عدد']} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -400,30 +446,30 @@ export function TeacherPerformanceReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              Top Performing Teachers
+              أفضل المعلمين أداءً
             </CardTitle>
-            <CardDescription>Teachers with highest performance ratings</CardDescription>
+            <CardDescription>المعلمين بأعلى تقييمات الأداء</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {topPerformers.map((teacher, index) => (
-                <div key={teacher.teacherId} className="flex items-center justify-between">
+                <div key={teacher.teacherId} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline">#{index + 1}</Badge>
+                    <Badge variant="secondary">#{index + 1}</Badge>
                     <div>
                       <p className="font-medium">{teacher.teacherName}</p>
                       <p className="text-sm text-muted-foreground">
-                        {teacher.courses} courses, {teacher.totalStudents} students
+                        {teacher.courses} مادة، {teacher.totalStudents} طالب
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       <span className="font-bold">{teacher.rating}/5</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {teacher.averageGrade}% avg grade
+                      {teacher.averageGrade}% معدل الدرجات
                     </p>
                   </div>
                 </div>
@@ -436,9 +482,9 @@ export function TeacherPerformanceReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              Course Workload
+              {t('reports.courseWorkload')}
             </CardTitle>
-            <CardDescription>Courses with highest student counts</CardDescription>
+            <CardDescription>{t('reports.coursesWithMostStudents')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -446,17 +492,17 @@ export function TeacherPerformanceReport() {
                 .sort((a, b) => b.studentCount - a.studentCount)
                 .slice(0, 5)
                 .map((course) => (
-                <div key={course.courseId} className="flex items-center justify-between">
+                <div key={course.courseId} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">{course.courseName}</p>
                     <p className="text-sm text-muted-foreground">
                       {course.teacherName}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">{course.studentCount} students</p>
+                  <div className="text-left">
+                    <p className="font-bold">{course.studentCount} {t('reports.students')}</p>
                     <p className="text-xs text-muted-foreground">
-                      {course.averageGrade}% avg grade
+                      {course.averageGrade}% {t('reports.avgGrade')}
                     </p>
                   </div>
                 </div>
