@@ -59,12 +59,6 @@ jobs:
             echo "No playwright-report/index.html found"
           fi
 
-      - name: Upload audit artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: accessibility-audit
-          path: audit
-
       - name: Sanitize audit filenames
         if: always()
         run: |
@@ -72,6 +66,12 @@ jobs:
           if [ -d audit ]; then
             node -e "const fs=require('fs'), path=require('path'); const dir='audit'; if(fs.existsSync(dir)){ for(const f of fs.readdirSync(dir)){ const old=path.join(dir,f); const safe=f.replace(/[?&=:\\#%]/g,'_'); if(safe!==f){ fs.renameSync(old,path.join(dir,safe)); console.log('renamed', f, '->', safe); } } } }"
           fi
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-audit
+          path: audit
 
       - name: Upload Playwright HTML report (if present)
         if: always()
