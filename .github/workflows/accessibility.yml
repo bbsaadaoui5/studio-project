@@ -64,7 +64,15 @@ jobs:
         run: |
           # replace characters that are invalid in artifact filenames on some systems
           if [ -d audit ]; then
-            node -e "const fs=require('fs'), path=require('path'); const dir='audit'; if(fs.existsSync(dir)){ for(const f of fs.readdirSync(dir)){ const old=path.join(dir,f); const safe=f.replace(/[?&=:\\#%]/g,'_'); if(safe!==f){ fs.renameSync(old,path.join(dir,safe)); console.log('renamed', f, '->', safe); } } } }"
+            for old in audit/*; do
+              [ -f "$old" ] || continue
+              base=$(basename "$old")
+              safe=$(printf '%s' "$base" | sed 's/[?&=:#%]/_/g')
+              if [ "$safe" != "$base" ]; then
+                mv -- "$old" "audit/$safe"
+                echo "renamed $base -> $safe"
+              fi
+            done
           fi
 
       - name: Upload audit artifacts
