@@ -75,11 +75,26 @@ jobs:
             done
           fi
 
+      - name: Create audit archive (zip, fallback to tar.gz)
+        if: always()
+        run: |
+          if [ -d audit ]; then
+            if command -v zip >/dev/null 2>&1; then
+              zip -r accessibility-audit.zip audit || true
+              echo "Created accessibility-audit.zip"
+            else
+              tar -czf accessibility-audit.tar.gz audit || true
+              echo "Created accessibility-audit.tar.gz"
+            fi
+          else
+            echo "No audit directory to archive"
+          fi
+
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
           name: accessibility-audit
-          path: audit
+          path: accessibility-audit.*
 
       - name: Upload Playwright HTML report (if present)
         if: always()
