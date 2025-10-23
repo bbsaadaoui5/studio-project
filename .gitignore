@@ -47,3 +47,14 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# CI artifacts / local audit outputs
+*.zip
+*.tar.gz
+accessibility-audit.*
+playwright-report/
+test-results/
+audit*/
+
+# Local workflow backups
+.github/workflows/*.bak
