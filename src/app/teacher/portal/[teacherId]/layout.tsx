@@ -1,7 +1,6 @@
-"use client";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
+import { getStaffMember } from "@/services/staffService";
 
 const nav = [
   { label: "لوحة التحكم", href: "dashboard" },
@@ -16,13 +15,25 @@ const nav = [
   { label: "الإعدادات", href: "settings" },
 ];
 
-export default function TeacherPortalLayout({ children }: { children: ReactNode }) {
-  const params = useParams();
-  const teacherId = params?.teacherId;
+export default async function TeacherPortalLayout({ children, params }: { children: ReactNode; params: { teacherid: string } }) {
+  const teacherId = params?.teacherid;
+  let teacherName = 'بوابة الأستاذ';
+  try {
+    if (teacherId) {
+      const staff = await getStaffMember(teacherId);
+      if (staff && staff.name) teacherName = staff.name;
+    }
+  } catch (e) {
+    // swallow server-side fetch errors but keep portal usable
+    // eslint-disable-next-line no-console
+    console.error('Failed to load teacher record for', teacherId, e);
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <aside className="w-64 bg-white border-l p-6 text-right">
-        <div className="font-bold text-xl mb-8 text-center">بوابة الأستاذ</div>
+        <div className="font-bold text-xl mb-1 text-center">{teacherName}</div>
+        <div className="text-sm text-muted-foreground mb-6 text-center">بوابة الأستاذ</div>
         <nav>
           <ul className="space-y-4">
             {nav.map(item => (
