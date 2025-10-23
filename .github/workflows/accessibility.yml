@@ -1,27 +1,38 @@
-name: Test Accessibility Comment
+name: Test PAT Permissions
 
 on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  issues: write
-  contents: read
-
 jobs:
-  test-comment:
+  test-pat:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test PR Comment
+      - name: Debug - Check PAT permissions
+        run: |
+          echo "Testing PAT permissions..."
+          curl -H "Authorization: token ${{ secrets.PAT }}" \
+               https://api.github.com/repos/${{ github.repository }} \
+               | jq '.permissions' || echo "PAT authentication failed"
+
+      - name: Test Comment with PAT
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PAT }}
           script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '## Test: Accessibility workflow is working!\\n✅ Permissions are fixed\\n✅ Can post comments to PR'
-            })
+            console.log('Testing PAT permissions...');
+            try {
+              const result = await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '## PAT Test Successful!\\n✅ The PAT has correct permissions'
+              });
+              console.log('Comment created successfully!');
+            } catch (error) {
+              console.log('Error details:', error.message);
+              console.log('Status:', error.status);
+            }
