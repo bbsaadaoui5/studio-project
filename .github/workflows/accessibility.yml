@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  issues: write
-  contents: read
-
 jobs:
   test-comment:
     runs-on: ubuntu-latest
@@ -17,11 +13,13 @@ jobs:
 
       - name: Test PR Comment
         uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
         with:
           script: |
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '## Test: Accessibility workflow is working!\\n✅ Permissions are fixed\\n✅ Can post comments to PR'
+              body: '## Test: Accessibility workflow is working!\\n✅ Using PAT for permissions\\n✅ Can post comments to PR'
             })
