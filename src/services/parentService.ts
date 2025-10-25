@@ -20,10 +20,10 @@ export const generateParentAccessToken = async (studentId: string): Promise<stri
       id: token,
       studentId,
     };
-    
+    if (!db) throw new Error('Firestore not initialized. Cannot generate parent access token.');
     const tokenRef = doc(db, PARENT_ACCESS_COLLECTION, token);
     await setDoc(tokenRef, { ...accessRecord, createdAt: serverTimestamp() });
-    
+
     // Also save the token reference on the student's access doc for easy lookup
     const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
     await setDoc(studentAccessRef, { token });
@@ -42,8 +42,12 @@ export const generateParentAccessToken = async (studentId: string): Promise<stri
  */
 export const getParentAccessLink = async (studentId: string): Promise<string | null> => {
     try {
-        const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
-        const docSnap = await getDoc(studentAccessRef);
+    if (!db) {
+      console.warn('Firestore not initialized. getParentAccessLink() returning null.');
+      return null;
+    }
+    const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
+    const docSnap = await getDoc(studentAccessRef);
         if (docSnap.exists()) {
             const token = docSnap.data().token;
             // This assumes the app is hosted at the root. Adjust if needed.
@@ -64,8 +68,12 @@ export const getParentAccessLink = async (studentId: string): Promise<string | n
  */
 export const validateParentAccessToken = async (token: string): Promise<string | null> => {
     try {
-        const docRef = doc(db, PARENT_ACCESS_COLLECTION, token);
-        const docSnap = await getDoc(docRef);
+    if (!db) {
+      console.warn('Firestore not initialized. validateParentAccessToken() returning null.');
+      return null;
+    }
+    const docRef = doc(db, PARENT_ACCESS_COLLECTION, token);
+    const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             // Optional: Add token expiration logic here if needed

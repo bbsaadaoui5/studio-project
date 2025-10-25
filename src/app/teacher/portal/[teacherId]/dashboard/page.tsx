@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-export default function TeacherDashboardPage() {
+export default function TeacherDashboardPage({ params }: any) {
+  // Accept either teacherId or teacherid to be robust across param naming
+  const teacherId = params?.teacherId ?? params?.teacherid ?? 'me';
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6 text-right">👋 مرحباً أستاذ/ة</h1>
@@ -34,7 +36,7 @@ export default function TeacherDashboardPage() {
             <li>10:30 - 11:30: لغة عربية (الأولى إعدادي)</li>
           </ul>
           <div className="mt-4 text-left">
-            <Link href="/teacher/portal/[teacherId]/timetable" className="text-blue-600 underline">تعديل الجدول &rarr;</Link>
+            <Link href={`/teacher/portal/${teacherId}/timetable`} className="text-blue-600 underline">تعديل الجدول &rarr;</Link>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">

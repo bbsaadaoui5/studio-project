@@ -232,4 +232,8 @@ function AttendanceAnalyticsReport() {
   );
 }
 
+// Also provide a named export for compatibility with modules that import
+// `{ AttendanceAnalyticsReport }` instead of the default export.
+export { AttendanceAnalyticsReport };
+
 export default AttendanceAnalyticsReport;

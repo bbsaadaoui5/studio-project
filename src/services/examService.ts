@@ -23,6 +23,7 @@ export type NewExam = Omit<Exam, "id">;
  */
 export const addExam = async (examData: NewExam): Promise<string> => {
   try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot add exam.');
     const docRef = await addDoc(collection(db, EXAMS_COLLECTION), examData);
     await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
@@ -38,6 +39,10 @@ export const addExam = async (examData: NewExam): Promise<string> => {
  */
 export const getExams = async (): Promise<Exam[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getExams() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, EXAMS_COLLECTION), orderBy("examDate", "desc"));
     const querySnapshot = await getDocs(q);
     const exams: Exam[] = [];

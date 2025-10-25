@@ -16,6 +16,7 @@ export type NewAssignment = Omit<Assignment, 'id'>;
  */
 export const addAssignment = async (assignmentData: NewAssignment): Promise<string> => {
     try {
+        if (!db) throw new Error('Firestore not initialized. Cannot add assignment.');
         const docRef = await addDoc(collection(db, ASSIGNMENT_COLLECTION), assignmentData);
         await updateDoc(docRef, { id: docRef.id });
         return docRef.id;
@@ -32,6 +33,10 @@ export const addAssignment = async (assignmentData: NewAssignment): Promise<stri
  */
 export const getAssignmentsForCourse = async (courseId: string): Promise<Assignment[]> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getAssignmentsForCourse() returning empty list.');
+            return [];
+        }
         const q = query(collection(db, ASSIGNMENT_COLLECTION), where("courseId", "==", courseId));
         const querySnapshot = await getDocs(q);
         const assignments: Assignment[] = [];
@@ -53,8 +58,9 @@ export const getAssignmentsForCourse = async (courseId: string): Promise<Assignm
  */
 export const saveGrades = async (assignmentId: string, studentGrades: Grade['studentGrades']): Promise<void> => {
   try {
-    const gradeRef = doc(db, GRADE_COLLECTION, assignmentId);
-    await setDoc(gradeRef, { assignmentId, studentGrades }, { merge: true });
+        if (!db) throw new Error('Firestore not initialized. Cannot save grades.');
+        const gradeRef = doc(db, GRADE_COLLECTION, assignmentId);
+        await setDoc(gradeRef, { assignmentId, studentGrades }, { merge: true });
   } catch (error) {
     console.error("Error saving grades: ", error);
     throw new Error("Failed to save grades.");
@@ -68,6 +74,10 @@ export const saveGrades = async (assignmentId: string, studentGrades: Grade['stu
  */
 export const getGrades = async (assignmentId: string): Promise<Grade | null> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getGrades() returning null.');
+            return null;
+        }
         const docRef = doc(db, GRADE_COLLECTION, assignmentId);
         const docSnap = await getDoc(docRef);
 
@@ -125,8 +135,9 @@ export const getStudentGradeForCourse = async (courseId: string, studentId: stri
  */
 export const saveExamScores = async (examId: string, studentScores: ExamScore['studentScores']): Promise<void> => {
   try {
-    const scoreRef = doc(db, EXAM_SCORE_COLLECTION, examId);
-    await setDoc(scoreRef, { examId, studentScores }, { merge: true });
+        if (!db) throw new Error('Firestore not initialized. Cannot save exam scores.');
+        const scoreRef = doc(db, EXAM_SCORE_COLLECTION, examId);
+        await setDoc(scoreRef, { examId, studentScores }, { merge: true });
   } catch (error) {
     console.error("Error saving exam scores: ", error);
     throw new Error("Failed to save exam scores.");
@@ -140,6 +151,10 @@ export const saveExamScores = async (examId: string, studentScores: ExamScore['s
  */
 export const getExamScores = async (examId: string): Promise<ExamScore | null> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getExamScores() returning null.');
+            return null;
+        }
         const docRef = doc(db, EXAM_SCORE_COLLECTION, examId);
         const docSnap = await getDoc(docRef);
 

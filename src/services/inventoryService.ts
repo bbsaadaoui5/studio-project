@@ -23,6 +23,7 @@ export type NewInventoryItem = Omit<InventoryItem, "id">;
  */
 export const addInventoryItem = async (itemData: Omit<NewInventoryItem, 'status'>): Promise<string> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot add inventory item.');
     const newItem = {
       ...itemData,
       status: "available" as const,
@@ -42,6 +43,10 @@ export const addInventoryItem = async (itemData: Omit<NewInventoryItem, 'status'
  */
 export const getInventoryItems = async (): Promise<InventoryItem[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getInventoryItems() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, INVENTORY_COLLECTION), orderBy("name"));
     const querySnapshot = await getDocs(q);
     const items: InventoryItem[] = [];
@@ -62,8 +67,9 @@ export const getInventoryItems = async (): Promise<InventoryItem[]> => {
  */
 export const updateItemStatus = async (itemId: string, status: InventoryItem['status']): Promise<void> => {
     try {
-        const itemRef = doc(db, INVENTORY_COLLECTION, itemId);
-        await updateDoc(itemRef, { status });
+    if (!db) throw new Error('Firestore not initialized. Cannot update inventory item.');
+    const itemRef = doc(db, INVENTORY_COLLECTION, itemId);
+    await updateDoc(itemRef, { status });
     } catch (error) {
         console.error("Error updating item status:", error);
         throw new Error("Failed to update item status.");

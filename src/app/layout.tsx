@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { FirebaseInitializer } from '@/components/firebase-initializer';
+import FirebaseNotConfiguredBanner from '@/components/dev/FirebaseNotConfiguredBanner';
 import ClientProviders from '@/components/ClientProviders';
 import { Inter } from 'next/font/google';
 
@@ -31,7 +32,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
     <body className={`${inter.variable} font-body antialiased`}> 
-      <FirebaseInitializer />
+  <FirebaseInitializer />
+  <FirebaseNotConfiguredBanner />
       {/* Skip link for keyboard users */}
       <a href="#main-content" className="skip-link sr-only-focusable">تخطي إلى المحتوى</a>
       <main id="main-content" role="main" aria-label="المحتوى الرئيسي">

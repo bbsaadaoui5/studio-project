@@ -45,11 +45,15 @@ const MESSAGES_COLLECTION = "messages";
 
 export const getConversations = async (userId: string): Promise<Conversation[]> => {
   try {
-    const q = query(
-      collection(db, CONVERSATIONS_COLLECTION),
-      where("participantIds", "array-contains", userId),
-      orderBy("lastMessage.timestamp", "desc")
-    );
+        if (!db) {
+            console.warn('Firestore not initialized. getConversations() returning empty list.');
+            return [];
+        }
+        const q = query(
+            collection(db, CONVERSATIONS_COLLECTION),
+            where("participantIds", "array-contains", userId),
+            orderBy("lastMessage.timestamp", "desc")
+        );
     const querySnapshot = await getDocs(q);
     const conversations: Conversation[] = [];
     querySnapshot.forEach((doc) => {
@@ -68,6 +72,10 @@ export const getConversations = async (userId: string): Promise<Conversation[]> 
 
 export const getMessages = async (conversationId: string): Promise<Message[]> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getMessages() returning empty list.');
+            return [];
+        }
         const q = query(
             collection(db, MESSAGES_COLLECTION),
             where("conversationId", "==", conversationId),
@@ -98,12 +106,14 @@ export const sendMessage = async (conversationId: string, senderId: string, text
             text,
             timestamp: serverTimestamp(),
         };
-        const docRef = await addDoc(collection(db, MESSAGES_COLLECTION), newMessageData);
+    if (!db) throw new Error('Firestore not initialized. Cannot send message.');
+    const docRef = await addDoc(collection(db, MESSAGES_COLLECTION), newMessageData);
         const newMessage = { id: docRef.id, ...newMessageData };
         // Try to normalize timestamp if possible; otherwise keep FieldValue
         await updateDoc(docRef, { id: docRef.id });
 
         // 2. Update the conversation's lastMessage field
+        if (!db) throw new Error('Firestore not initialized. Cannot update conversation.');
         const convoRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
         await updateDoc(convoRef, {
             lastMessage: {
@@ -123,6 +133,7 @@ export const sendMessage = async (conversationId: string, senderId: string, text
 export const startConversation = async (currentUserId: string, otherUserId: string, otherUserName: string): Promise<Conversation> => {
     // Check if a conversation already exists between these two users
     const compositeId = [currentUserId, otherUserId].sort().join('_');
+    if (!db) throw new Error('Firestore not initialized. Cannot start conversation.');
     const conversationRef = doc(db, CONVERSATIONS_COLLECTION, compositeId);
     const conversationSnap = await getDoc(conversationRef);
 

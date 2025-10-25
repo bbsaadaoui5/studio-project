@@ -5,6 +5,10 @@ import type { Parent } from "@/lib/types";
 const PARENTS_COLLECTION = "parents";
 
 export const getParent = async (id: string): Promise<Parent | null> => {
+  if (!db) {
+    console.warn('Firestore not initialized. getParent() returning null.');
+    return null;
+  }
   const ref = doc(db, PARENTS_COLLECTION, id);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
@@ -17,6 +21,10 @@ export const getParent = async (id: string): Promise<Parent | null> => {
 }
 
 export const getParents = async (): Promise<Parent[]> => {
+  if (!db) {
+    console.warn('Firestore not initialized. getParents() returning empty list.');
+    return [];
+  }
   const q = query(collection(db, PARENTS_COLLECTION));
   const snap = await getDocs(q);
   const results: Parent[] = [];
@@ -32,6 +40,7 @@ export const getParents = async (): Promise<Parent[]> => {
 }
 
 export const createOrUpdateParent = async (parent: Omit<Parent, 'createdAt'> & { createdAt?: string }): Promise<void> => {
+  if (!db) throw new Error('Firestore not initialized. Cannot create or update parent.');
   const ref = doc(db, PARENTS_COLLECTION, parent.id);
   await setDoc(ref, {
     ...parent,
@@ -40,6 +49,7 @@ export const createOrUpdateParent = async (parent: Omit<Parent, 'createdAt'> & {
 }
 
 export const linkStudentToParent = async (parentId: string, studentId: string): Promise<void> => {
+  if (!db) throw new Error('Firestore not initialized. Cannot link student to parent.');
   const ref = doc(db, PARENTS_COLLECTION, parentId);
   const snap = await getDoc(ref);
   if (!snap.exists()) {
@@ -52,6 +62,7 @@ export const linkStudentToParent = async (parentId: string, studentId: string): 
 }
 
 export const unlinkStudentFromParent = async (parentId: string, studentId: string): Promise<void> => {
+  if (!db) throw new Error('Firestore not initialized. Cannot unlink student from parent.');
   const ref = doc(db, PARENTS_COLLECTION, parentId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return;

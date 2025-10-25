@@ -30,6 +30,7 @@ export type NewBook = Omit<Book, 'id' | 'status' | 'loanedTo' | 'dueDate'>;
  */
 export const addBook = async (bookData: NewBook): Promise<string> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot add book.');
     const newBook = {
       ...bookData,
       status: "available" as const,
@@ -49,6 +50,10 @@ export const addBook = async (bookData: NewBook): Promise<string> => {
  */
 export const getBooks = async (): Promise<Book[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getBooks() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, BOOKS_COLLECTION), orderBy("title"));
     const querySnapshot = await getDocs(q);
     const books: Book[] = [];
@@ -70,18 +75,19 @@ export const getBooks = async (): Promise<Book[]> => {
  * @returns The ID of the new loan record.
  */
 export const checkOutBook = async (bookId: string, studentId: string, dueDate: string): Promise<string> => {
-    const batch = writeBatch(db);
+  if (!db) throw new Error('Firestore not initialized. Cannot check out book.');
+  const batch = writeBatch(db);
 
-    // 1. Update the book's status
-    const bookRef = doc(db, BOOKS_COLLECTION, bookId);
-    batch.update(bookRef, { 
+  // 1. Update the book's status
+  const bookRef = doc(db, BOOKS_COLLECTION, bookId);
+  batch.update(bookRef, { 
         status: 'loaned',
         loanedTo: studentId,
         dueDate: dueDate
     });
 
     // 2. Create a new loan record
-    const loanRef = doc(collection(db, LOANS_COLLECTION));
+  const loanRef = doc(collection(db, LOANS_COLLECTION));
     const newLoan: Omit<LibraryLoan, 'id' | 'returnDate' | 'loanDate'> = {
         bookId,
         studentId,
@@ -103,13 +109,14 @@ export const checkOutBook = async (bookId: string, studentId: string, dueDate: s
  * @param bookId - The ID of the book being returned.
  */
 export const checkInBook = async (bookId: string): Promise<void> => {
-    const bookRef = doc(db, BOOKS_COLLECTION, bookId);
+  if (!db) throw new Error('Firestore not initialized. Cannot check in book.');
+  const bookRef = doc(db, BOOKS_COLLECTION, bookId);
 
-    // Find the active loan for this book to update it
-    const loansRef = collection(db, LOANS_COLLECTION);
-    const q = query(loansRef, where("bookId", "==", bookId), where("returnDate", "==", undefined), limit(1));
+  // Find the active loan for this book to update it
+  const loansRef = collection(db, LOANS_COLLECTION);
+  const q = query(loansRef, where("bookId", "==", bookId), where("returnDate", "==", undefined), limit(1));
     
-    const batch = writeBatch(db);
+  const batch = writeBatch(db);
 
     try {
         const querySnapshot = await getDocs(q);

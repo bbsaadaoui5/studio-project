@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+  "check-firebase": "node tools/check-firebase.js",
     "typecheck": "tsc --noEmit",
     "deploy": "firebase deploy",
     "test:e2e": "playwright test",

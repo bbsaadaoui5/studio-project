@@ -13,6 +13,10 @@ const TIMETABLE_COLLECTION = "timetables";
  */
 export const getTimetableForClass = async (grade: string, className: string): Promise<TimetableEntry[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getTimetableForClass() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, TIMETABLE_COLLECTION), where("grade", "==", grade), where("className", "==", className));
     const querySnapshot = await getDocs(q);
     const timetable: TimetableEntry[] = [];
@@ -34,6 +38,10 @@ export const getTimetableForClass = async (grade: string, className: string): Pr
  */
 export const getTimetableForTeacher = async (teacherName: string): Promise<TimetableEntry[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getTimetableForTeacher() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, TIMETABLE_COLLECTION), where("teacherName", "==", teacherName));
     const querySnapshot = await getDocs(q);
     const timetable: TimetableEntry[] = [];
@@ -57,6 +65,7 @@ export const getTimetableForTeacher = async (teacherName: string): Promise<Timet
 export const addTimetableEntry = async (entry: Omit<TimetableEntry, 'id'>): Promise<string> => {
   try {
     // Check for teacher conflict
+    if (!db) throw new Error('Firestore not initialized. Cannot add timetable entry.');
     const conflictQuery = query(
       collection(db, TIMETABLE_COLLECTION),
       where("teacherName", "==", entry.teacherName),
@@ -69,7 +78,7 @@ export const addTimetableEntry = async (entry: Omit<TimetableEntry, 'id'>): Prom
         throw new Error(`Teacher ${entry.teacherName} is already scheduled at this time.`);
     }
 
-    const docRef = await addDoc(collection(db, TIMETABLE_COLLECTION), entry);
+  const docRef = await addDoc(collection(db, TIMETABLE_COLLECTION), entry);
     await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
   } catch (error) {

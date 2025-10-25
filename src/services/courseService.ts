@@ -11,6 +11,7 @@ export type UpdatableCourse = Omit<Course, 'id' | 'createdAt'>;
 
 // Function to add a new course to Firestore
 export const addCourse = async (courseData: NewCourse): Promise<string> => {
+  if (!db) throw new Error('Firestore is not initialized. Cannot add course.');
   const batch = writeBatch(db);
   const newDocRef = doc(collection(db, "courses"));
   
@@ -32,6 +33,10 @@ export const addCourse = async (courseData: NewCourse): Promise<string> => {
 // Function to get all courses from Firestore
 export const getCourses = async (): Promise<Course[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getCourses() returning empty list.');
+      return [];
+    }
     const querySnapshot = await getDocs(collection(db, "courses"));
     const courses: Course[] = [];
     querySnapshot.forEach((doc) => {
@@ -55,8 +60,12 @@ export const getCourses = async (): Promise<Course[]> => {
  */
 export const getCoursesByGrade = async (grade: string): Promise<Course[]> => {
     try {
-        const q = query(collection(db, "courses"), where("grade", "==", grade), where("type", "==", "academic"));
-        const querySnapshot = await getDocs(q);
+    if (!db) {
+      console.warn('Firestore not initialized. getCoursesByGrade() returning empty list.');
+      return [];
+    }
+    const q = query(collection(db, "courses"), where("grade", "==", grade), where("type", "==", "academic"));
+    const querySnapshot = await getDocs(q);
         const courses: Course[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -79,8 +88,12 @@ export const getCoursesByGrade = async (grade: string): Promise<Course[]> => {
  */
 export const getCoursesByType = async (type: "academic" | "support"): Promise<Course[]> => {
     try {
-        const q = query(collection(db, "courses"), where("type", "==", type));
-        const querySnapshot = await getDocs(q);
+    if (!db) {
+      console.warn('Firestore not initialized. getCoursesByType() returning empty list.');
+      return [];
+    }
+    const q = query(collection(db, "courses"), where("type", "==", type));
+    const querySnapshot = await getDocs(q);
         const courses: Course[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -108,8 +121,12 @@ export const getSupportCourses = async (): Promise<Course[]> => {
 // Function to get a single course by ID from Firestore
 export const getCourse = async (id: string): Promise<Course | null> => {
     try {
-        const docRef = doc(db, "courses", id);
-        const docSnap = await getDoc(docRef);
+    if (!db) {
+      console.warn('Firestore not initialized. getCourse() returning null.');
+      return null;
+    }
+    const docRef = doc(db, "courses", id);
+    const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -130,8 +147,9 @@ export const getCourse = async (id: string): Promise<Course | null> => {
 // Function to update a course in Firestore
 export const updateCourse = async (id: string, courseData: Partial<UpdatableCourse>): Promise<void> => {
     try {
-        const courseRef = doc(db, "courses", id);
-        await updateDoc(courseRef, courseData);
+    if (!db) throw new Error('Firestore is not initialized. Cannot update course.');
+    const courseRef = doc(db, "courses", id);
+    await updateDoc(courseRef, courseData);
     } catch (error) {
         console.error("Error updating course: ", error);
         throw new Error("Failed to update course.");
@@ -141,8 +159,9 @@ export const updateCourse = async (id: string, courseData: Partial<UpdatableCour
 // Function to delete a course from Firestore
 export const deleteCourse = async (id: string): Promise<void> => {
     try {
-        const courseRef = doc(db, "courses", id);
-        await deleteDoc(courseRef);
+    if (!db) throw new Error('Firestore is not initialized. Cannot delete course.');
+    const courseRef = doc(db, "courses", id);
+    await deleteDoc(courseRef);
         // Note: In a real-world application, you would also want to handle
         // deleting associated data like enrollments, grades, etc.
         // For simplicity, we are only deleting the course document here.
@@ -155,6 +174,10 @@ export const deleteCourse = async (id: string): Promise<void> => {
 // Optimized function to get the count of all courses
 export const getCourseCount = async (): Promise<number> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getCourseCount() returning 0.');
+      return 0;
+    }
     const snapshot = await getCountFromServer(collection(db, "courses"));
     return snapshot.data().count;
   } catch (error) {
@@ -166,6 +189,7 @@ export const getCourseCount = async (): Promise<number> => {
 // Function to assign a teacher to multiple courses
 export const assignTeacherToCourses = async (teacherId: string, teacherName: string, courseIds: string[]): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot assign teacher to courses.');
     const batch = writeBatch(db);
     
     for (const courseId of courseIds) {
@@ -194,6 +218,7 @@ export const assignTeacherToCourses = async (teacherId: string, teacherName: str
 // Function to remove a teacher from all courses
 export const removeTeacherFromAllCourses = async (teacherId: string): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot remove teacher from courses.');
     const coursesSnapshot = await getDocs(collection(db, "courses"));
     const batch = writeBatch(db);
     

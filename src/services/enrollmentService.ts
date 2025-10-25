@@ -16,7 +16,8 @@ const ENROLLMENT_COLLECTION = "enrollments";
  */
 export const enrollStudentsInCourse = async (courseId: string, studentIds: string[]): Promise<void> => {
   try {
-    const enrollmentRef = doc(db, ENROLLMENT_COLLECTION, courseId);
+        if (!db) throw new Error('Firestore is not initialized. Cannot enroll students.');
+        const enrollmentRef = doc(db, ENROLLMENT_COLLECTION, courseId);
     const docSnap = await getDoc(enrollmentRef);
 
     if (docSnap.exists()) {
@@ -44,6 +45,7 @@ export const enrollStudentsInCourse = async (courseId: string, studentIds: strin
  * @param courseIds An array of course IDs the student should be enrolled in.
  */
 export const enrollStudentInCourses = async (studentId: string, courseIds: string[]): Promise<void> => {
+    if (!db) throw new Error('Firestore is not initialized. Cannot update enrollments.');
     const batch = writeBatch(db);
     try {
         const allCoursesSnapshot = await getDocs(collection(db, ENROLLMENT_COLLECTION));
@@ -95,6 +97,10 @@ export const enrollStudentInCourses = async (studentId: string, courseIds: strin
  */
 export const getEnrollmentForCourse = async (courseId: string): Promise<Enrollment | null> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getEnrollmentForCourse() returning null.');
+            return null;
+        }
         const docRef = doc(db, ENROLLMENT_COLLECTION, courseId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -114,6 +120,10 @@ export const getEnrollmentForCourse = async (courseId: string): Promise<Enrollme
  */
 export const getCoursesForStudent = async (studentId: string): Promise<string[]> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getCoursesForStudent() returning empty list.');
+            return [];
+        }
         const enrollmentsRef = collection(db, ENROLLMENT_COLLECTION);
         const q = query(enrollmentsRef, where("studentIds", "array-contains", studentId));
         const querySnapshot = await getDocs(q);

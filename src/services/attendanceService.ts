@@ -16,6 +16,7 @@ const getStudentDocId = (grade: string, className: string, date: string) => `${g
  */
 export const saveAttendance = async (record: Omit<AttendanceRecord, 'id'>): Promise<void> => {
   try {
+        if (!db) throw new Error('Firestore is not initialized. Cannot save attendance.');
     const docId = getStudentDocId(record.grade, record.className, record.date);
     const attendanceRef = doc(db, STUDENT_ATTENDANCE_COLLECTION, docId);
     // Add student IDs to the top level for efficient querying
@@ -36,6 +37,10 @@ export const saveAttendance = async (record: Omit<AttendanceRecord, 'id'>): Prom
  */
 export const getAttendance = async (grade: string, className: string, date: string): Promise<AttendanceRecord | null> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getAttendance() returning null.');
+            return null;
+        }
         const docId = getStudentDocId(grade, className, date);
         const docRef = doc(db, STUDENT_ATTENDANCE_COLLECTION, docId);
         const docSnap = await getDoc(docRef);
@@ -57,6 +62,10 @@ export const getAttendance = async (grade: string, className: string, date: stri
  */
 export const getAttendanceForStudent = async (studentId: string): Promise<{ date: string; status: string }[]> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getAttendanceForStudent() returning empty list.');
+            return [];
+        }
         // Get ALL attendance records and filter client-side (temporary fix)
         const querySnapshot = await getDocs(collection(db, STUDENT_ATTENDANCE_COLLECTION));
         
@@ -86,6 +95,7 @@ export const getAttendanceForStudent = async (studentId: string): Promise<{ date
  */
 export const saveStaffAttendance = async (record: Omit<StaffAttendanceRecord, 'id'>): Promise<void> => {
   try {
+        if (!db) throw new Error('Firestore is not initialized. Cannot save staff attendance.');
     const docRef = doc(db, STAFF_ATTENDANCE_COLLECTION, record.date);
     await setDoc(docRef, record, { merge: true });
   } catch (error) {
@@ -101,6 +111,10 @@ export const saveStaffAttendance = async (record: Omit<StaffAttendanceRecord, 'i
  */
 export const getStaffAttendance = async (date: string): Promise<StaffAttendanceRecord | null> => {
     try {
+        if (!db) {
+            console.warn('Firestore not initialized. getStaffAttendance() returning null.');
+            return null;
+        }
         const docRef = doc(db, STAFF_ATTENDANCE_COLLECTION, date);
         const docSnap = await getDoc(docRef);
 

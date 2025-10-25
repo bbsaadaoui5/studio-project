@@ -15,8 +15,10 @@ const nav = [
   { label: "الإعدادات", href: "settings" },
 ];
 
-export default async function TeacherPortalLayout({ children, params }: { children: ReactNode; params: { teacherid: string } }) {
-  const teacherId = params?.teacherid;
+export default async function TeacherPortalLayout({ children, params }: { children: ReactNode; params: any }) {
+  // Accept either `teacherId` or `teacherid` to be robust across route param naming
+  // Fallback to the 'me' alias so the layout remains usable if params is missing.
+  const teacherId = (params && (params.teacherId ?? params.teacherid)) ?? 'me';
   let teacherName = 'بوابة الأستاذ';
   try {
     if (teacherId) {

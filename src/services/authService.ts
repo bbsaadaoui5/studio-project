@@ -16,6 +16,10 @@ export const createAuthUser = async (email: string, password: string):Promise<st
 }
 
 export const getStaffByEmail = async (email: string) => {
+    if (!db) {
+        console.warn('Firestore not initialized. getStaffByEmail() returning null.');
+        return null;
+    }
     const staffRef = collection(db, "staff");
     const q = query(staffRef, where("email", "==", email));
     const querySnapshot = await getDocs(q);

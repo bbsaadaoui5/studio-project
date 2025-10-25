@@ -3,6 +3,7 @@ import { doc, deleteDoc } from "firebase/firestore";
 
 export const deleteStaffMember = async (id: string): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot delete staff member.');
     const staffRef = doc(db, "staff", id);
     await deleteDoc(staffRef);
   } catch (error) {

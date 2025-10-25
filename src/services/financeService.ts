@@ -1,6 +1,7 @@
 // تحديث مصروف
 export const updateExpense = async (expenseId: string, expenseData: Partial<Expense>): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot update expense.');
     const docRef = doc(db, "expenses", expenseId);
     await updateDoc(docRef, expenseData);
   } catch (error) {
@@ -11,6 +12,7 @@ export const updateExpense = async (expenseId: string, expenseData: Partial<Expe
 // حذف مصروف
 export const deleteExpense = async (expenseId: string): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot delete expense.');
     const docRef = doc(db, "expenses", expenseId);
     await deleteDoc(docRef);
   } catch (error) {
@@ -43,6 +45,10 @@ import { getPayrolls } from "./payrollService";
 
 export const getExpenses = async (from?: Date, to?: Date): Promise<Expense[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getExpenses() returning empty list.');
+      return [];
+    }
     const expensesCol = collection(db, "expenses");
     let q;
 
@@ -74,6 +80,7 @@ export const getExpenses = async (from?: Date, to?: Date): Promise<Expense[]> =>
 export const addExpense = async (expenseData: Omit<Expense, 'id'>) => {
 
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot add expense.');
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expenseData,
       date: serverTimestamp() // Use server timestamp
@@ -102,7 +109,11 @@ export const getExpenseSummary = async (): Promise<Record<string, number>> => {
 
 export const getFeeStructures = async (): Promise<FeeStructure[]> => {
     try {
-        const querySnapshot = await getDocs(collection(db, "feeStructures"));
+    if (!db) {
+      console.warn('Firestore not initialized. getFeeStructures() returning empty list.');
+      return [];
+    }
+    const querySnapshot = await getDocs(collection(db, "feeStructures"));
         const structures: FeeStructure[] = [];
         querySnapshot.forEach((doc) => {
             structures.push(doc.data() as FeeStructure);
@@ -118,8 +129,12 @@ export const getFeeStructureForGrade = async (grade: string, academicYear: strin
     try {
         // First try exact match
         const docId = `${grade}-${academicYear}`;
-        const docRef = doc(db, "feeStructures", docId);
-        const docSnap = await getDoc(docRef);
+    if (!db) {
+      console.warn('Firestore not initialized. getFeeStructureForGrade() returning null.');
+      return null;
+    }
+    const docRef = doc(db, "feeStructures", docId);
+    const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
             return docSnap.data() as FeeStructure;
@@ -142,6 +157,7 @@ export const getFeeStructureForGrade = async (grade: string, academicYear: strin
 
 export const saveFeeStructure = async (structureData: FeeStructure): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot save fee structure.');
     const docRef = doc(db, "feeStructures", structureData.id);
     await setDoc(docRef, structureData);
   } catch (error) {
@@ -152,6 +168,7 @@ export const saveFeeStructure = async (structureData: FeeStructure): Promise<voi
 
 export const updateFeeStructure = async (structureId: string, structureData: Partial<FeeStructure>): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot update fee structure.');
     const docRef = doc(db, "feeStructures", structureId);
     await updateDoc(docRef, structureData);
   } catch (error) {
@@ -165,6 +182,10 @@ export const updateFeeStructure = async (structureId: string, structureData: Par
 
 export const getPaymentsForStudent = async (studentId: string): Promise<Payment[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getPaymentsForStudent() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, "payments"), where("studentId", "==", studentId));
     const querySnapshot = await getDocs(q);
     const payments: Payment[] = [];
@@ -185,6 +206,7 @@ export const getPaymentsForStudent = async (studentId: string): Promise<Payment[
 
 export const recordPayment = async (paymentData: Omit<Payment, 'id'>): Promise<Payment> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot record payment.');
     const docRef = await addDoc(collection(db, "payments"), { ...paymentData, date: serverTimestamp() });
     await updateDoc(docRef, { id: docRef.id });
     return { ...paymentData, id: docRef.id, date: new Date().toISOString() } as Payment;
@@ -196,6 +218,7 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id'>): Promise<P
 
 export const updatePayment = async (paymentId: string, paymentData: Partial<Payment>): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot update payment.');
     const docRef = doc(db, "payments", paymentId);
     await updateDoc(docRef, paymentData);
   } catch (error) {
@@ -206,6 +229,7 @@ export const updatePayment = async (paymentId: string, paymentData: Partial<Paym
 
 export const deletePayment = async (paymentId: string): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot delete payment.');
     const docRef = doc(db, "payments", paymentId);
     await deleteDoc(docRef);
   } catch (error) {
@@ -217,8 +241,12 @@ export const deletePayment = async (paymentId: string): Promise<void> => {
 
 export const getIncomeSummary = async (): Promise<Record<string, number>> => {
     try {
-        const querySnapshot = await getDocs(collection(db, "payments"));
-        return querySnapshot.docs.reduce((acc, doc) => {
+    if (!db) {
+      console.warn('Firestore not initialized. getIncomeSummary() returning empty summary.');
+      return {};
+    }
+    const querySnapshot = await getDocs(collection(db, "payments"));
+    return querySnapshot.docs.reduce((acc, doc) => {
             const payment = doc.data() as Payment;
             const month = new Date(payment.date).toLocaleString('default', { month: 'long' });
             acc[month] = (acc[month] || 0) + payment.amount;

@@ -17,6 +17,14 @@ const GENERAL_SETTINGS_DOC_ID = "general";
  */
 export const getSettings = async (): Promise<SchoolSettings> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getSettings() returning default settings.');
+      return {
+        schoolName: "Almawed Academy",
+        academicYear: "2024-2025",
+        address: "",
+      };
+    }
     const docRef = doc(db, SETTINGS_COLLECTION, GENERAL_SETTINGS_DOC_ID);
     const docSnap = await getDoc(docRef);
 
@@ -42,6 +50,7 @@ export const getSettings = async (): Promise<SchoolSettings> => {
  */
 export const saveSettings = async (settings: SchoolSettings): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot save settings.');
     const docRef = doc(db, SETTINGS_COLLECTION, GENERAL_SETTINGS_DOC_ID);
     await setDoc(docRef, settings);
   } catch (error) {
