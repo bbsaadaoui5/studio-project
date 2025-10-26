@@ -22,6 +22,9 @@ import { Loader2, PlusCircle, CalendarDays, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/i18n/translation-provider";
 import { getTimetableForClass, addTimetableEntry } from "@/services/timetableService";
+import dynamic from 'next/dynamic'
+
+const TimetableAdmin = dynamic(() => import('@/components/TimetableAdmin'), { ssr: false })
 import { getCourses } from "@/services/courseService";
 import { getStudents } from "@/services/studentService";
 import { getSettings } from "@/services/settingsService";
@@ -181,6 +184,17 @@ export default function TimetablePage() {
 
   return (
     <>
+        <div className="p-4">
+            <div className="flex justify-end mb-4">
+                <details className="ml-2">
+                    <summary className="cursor-pointer">لوحة الإدارة — عرض الجدول (إدارة)</summary>
+                    <div className="mt-3">
+                        {/* Client component handles loading via /api/timetable */}
+                        <TimetableAdmin />
+                    </div>
+                </details>
+            </div>
+        </div>
     <div className="flex flex-col gap-6 no-print">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
