@@ -1,29 +1,19 @@
 import { db } from '@/lib/firebase-client'
-
-export interface TimetableEntry {
-  id?: string
-  teacherId: string
-  teacherName?: string
-  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
-  start: string // HH:MM
-  end: string // HH:MM
-  subject: string
-  room?: string
-}
+import type { TimetableEntry as TT } from '@/lib/types'
 
 // Simple dev fallback if `db` is not configured
-const devFallback: TimetableEntry[] = [
-  { id: 't1', teacherId: 't-1', teacherName: 'أ. سمير', day: 'monday', start: '09:00', end: '10:00', subject: 'رياضيات', room: 'A101' },
-  { id: 't2', teacherId: 't-2', teacherName: 'أ. ليلى', day: 'monday', start: '10:00', end: '11:00', subject: 'فيزياء', room: 'B201' },
-  { id: 't3', teacherId: 't-1', teacherName: 'أ. سمير', day: 'wednesday', start: '11:00', end: '12:00', subject: 'رياضيات', room: 'A101' },
+const devFallback: TT[] = [
+  { id: 't1', grade: '9', className: 'A', day: 'Monday', timeSlot: '09:00 - 10:00', courseId: 'c1', courseName: 'رياضيات', teacherName: 'أ. سمير' },
+  { id: 't2', grade: '9', className: 'A', day: 'Monday', timeSlot: '10:00 - 11:00', courseId: 'c2', courseName: 'فيزياء', teacherName: 'أ. ليلى' },
+  { id: 't3', grade: '9', className: 'A', day: 'Wednesday', timeSlot: '11:00 - 12:00', courseId: 'c1', courseName: 'رياضيات', teacherName: 'أ. سمير' },
 ]
 
-export async function getWeeklyTimetable(): Promise<TimetableEntry[]> {
+export async function getWeeklyTimetable(): Promise<TT[]> {
   if (!db) return devFallback
   try {
     const snap = await db.collection('timetables').get()
-    const items: TimetableEntry[] = []
-    snap.forEach(doc => {
+    const items: TT[] = []
+    snap.forEach((doc: any) => {
       items.push({ id: doc.id, ...(doc.data() as any) })
     })
     return items
@@ -35,28 +25,30 @@ export async function getWeeklyTimetable(): Promise<TimetableEntry[]> {
   }
 }
 
-export async function getTimetableForClass(grade: string, className: string): Promise<TimetableEntry[]> {
+export async function getTimetableForClass(grade: string, className: string): Promise<TT[]> {
   const all = await getWeeklyTimetable()
   // naive client-side filter for simplicity in this implementation
   return all.filter(t => (t as any).grade === grade && (t as any).className === className)
 }
 
-export async function getTimetableForTeacher(teacherName: string): Promise<TimetableEntry[]> {
+export async function getTimetableForTeacher(teacherName: string): Promise<TT[]> {
   const all = await getWeeklyTimetable()
-  return all.filter(t => t.teacherName === teacherName || t.teacherId === teacherName)
+  return all.filter(t => t.teacherName === teacherName || t.teacherName === teacherName)
 }
 
-export async function addTimetableEntry(entry: TimetableEntry) {
+export async function addTimetableEntry(entry: Omit<TT, 'id'>) {
   if (!db) {
     // return a pseudo-id for dev fallback
     const id = `dev-${Date.now()}`
-    return { id, ...entry }
+    return { id, ...(entry as any) } as TT
   }
   const ref = await db.collection('timetables').add(entry)
-  return { id: ref.id, ...entry }
+  const result = { ...(entry as any) } as any
+  result.id = ref.id
+  return result as TT
 }
 
-export async function updateTimetableEntry(id: string, patch: Partial<TimetableEntry>) {
+export async function updateTimetableEntry(id: string, patch: Partial<TT>) {
   if (!db) {
     return { id, ...patch }
   }

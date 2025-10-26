@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import timetableService from '@/services/timetableService'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const items = await timetableService.getWeeklyTimetable()
   return NextResponse.json(items)
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const body = await request.json()
   const created = await timetableService.addTimetableEntry(body)
   return NextResponse.json(created)
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   const body = await request.json()
   const { id, ...patch } = body
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
@@ -20,7 +20,7 @@ export async function PUT(request: Request) {
   return NextResponse.json(updated)
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   const url = new URL(request.url)
   const id = url.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })

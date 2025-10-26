@@ -1,19 +1,10 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 
-type Entry = {
-  id?: string
-  teacherId: string
-  teacherName?: string
-  day: string
-  start: string
-  end: string
-  subject: string
-  room?: string
-}
+import type { TimetableEntry } from '@/lib/types'
 
-export default function TimetableAdmin({ initial = [] as Entry[] }: { initial?: Entry[] }) {
-  const [entries, setEntries] = useState<Entry[]>(initial)
+export default function TimetableAdmin({ initial = [] as TimetableEntry[] }: { initial?: TimetableEntry[] }) {
+  const [entries, setEntries] = useState<TimetableEntry[]>(initial)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -22,8 +13,8 @@ export default function TimetableAdmin({ initial = [] as Entry[] }: { initial?: 
 
   async function reload() {
     setLoading(true)
-    const res = await fetch('/api/timetable')
-    const data = await res.json()
+  const res = await fetch('/api/timetable')
+  const data: TimetableEntry[] = await res.json()
     setEntries(data)
     setLoading(false)
   }
@@ -33,8 +24,20 @@ export default function TimetableAdmin({ initial = [] as Entry[] }: { initial?: 
     const form = e.target as HTMLFormElement
     const fd = new FormData(form)
     const payload = Object.fromEntries(fd) as any
-    const res = await fetch('/api/timetable', { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } })
-    const created = await res.json()
+    // normalize payload to TimetableEntry shape expected by backend
+    // expect grade and className optionally provided; keep minimal required fields
+    const body: Partial<TimetableEntry> = {
+      grade: payload.grade || '9',
+      className: payload.className || 'A',
+      day: payload.day as TimetableEntry['day'] || 'Monday',
+      timeSlot: payload.timeSlot || `${payload.start || '09:00'} - ${payload.end || '10:00'}`,
+      courseId: payload.courseId || `c-${Date.now()}`,
+      courseName: payload.subject || payload.courseName || 'General',
+      teacherName: payload.teacherName || payload.teacherId || 'TBA',
+      notes: payload.notes,
+    }
+    const res = await fetch('/api/timetable', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } })
+    const created: TimetableEntry = await res.json()
     setEntries(prev => [created, ...prev])
     form.reset()
   }
@@ -77,8 +80,8 @@ export default function TimetableAdmin({ initial = [] as Entry[] }: { initial?: 
         {entries.map(e => (
           <div key={e.id ?? JSON.stringify(e)} className="p-3 border rounded flex justify-between items-center">
             <div className="text-sm">
-              <div className="font-semibold">{e.teacherName ?? e.teacherId} — {e.subject}</div>
-              <div className="text-xs text-muted-foreground">{e.day} • {e.start} - {e.end} • {e.room}</div>
+              <div className="font-semibold">{e.teacherName} — {e.courseName}</div>
+              <div className="text-xs text-muted-foreground">Grade {e.grade} • Class {e.className} • {e.day} • {e.timeSlot}</div>
             </div>
             <div className="space-x-2">
               <button onClick={() => handleDelete(e.id)} className="text-sm text-red-600">حذف</button>
