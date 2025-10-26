@@ -18,7 +18,9 @@ const nav = [
 export default async function TeacherPortalLayout({ children, params }: { children: ReactNode; params: any }) {
   // Accept either `teacherId` or `teacherid` to be robust across route param naming
   // Fallback to the 'me' alias so the layout remains usable if params is missing.
-  const teacherId = (params && (params.teacherId ?? params.teacherid)) ?? 'me';
+  // `params` can be a Promise in some Next.js dynamic APIs; await it before use
+  const awaitedParams = await params;
+  const teacherId = (awaitedParams && (awaitedParams.teacherId ?? awaitedParams.teacherid)) ?? 'me';
   let teacherName = 'بوابة الأستاذ';
   try {
     if (teacherId) {
