@@ -1,15 +1,11 @@
 import { db } from '@/lib/firebase-client'
 import type { TimetableEntry as TT } from '@/lib/types'
-
-// Simple dev fallback if `db` is not configured
-const devFallback: TT[] = [
-  { id: 't1', grade: '9', className: 'A', day: 'Monday', timeSlot: '09:00 - 10:00', courseId: 'c1', courseName: 'رياضيات', teacherName: 'أ. سمير' },
-  { id: 't2', grade: '9', className: 'A', day: 'Monday', timeSlot: '10:00 - 11:00', courseId: 'c2', courseName: 'فيزياء', teacherName: 'أ. ليلى' },
-  { id: 't3', grade: '9', className: 'A', day: 'Wednesday', timeSlot: '11:00 - 12:00', courseId: 'c1', courseName: 'رياضيات', teacherName: 'أ. سمير' },
-]
+import { isDevMockEnabled, getMockTimetable } from '@/lib/dev-mock'
 
 export async function getWeeklyTimetable(): Promise<TT[]> {
-  if (!db) return devFallback
+  // If dev mocks are enabled, return the mock timetable
+  if (isDevMockEnabled()) return getMockTimetable()
+  if (!db) return getMockTimetable()
   try {
     const snap = await db.collection('timetables').get()
     const items: TT[] = []
@@ -21,7 +17,7 @@ export async function getWeeklyTimetable(): Promise<TT[]> {
     // If Firestore read fails, return fallback
     // eslint-disable-next-line no-console
     console.error('Failed to load timetable', e)
-    return devFallback
+    return getMockTimetable()
   }
 }
 
@@ -62,7 +58,7 @@ export async function deleteTimetableEntry(id: string) {
   return true
 }
 
-export default {
+const timetableService = {
   getWeeklyTimetable,
   getTimetableForClass,
   getTimetableForTeacher,
@@ -70,3 +66,5 @@ export default {
   updateTimetableEntry,
   deleteTimetableEntry,
 }
+
+export default timetableService

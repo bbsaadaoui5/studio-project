@@ -1,7 +1,7 @@
 // Lightweight dev mock data used when Firestore is not available locally.
 // Controlled by NODE_ENV !== 'production' so production builds aren't affected.
 
-import type { Student, Staff } from "@/lib/types";
+import type { Student, Staff, TimetableEntry } from "@/lib/types";
 
 export const MOCK_STUDENTS: Student[] = [
   {
@@ -60,4 +60,19 @@ export async function getMockStaffMembers(): Promise<Staff[]> {
 export async function getMockStaffMember(id: string): Promise<Staff | null> {
   const s = MOCK_STAFF.find(s => s.id === id);
   return s || null;
+}
+
+// Richer timetable mock data for local demos
+const MOCK_TIMETABLE: TimetableEntry[] = [
+  { id: 't1', grade: '9', className: 'A', day: 'Monday', timeSlot: '08:00 - 08:45', courseId: 'c-math', courseName: 'رياضيات', teacherName: 'أ. سمير', notes: '' },
+  { id: 't2', grade: '9', className: 'A', day: 'Monday', timeSlot: '08:50 - 09:35', courseId: 'c-eng', courseName: 'انكليزي', teacherName: 'أ. ليلى', notes: '' },
+  { id: 't3', grade: '9', className: 'A', day: 'Tuesday', timeSlot: '09:40 - 10:25', courseId: 'c-phy', courseName: 'فيزياء', teacherName: 'أ. كريم', notes: '' },
+  { id: 't4', grade: '9', className: 'B', day: 'Monday', timeSlot: '08:00 - 08:45', courseId: 'c-bio', courseName: 'أحياء', teacherName: 'أ. يسرا', notes: '' },
+  { id: 't5', grade: '10', className: 'A', day: 'Wednesday', timeSlot: '10:30 - 11:15', courseId: 'c-chem', courseName: 'كيمياء', teacherName: 'أ. خالد', notes: '' },
+  { id: 't6', grade: '11', className: 'C', day: 'Thursday', timeSlot: '11:20 - 12:05', courseId: 'c-his', courseName: 'تاريخ', teacherName: 'أ. مريم', notes: '' },
+]
+
+export async function getMockTimetable(): Promise<TimetableEntry[]> {
+  // Return a cloned array so callers can mutate safely
+  return MOCK_TIMETABLE.map(t => ({ ...t }))
 }

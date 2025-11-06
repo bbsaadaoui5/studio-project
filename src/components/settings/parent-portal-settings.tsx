@@ -17,6 +17,7 @@ export function ParentPortalSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [parentLink, setParentLink] = useState<string | null>(null);
+  const [parentDisplayName, setParentDisplayName] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,7 +38,7 @@ export function ParentPortalSettings() {
     if (!selectedStudentId) return;
     setIsGenerating(true);
     try {
-      await generateParentAccessToken(selectedStudentId);
+      await generateParentAccessToken(selectedStudentId, { parentName: parentDisplayName || undefined });
       const link = await getParentAccessLink(selectedStudentId);
       setParentLink(link);
       toast({ title: t('common.success'), description: t('settings.parentPortal.linkGenerated') });
@@ -84,6 +85,10 @@ export function ParentPortalSettings() {
                   <option key={s.id} value={s.id}>{s.name} ({s.grade} - {s.className})</option>
                 ))}
               </select>
+              <div className="mt-2">
+                <Label htmlFor="parent-name" className="text-right">{t('settings.parentPortal.parentName') || 'اسم ولي الأمر (اختياري)'}</Label>
+                <Input id="parent-name" value={parentDisplayName} onChange={e => setParentDisplayName(e.target.value)} placeholder="مثال: فاطمة محمد" />
+              </div>
             </div>
             <Button onClick={handleGenerateLink} disabled={!selectedStudentId || isGenerating} className="text-right">
               {isGenerating ? <Loader2 className="animate-spin ml-2" /> : <Link2 className="ml-2" />}

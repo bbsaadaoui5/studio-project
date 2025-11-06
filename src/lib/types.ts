@@ -36,6 +36,7 @@ export type Course = {
   teachers: { id: string; name: string }[];
   description: string;
   credits: number;
+  monthlyFee?: number;
   department: string;
   grade: string;
   type: "academic" | "support";
@@ -98,6 +99,7 @@ export type Assignment = {
     courseId: string;
     name: string;
     totalPoints: number;
+  dueDate?: string; // ISO Date string (optional)
 }
 
 export type Grade = {
@@ -135,6 +137,8 @@ export type Payment = {
   month: string; // e.g., "September"
   academicYear: string;
   method: "card" | "cash" | "bank-transfer";
+  // Optional external payment reference (e.g., Stripe PaymentIntent id)
+  stripePaymentId?: string;
 };
 
 export type StudentFeeStatus = {
@@ -191,6 +195,8 @@ export type ReportCard = {
 export type ParentAccess = {
   id: string; // The token itself
   studentId: string;
+  parentId?: string; // optional parent user id (if available)
+  parentName?: string; // optional display name stored with the token
   createdAt: string; // ISO Date String
 }
 

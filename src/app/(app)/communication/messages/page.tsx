@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -18,13 +19,17 @@ import { Staff, Student } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
-// In a real app, this would come from an authentication context
-const CURRENT_USER_ID = "admin_user_01"; 
-const CURRENT_USER_NAME = "Admin"; 
+// In a real app, this would come from an authentication context.
+// When opened from the parent portal we accept a `parentName` query param and
+// use that as a synthetic current-user identity for the page (display-only).
 
 type Contact = (Student | Staff) & { type: 'student' | 'staff' };
 
 export default function MessagesPage() {
+    const searchParams = useSearchParams();
+    const parentNameFromQuery = searchParams?.get?.('parentName') || null;
+    const currentUserId = parentNameFromQuery ? `parent:${parentNameFromQuery}` : "admin_user_01";
+    const currentUserName = parentNameFromQuery || "Admin";
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -41,7 +46,7 @@ export default function MessagesPage() {
     const fetchConversations = useCallback(async () => {
         setIsLoadingConversations(true);
         try {
-            const convos = await getConversations(CURRENT_USER_ID);
+            const convos = await getConversations(currentUserId);
             setConversations(convos);
             if (convos.length > 0 && !selectedConversation) {
                 setSelectedConversation(convos[0]);
@@ -55,11 +60,33 @@ export default function MessagesPage() {
         } finally {
             setIsLoadingConversations(false);
         }
-    }, [toast, selectedConversation]);
+    }, [toast, selectedConversation, currentUserId]);
     
     useEffect(() => {
         fetchConversations();
     }, [fetchConversations]);
+
+    // If a query param `withStudentId` is provided, start or open a conversation with that student.
+    useEffect(() => {
+        const studentId = searchParams?.get?.('withStudentId');
+        if (!studentId) return;
+
+        (async () => {
+            try {
+                const starterId = currentUserId;
+                const starterName = currentUserName;
+                // Start or fetch the conversation using the derived starter identity
+                const convo = await startConversation(starterId, studentId, `محادثة ${starterName}`);
+                // Refresh and select
+                await fetchConversations();
+                setSelectedConversation(convo);
+            } catch (err) {
+                // ignore; user will see empty state
+                console.error('Failed to open conversation for studentId:', studentId, err);
+            }
+        })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (!selectedConversation) {
@@ -112,7 +139,7 @@ export default function MessagesPage() {
 
     const handleSelectContact = async (contact: Contact) => {
         try {
-            const newConversation = await startConversation(CURRENT_USER_ID, contact.id, contact.name);
+            const newConversation = await startConversation(currentUserId, contact.id, contact.name);
             await fetchConversations();
             setSelectedConversation(newConversation);
             setIsNewMessageOpen(false);
@@ -127,7 +154,7 @@ export default function MessagesPage() {
     }
     
     const getParticipantDetails = (convo: Conversation) => {
-        return convo.participantDetails.find(p => p.id !== CURRENT_USER_ID) || convo.participantDetails[0];
+        return convo.participantDetails.find(p => p.id !== currentUserId) || convo.participantDetails[0];
     }
 
     type TimestampLike = { toDate: () => Date };
@@ -151,11 +178,11 @@ export default function MessagesPage() {
         setMessageInput('');
 
         try {
-            const newMessage = await sendMessage(selectedConversation.id, CURRENT_USER_ID, text);
+            const newMessage = await sendMessage(selectedConversation.id, currentUserId, text);
             setMessages(prev => [...prev, newMessage]);
             setConversations(prev => prev.map(conv => 
                 conv.id === selectedConversation.id 
-                    ? { ...conv, lastMessage: { text, senderId: CURRENT_USER_ID, timestamp: new Date().toISOString() } }
+                    ? { ...conv, lastMessage: { text, senderId: currentUserId, timestamp: new Date().toISOString() } }
                     : conv
             ).sort((a,b) => parseTimestamp(b.lastMessage.timestamp) - parseTimestamp(a.lastMessage.timestamp)));
         } catch (error) {
@@ -245,7 +272,7 @@ export default function MessagesPage() {
                                 <div className="flex-1 truncate">
                                     <p className="font-semibold">{participant?.name}</p>
                                     <p className="text-sm text-muted-foreground truncate">
-                                        {conv.lastMessage.senderId === CURRENT_USER_ID && "أنت: "}
+                                        {conv.lastMessage.senderId === currentUserId && "أنت: "}
                                         {conv.lastMessage.text}
                                     </p>
                                 </div>
@@ -275,15 +302,15 @@ export default function MessagesPage() {
                             </div>
                         ) : messages.map((msg, index) => {
                             const senderDetails = selectedConversation.participantDetails.find(p => p.id === msg.senderId);
-                            const senderName = msg.senderId === CURRENT_USER_ID ? CURRENT_USER_NAME : senderDetails?.name || 'غير معروف';
-                            const senderAvatar = msg.senderId === CURRENT_USER_ID ? `https://picsum.photos/seed/${CURRENT_USER_ID}/100/100` : senderDetails?.avatar || '';
+                            const senderName = msg.senderId === currentUserId ? currentUserName : senderDetails?.name || 'غير معروف';
+                            const senderAvatar = msg.senderId === currentUserId ? `https://picsum.photos/seed/${encodeURIComponent(currentUserId)}/100/100` : senderDetails?.avatar || '';
 
                             return (
                             <div key={index} className={cn(
                                 "flex items-end gap-2",
-                                msg.senderId === CURRENT_USER_ID ? 'justify-end' : 'justify-start'
+                                msg.senderId === currentUserId ? 'justify-end' : 'justify-start'
                             )}>
-                                {msg.senderId !== CURRENT_USER_ID && (
+                                {msg.senderId !== currentUserId && (
                                     <Avatar className="h-8 w-8">
                                         <AvatarImage src={senderAvatar} data-ai-hint="person photo" />
                                         <AvatarFallback>{getInitials(senderName)}</AvatarFallback>
@@ -291,7 +318,7 @@ export default function MessagesPage() {
                                 )}
                                 <div className={cn(
                                     "max-w-xs rounded-xl p-3",
-                                    msg.senderId === CURRENT_USER_ID ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                                    msg.senderId === currentUserId ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                 )}>
                                     <p className="text-sm">{msg.text}</p>
                                     <p className="text-xs text-right mt-1 opacity-70">

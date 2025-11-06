@@ -50,6 +50,7 @@ export default function GradebookPage() {
 
   const [newAssignmentName, setNewAssignmentName] = useState("");
   const [newAssignmentPoints, setNewAssignmentPoints] = useState(100);
+  const [newAssignmentDueDate, setNewAssignmentDueDate] = useState<string | null>(null);
 
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(false);
@@ -138,18 +139,20 @@ export default function GradebookPage() {
       }
       setIsCreatingAssignment(true);
       try {
-          const newAssignment = {
-              courseId: selectedCourse,
-              name: newAssignmentName,
-              totalPoints: newAssignmentPoints,
-          }
-          const assignmentId = await addAssignment(newAssignment);
-          setAssignments(prev => [...prev, { ...newAssignment, id: assignmentId }]);
-          setSelectedAssignment(assignmentId);
-          toast({ title: "Assignment Created", description: `"${newAssignmentName}" has been added.`});
-          setNewAssignmentName("");
-          setNewAssignmentPoints(100);
-          setIsDialogOpen(false);
+      const newAssignment = {
+        courseId: selectedCourse,
+        name: newAssignmentName,
+        totalPoints: newAssignmentPoints,
+        dueDate: newAssignmentDueDate || undefined,
+      }
+      const assignmentId = await addAssignment(newAssignment);
+      setAssignments(prev => [...prev, { ...newAssignment, id: assignmentId }]);
+      setSelectedAssignment(assignmentId);
+      toast({ title: "Assignment Created", description: `"${newAssignmentName}" has been added.`});
+      setNewAssignmentName("");
+      setNewAssignmentPoints(100);
+      setNewAssignmentDueDate(null);
+      setIsDialogOpen(false);
       } catch (error) {
           toast({ title: "Error", description: "Failed to create assignment.", variant: "destructive" });
       } finally {
@@ -228,24 +231,28 @@ export default function GradebookPage() {
                       <span className="sr-only">{t('examination.addAssignment') || 'Add assignment'}</span>
                     </Button>
                   </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                    <DialogTitle>إنشاء تكليف جديد</DialogTitle>
-                    <DialogDescription>
-                        أدخل تفاصيل التكليف الجديد للمقرر: {courses.find(c => c.id === selectedCourse)?.name}
-                    </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="assignment-name" className="text-right">اسم التكليف</Label>
-                            <Input id="assignment-name" value={newAssignmentName} onChange={e => setNewAssignmentName(e.target.value)} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="total-points" className="text-right">إجمالي النقاط</Label>
-                            <Input id="total-points" type="number" value={newAssignmentPoints} onChange={e => setNewAssignmentPoints(Number(e.target.value))} className="col-span-3" />
-                        </div>
-                    </div>
-                    <DialogFooter>
+        <DialogContent>
+          <DialogHeader>
+          <DialogTitle>إنشاء تكليف جديد</DialogTitle>
+          <DialogDescription>
+            أدخل تفاصيل التكليف الجديد للمقرر: {courses.find(c => c.id === selectedCourse)?.name}
+          </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="assignment-name" className="text-right">اسم التكليف</Label>
+              <Input id="assignment-name" value={newAssignmentName} onChange={e => setNewAssignmentName(e.target.value)} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="total-points" className="text-right">إجمالي النقاط</Label>
+              <Input id="total-points" type="number" value={newAssignmentPoints} onChange={e => setNewAssignmentPoints(Number(e.target.value))} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="due-date" className="text-right">تاريخ الاستحقاق</Label>
+              <Input id="due-date" type="date" value={newAssignmentDueDate ?? ""} onChange={e => setNewAssignmentDueDate(e.target.value || null)} className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
                     <Button onClick={handleCreateAssignment} disabled={isCreatingAssignment}>
                         {isCreatingAssignment && <Loader2 className="animate-spin" />}
                         إنشاء التكليف

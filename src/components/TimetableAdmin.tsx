@@ -2,10 +2,15 @@
 import React, { useEffect, useState } from 'react'
 
 import type { TimetableEntry } from '@/lib/types'
+import { GlassModal, GlassModalContent, GlassModalHeader, GlassModalFooter, GlassModalTitle, GlassModalDescription, GlassModalTrigger, GlassModalClose } from '@/components/ui/glass-modal'
 
 export default function TimetableAdmin({ initial = [] as TimetableEntry[] }: { initial?: TimetableEntry[] }) {
   const [entries, setEntries] = useState<TimetableEntry[]>(initial)
   const [loading, setLoading] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingValues, setEditingValues] = useState<Partial<TimetableEntry> | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     setEntries(initial)
@@ -29,7 +34,7 @@ export default function TimetableAdmin({ initial = [] as TimetableEntry[] }: { i
     const body: Partial<TimetableEntry> = {
       grade: payload.grade || '9',
       className: payload.className || 'A',
-      day: payload.day as TimetableEntry['day'] || 'Monday',
+      day: ((payload.day as string) || 'Monday').replace(/^./, s => s.toUpperCase()) as TimetableEntry['day'],
       timeSlot: payload.timeSlot || `${payload.start || '09:00'} - ${payload.end || '10:00'}`,
       courseId: payload.courseId || `c-${Date.now()}`,
       courseName: payload.subject || payload.courseName || 'General',
@@ -48,6 +53,42 @@ export default function TimetableAdmin({ initial = [] as TimetableEntry[] }: { i
     setEntries(prev => prev.filter(x => x.id !== id))
   }
 
+  function startEdit(entry: TimetableEntry) {
+    setEditingId(entry.id)
+    setEditingValues({ ...entry })
+    setModalOpen(true)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditingValues(null)
+    setModalOpen(false)
+  }
+
+  async function submitEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingId || !editingValues) return
+    // basic validation
+    if (!editingValues.courseName || !editingValues.teacherName || !editingValues.day || !editingValues.timeSlot) {
+      alert('الرجاء ملء الحقول المطلوبة: المادة، المدرس، اليوم، والوقت')
+      return
+    }
+    try {
+      setSaving(true)
+      const payload = { id: editingId, ...editingValues }
+      const res = await fetch('/api/timetable', { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } })
+      if (!res.ok) throw new Error(`Server returned ${res.status}`)
+      const updated: TimetableEntry = await res.json()
+      setEntries(prev => prev.map(x => x.id === updated.id ? updated : x))
+      cancelEdit()
+    } catch (err) {
+      console.error(err)
+      alert('فشل تحديث الحصة — حاول مرة أخرى')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -56,6 +97,40 @@ export default function TimetableAdmin({ initial = [] as TimetableEntry[] }: { i
           <button onClick={reload} className="btn">{loading ? 'جارٍ...' : 'تحديث'}</button>
         </div>
       </div>
+
+      {/* Edit modal */}
+      <GlassModal open={modalOpen} onOpenChange={(v) => { if (!v) cancelEdit(); setModalOpen(v) }}>
+        <GlassModalContent>
+          <GlassModalHeader>
+            <GlassModalTitle>تعديل الحصة</GlassModalTitle>
+            <GlassModalDescription>قم بتعديل معلومات الحصة ثم اضغط حفظ.</GlassModalDescription>
+          </GlassModalHeader>
+
+          <form onSubmit={submitEdit} className="grid grid-cols-6 gap-2 mt-2">
+            <input className="col-span-3 p-2 border" value={editingValues?.teacherName || ''} onChange={ev => setEditingValues(v => ({ ...(v||{}), teacherName: ev.target.value }))} placeholder="اسم المدرس" />
+            <input className="col-span-3 p-2 border" value={editingValues?.courseName || ''} onChange={ev => setEditingValues(v => ({ ...(v||{}), courseName: ev.target.value }))} placeholder="المادة" />
+
+            <select className="col-span-2 p-2 border" value={editingValues?.day || 'Monday'} onChange={ev => setEditingValues(v => ({ ...(v||{}), day: ev.target.value as TimetableEntry['day'] }))}>
+              <option value="Monday">الاثنين</option>
+              <option value="Tuesday">الثلاثاء</option>
+              <option value="Wednesday">الاربعاء</option>
+              <option value="Thursday">الخميس</option>
+              <option value="Friday">الجمعة</option>
+            </select>
+            <input className="col-span-2 p-2 border" value={editingValues?.timeSlot || ''} onChange={ev => setEditingValues(v => ({ ...(v||{}), timeSlot: ev.target.value }))} placeholder="09:00 - 10:00" />
+            <input className="col-span-2 p-2 border" value={editingValues?.className || ''} onChange={ev => setEditingValues(v => ({ ...(v||{}), className: ev.target.value }))} placeholder="الصف/الشعبة" />
+
+            <input className="col-span-2 p-2 border" value={editingValues?.grade || ''} onChange={ev => setEditingValues(v => ({ ...(v||{}), grade: ev.target.value }))} placeholder="المرحلة" />
+            <input className="col-span-4 p-2 border" value={editingValues?.notes || ''} onChange={ev => setEditingValues(v => ({ ...(v||{}), notes: ev.target.value }))} placeholder="ملاحظات" />
+
+            <div className="col-span-6 flex justify-end space-x-2 pt-2">
+              <button type="button" onClick={cancelEdit} className="px-3 py-1 border">إلغاء</button>
+              <button type="submit" disabled={saving} className="btn-primary px-3 py-1">{saving ? 'جارٍ الحفظ...' : 'احفظ'}</button>
+            </div>
+          </form>
+
+        </GlassModalContent>
+      </GlassModal>
 
       <form onSubmit={handleAdd} className="grid grid-cols-6 gap-2 mb-4">
         <input name="teacherId" placeholder="معرف المدرس" className="col-span-1 p-2 border" />
@@ -78,14 +153,30 @@ export default function TimetableAdmin({ initial = [] as TimetableEntry[] }: { i
 
       <div className="space-y-2">
         {entries.map(e => (
-          <div key={e.id ?? JSON.stringify(e)} className="p-3 border rounded flex justify-between items-center">
-            <div className="text-sm">
-              <div className="font-semibold">{e.teacherName} — {e.courseName}</div>
-              <div className="text-xs text-muted-foreground">Grade {e.grade} • Class {e.className} • {e.day} • {e.timeSlot}</div>
-            </div>
-            <div className="space-x-2">
-              <button onClick={() => handleDelete(e.id)} className="text-sm text-red-600">حذف</button>
-            </div>
+          <div key={e.id ?? JSON.stringify(e)} className="p-3 border rounded">
+            {editingId === e.id && editingValues ? (
+              <>
+                <div className="text-sm">
+                  <div className="font-semibold">{editingValues.teacherName} — {editingValues.courseName}</div>
+                  <div className="text-xs text-muted-foreground">Grade {editingValues.grade} • Class {editingValues.className} • {editingValues.day} • {editingValues.timeSlot}</div>
+                </div>
+                <div className="space-x-2">
+                  <button onClick={() => setModalOpen(true)} className="text-sm text-blue-600">تعديل (فتح النافذة)</button>
+                  <button onClick={() => handleDelete(e.id)} className="text-sm text-red-600">حذف</button>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between items-center">
+                <div className="text-sm">
+                  <div className="font-semibold">{e.teacherName} — {e.courseName}</div>
+                  <div className="text-xs text-muted-foreground">Grade {e.grade} • Class {e.className} • {e.day} • {e.timeSlot}</div>
+                </div>
+                <div className="space-x-2">
+                  <button onClick={() => startEdit(e)} className="text-sm text-blue-600">تعديل</button>
+                  <button onClick={() => handleDelete(e.id)} className="text-sm text-red-600">حذف</button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

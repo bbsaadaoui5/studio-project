@@ -139,3 +139,48 @@ export const checkInBook = async (bookId: string): Promise<void> => {
         throw new Error("Failed to check in book.");
     }
 }
+
+/**
+ * Get all loans for a specific student.
+ * @param studentId - the student's id
+ * @returns an array of LibraryLoan objects
+ */
+export const getLoansForStudent = async (studentId: string): Promise<LibraryLoan[]> => {
+  if (!db) {
+    console.warn('Firestore not initialized. getLoansForStudent() returning empty list.');
+    return [];
+  }
+
+  try {
+    const loansRef = collection(db, LOANS_COLLECTION);
+    const q = query(loansRef, where("studentId", "==", studentId), orderBy("loanDate", "desc"));
+    const querySnapshot = await getDocs(q);
+    const loans: LibraryLoan[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as any;
+      // Normalize Firestore Timestamps to ISO strings if necessary
+      const loanDate = data.loanDate && typeof data.loanDate.toDate === "function"
+        ? data.loanDate.toDate().toISOString()
+        : data.loanDate;
+      const dueDate = data.dueDate && typeof data.dueDate.toDate === "function"
+        ? data.dueDate.toDate().toISOString()
+        : data.dueDate;
+      const returnDate = data.returnDate && typeof data.returnDate.toDate === "function"
+        ? data.returnDate.toDate().toISOString()
+        : data.returnDate;
+
+      loans.push({
+        id: docSnap.id,
+        bookId: data.bookId,
+        studentId: data.studentId,
+        loanDate,
+        dueDate,
+        returnDate,
+      } as LibraryLoan);
+    });
+    return loans;
+  } catch (error) {
+    console.error("Error fetching loans for student:", error);
+    return [];
+  }
+}

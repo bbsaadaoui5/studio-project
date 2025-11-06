@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { getStudents } from "@/services/studentService";
 import { getSettings } from "@/services/settingsService";
-import { getFeeStructureForGrade, getPaymentsForStudent, recordPayment, updatePayment, deletePayment } from "@/services/financeService";
+import { getFeeStructureForGrade, getPaymentsForStudent, recordPayment, updatePayment, deletePayment, getCombinedMonthlyDueForStudent } from "@/services/financeService";
 import type { Student, FeeStructure, Payment } from "@/lib/types";
 import { Loader2, DollarSign, Receipt, Printer, X, TrendingUp, TrendingDown, Scale, Edit, Trash2 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, getYear, getMonth, set, isBefore, differenceInCalendarMonths, addMonths, isWithinInterval, startOfYear, endOfDay } from "date-fns";
@@ -43,29 +43,31 @@ import { cn } from "@/lib/utils";
 
 export default function FeesPage() {
     const { t } = useTranslation();
-    // أسماء الشهور بالعربية
-        // عناوين وحقول معربة
-        const pageTitle = "إدارة الرسوم الدراسية"; // Title
-        const pageDescription = "إدارة وتتبع جميع الرسوم الدراسية للطلاب"; // Description
-        const selectStudent = "اختر الطالب"; // Select student
-        const selectStudentPlaceholder = "ابحث عن اسم الطالب..."; // Placeholder for student search
-        const startPeriod = "بداية الفترة"; // Start period
-        const endPeriod = "نهاية الفترة"; // End period
-        const monthLabel = "الشهر"; // Month label
-        const yearLabel = "السنة"; // Year label
-        const months = [
-            { value: 0, label: "يناير" }, { value: 1, label: "فبراير" }, { value: 2, label: "مارس" },
-            { value: 3, label: "أبريل" }, { value: 4, label: "ماي" }, { value: 5, label: "يونيو" },
-            { value: 6, label: "يوليوز" }, { value: 7, label: "غشت" }, { value: 8, label: "شتنبر" },
-            { value: 9, label: "أكتوبر" }, { value: 10, label: "نونبر" }, { value: 11, label: "دجنبر" }
-        ];
-    // مثال لتعريب بعض الحقول الثابتة (يمكنك تعريب المزيد حسب الحاجة)
+    // Localized labels and months (use i18n keys)
+    const pageTitle = t('finance.feeManagement.title');
+    const pageDescription = t('finance.feeManagement.description');
+
+    const months = [
+      { value: 0, label: t('months.january') },
+      { value: 1, label: t('months.february') },
+      { value: 2, label: t('months.march') },
+      { value: 3, label: t('months.april') },
+      { value: 4, label: t('months.may') },
+      { value: 5, label: t('months.june') },
+      { value: 6, label: t('months.july') },
+      { value: 7, label: t('months.august') },
+      { value: 8, label: t('months.september') },
+      { value: 9, label: t('months.october') },
+      { value: 10, label: t('months.november') },
+      { value: 11, label: t('months.december') }
+    ];
+
     const tableHeaders = {
-        student: "الطالب",
-        grade: "المستوى",
-        amount: "المبلغ",
-        status: "الحالة",
-        actions: "إجراءات"
+        student: t('common.student'),
+        grade: t('common.grade'),
+        amount: t('common.amount'),
+        status: t('common.status'),
+        actions: t('common.actions')
     };
     const { toast } = useToast();
     const [students, setStudents] = useState<Student[]>([]);
@@ -73,6 +75,9 @@ export default function FeesPage() {
     
     const [feeStructure, setFeeStructure] = useState<FeeStructure | null>(null);
     const [allPayments, setAllPayments] = useState<Payment[]>([]);
+    const [gradeMonthly, setGradeMonthly] = useState<number>(0);
+    const [supportMonthly, setSupportMonthly] = useState<number>(0);
+    const [combinedMonthly, setCombinedMonthly] = useState<number>(0);
 
     const [academicYear, setAcademicYear] = useState("");
     const [schoolName, setSchoolName] = useState("");
@@ -106,11 +111,11 @@ export default function FeesPage() {
                 setAcademicYear(settings.academicYear);
                 setSchoolName(settings.schoolName);
             } catch (error) {
-                toast({ title: "Error", description: "Could not fetch initial data.", variant: "destructive" });
+                toast({ title: t('common.error'), description: t('finance.errors.fetchData') || 'Could not fetch initial data.', variant: "destructive" });
             }
         };
         fetchInitialData();
-    }, [toast]);
+    }, [toast, t]);
 
     const dateRange = useMemo(() => {
         if (startYear === null || startMonth === null || endYear === null || endMonth === null) {
@@ -136,11 +141,21 @@ export default function FeesPage() {
 
             const [structure, payments] = await Promise.all([
                 getFeeStructureForGrade(student.grade, academicYear),
-                getPaymentsForStudent(studentId)
+                getPaymentsForStudent(studentId),
+                getCombinedMonthlyDueForStudent(studentId, academicYear)
             ]);
 
             setFeeStructure(structure);
             setAllPayments(payments);
+            // the helper returns grade/support/combined
+            // when called in Promise.all the third item is the totals object
+            // but because Promise.all returns an array we need to extract it
+            // from the resolved promises above. We already have structure and payments,
+            // so call helper separately for clarity (avoid destructuring mismatch).
+            const totals = await getCombinedMonthlyDueForStudent(studentId, academicYear);
+            setGradeMonthly(totals.gradeMonthly || 0);
+            setSupportMonthly(totals.supportMonthly || 0);
+            setCombinedMonthly(totals.combinedMonthly || 0);
 
         } catch (error) {
              toast({ title: t('common.error'), description: t('finance.feeManagement.errorFetchingFeeInfo'), variant: "destructive" });
@@ -249,11 +264,11 @@ export default function FeesPage() {
         setIsDeleting(true);
         try {
             await deletePayment(paymentToDelete.id);
-            toast({ title: "Payment Deleted", description: "The payment record has been removed." });
+            toast({ title: t('finance.success.paymentDeleted'), description: t('finance.success.paymentDeletedDesc') });
             await fetchStudentFeeData(paymentToDelete.studentId);
             setPaymentToDelete(null);
         } catch (error) {
-             toast({ title: "Error", description: "Failed to delete payment.", variant: "destructive" });
+             toast({ title: t('common.error'), description: t('finance.errors.deletePayment'), variant: "destructive" });
         } finally {
             setIsDeleting(false);
         }
@@ -298,7 +313,7 @@ export default function FeesPage() {
         setIsSubmitting(true);
         try {
             if (!selectedStudent || !paymentAmount || !paymentMonth || !paymentMethod) {
-                toast({ title: "خطأ", description: "يرجى ملء جميع الحقول المطلوبة.", variant: "destructive" });
+                toast({ title: t('common.error'), description: t('finance.feeManagement.invalidInput'), variant: "destructive" });
                 setIsSubmitting(false);
                 return;
             }
@@ -310,13 +325,13 @@ export default function FeesPage() {
                 date: new Date().toISOString(),
                 academicYear: academicYear,
             });
-            toast({ title: "تم تسجيل الدفع بنجاح", description: "تمت إضافة الدفعة للطالب." });
+            toast({ title: t('finance.feeManagement.paymentRecorded'), description: t('finance.feeManagement.paymentRecordedDesc') });
             setIsDialogOpen(false);
             setPaymentAmount("");
             setPaymentMonth("");
             setPaymentMethod("card");
         } catch (error) {
-            toast({ title: "خطأ في تسجيل الدفع", description: "حدث خطأ أثناء تسجيل الدفعة.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('finance.feeManagement.errorRecordingPayment'), variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -330,9 +345,7 @@ export default function FeesPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle>{t('finance.feeManagement.title')}</CardTitle>
-                            <CardDescription>
-                                إدارة الرسوم الدراسية، الفواتير، وجدولة الأقساط للطلاب.
-                            </CardDescription>
+                            <CardDescription>{pageDescription}</CardDescription>
                         </div>
                          {selectedStudent && dateRange && (
                             <Button onClick={handlePrint} variant="outline" className="btn-glass btn-click-effect">
@@ -343,11 +356,11 @@ export default function FeesPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="flex flex-col md:flex-row gap-4 items-end">
-                     <div className="flex-1 space-y-2">
-                        <Label htmlFor="student-select">اختر الطالب</Label>
+                            <div className="flex-1 space-y-2">
+                        <Label htmlFor="student-select">{t('finance.feeManagement.selectStudent')}</Label>
                         <Select onValueChange={handleSelectStudent} value={selectedStudent?.id || ""}>
                             <SelectTrigger id="student-select">
-                                <SelectValue placeholder="يرجى اختيار الطالب..." />
+                                <SelectValue placeholder={t('finance.feeManagement.selectStudentPlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {students.map(student => (
@@ -360,27 +373,27 @@ export default function FeesPage() {
                     </div>
                     <div className="flex-1 grid grid-cols-2 gap-2 border p-2 rounded-md">
                         <div>
-                            <Label>بداية الفترة</Label>
+                            <Label>{t('finance.feeManagement.startPeriod')}</Label>
                             <div className="flex gap-2 mt-2">
                                 <Select onValueChange={(v) => setStartMonth(parseInt(v))} value={startMonth !== null ? String(startMonth) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="الشهر" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('finance.feeManagement.selectMonth')} /></SelectTrigger>
                                     <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
                                 </Select>
                                 <Select onValueChange={(v) => setStartYear(parseInt(v))} value={startYear !== null ? String(startYear) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="السنة" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('finance.feeManagement.year')} /></SelectTrigger>
                                     <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                         </div>
                          <div>
-                            <Label>نهاية الفترة</Label>
+                            <Label>{t('finance.feeManagement.endPeriod')}</Label>
                              <div className="flex gap-2 mt-2">
                                 <Select onValueChange={(v) => setEndMonth(parseInt(v))} value={endMonth !== null ? String(endMonth) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="الشهر" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('finance.feeManagement.selectMonth')} /></SelectTrigger>
                                     <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
                                 </Select>
                                 <Select onValueChange={(v) => setEndYear(parseInt(v))} value={endYear !== null ? String(endYear) : undefined}>
-                                    <SelectTrigger><SelectValue placeholder="السنة" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder={t('finance.feeManagement.year')} /></SelectTrigger>
                                     <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
@@ -404,7 +417,7 @@ export default function FeesPage() {
             {(!isLoading && selectedStudent && !dateRange) && (
                 <Card>
                     <CardContent className="text-center py-12 text-muted-foreground">
-                        <p>يرجى اختيار الفترة الزمنية لعرض كشف الحساب.</p>
+                        <p>{t('finance.feeManagement.selectPeriodToViewStatement')}</p>
                     </CardContent>
                 </Card>
             )}
@@ -412,8 +425,8 @@ export default function FeesPage() {
             {!isLoading && selectedStudent && dateRange && !feeStructure && (
                 <Card>
                     <CardContent className="text-center py-12">
-                        <p className="text-lg font-medium text-destructive">لا توجد بيانات للفترة المختارة، ربما لم يقم الطالب بأي دفعات خلال هذه الفترة.</p>
-                        <p className="text-muted-foreground">يرجى اختيار فترة أخرى أو التأكد من وجود دفعات للطالب.</p>
+                        <p className="text-lg font-medium text-destructive">{t('finance.feeManagement.noFeeStructureFound')}</p>
+                        <p className="text-muted-foreground">{t('finance.feeManagement.selectPeriodToViewStatement')}</p>
                     </CardContent>
                 </Card>
             )}
@@ -441,6 +454,19 @@ export default function FeesPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">{t('finance.feeManagement.gradeMonthlyLabel') || 'Grade monthly'}</span>
+                                        <span className="font-semibold">{formatCurrency(gradeMonthly)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">{t('finance.feeManagement.supportMonthlyLabel') || 'Support courses monthly'}</span>
+                                        <span className="font-semibold">{formatCurrency(supportMonthly)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">{t('finance.feeManagement.totalMonthlyLabel') || 'Total monthly due'}</span>
+                                        <span className="font-semibold">{formatCurrency(combinedMonthly || feeStructure?.monthlyAmount || 0)}</span>
+                                    </div>
+                                    <Separator />
                                  <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">{t('finance.feeManagement.dueThisPeriod')}</span>
                                     <span className="font-semibold">{formatCurrency(feeStatus.dueInPeriod)}</span>
@@ -475,14 +501,14 @@ export default function FeesPage() {
                                         <DialogHeader>
                                             <DialogTitle>{t('finance.feeManagement.addPayment')}</DialogTitle>
                                             <DialogDescription>
-                                                أدخل تفاصيل الدفعة لـ {selectedStudent.name}.
+                                                {t('finance.payment.enterDetails', { name: selectedStudent?.name })}
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="grid gap-4 py-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="month">{t('finance.feeManagement.paymentMonth')}</Label>
                                                 <Select onValueChange={setPaymentMonth} value={paymentMonth}>
-                                                    <SelectTrigger id="month"><SelectValue placeholder="اختر شهر..." /></SelectTrigger>
+                                                    <SelectTrigger id="month"><SelectValue placeholder={t('finance.feeManagement.selectMonth')} /></SelectTrigger>
                                                     <SelectContent>{feeStatus.monthsInPeriod.map(month => <SelectItem key={month} value={month}>{month}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </div>
@@ -505,7 +531,7 @@ export default function FeesPage() {
                                         <DialogFooter>
                                             <Button onClick={handleRecordPayment} disabled={isSubmitting} className="btn-gradient btn-click-effect">
                                                 {isSubmitting && <Loader2 className="animate-spin" />}
-                                                Submit Payment
+                                                {t('finance.feeManagement.recordPayment')}
                                             </Button>
                                         </DialogFooter>
                                     </DialogContent>
@@ -576,15 +602,15 @@ export default function FeesPage() {
                                                             </AlertDialogTrigger>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                    <AlertDialogTitle>{t('common.areYouSure')}</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        This action cannot be undone. This will permanently delete the payment record of {formatCurrency(paymentToDelete?.amount || 0)}.
+                                                                        {t('common.cannotUndo')} {t('finance.payment.deleteConfirmation', { amount: formatCurrency(paymentToDelete?.amount || 0) })}
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
-                                                                    <AlertDialogCancel onClick={() => setPaymentToDelete(null)}>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogCancel onClick={() => setPaymentToDelete(null)}>{t('common.cancel')}</AlertDialogCancel>
                                                                     <AlertDialogAction onClick={handleDeletePayment} disabled={isDeleting}>
-                                                                        {isDeleting ? "Deleting..." : "Continue"}
+                                                                        {isDeleting ? t('common.deleting') : t('common.continue')}
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                             </AlertDialogContent>

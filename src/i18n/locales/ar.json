@@ -346,6 +346,7 @@
     "selectAll": "تحديد الكل",
     "selectRow": "تحديد الصف",
     "idNotFound": "لم يتم العثور على المعرف",
+  "clearFilters": "مسح الفلاتر",
     "back": "رجوع",
     "areYouSure": "هل أنت متأكد؟",
     "backToPayroll": "العودة إلى كشوف الرواتب",
@@ -461,6 +462,65 @@
     "reports": "التقارير",
     "feeManagement": {
       "title": "إدارة الرسوم الدراسية",
+      "description": "إدارة الرسوم الدراسية، الفواتير، وجدولة الأقساط للطلاب.",
+      "selectStudent": "اختر الطالب",
+      "selectStudentPlaceholder": "ابحث عن اسم الطالب...",
+      "startPeriod": "بداية الفترة",
+      "endPeriod": "نهاية الفترة",
+      "month": "الشهر",
+      "year": "السنة",
+      "selectMonth": "اختر شهر...",
+      "amount": "المبلغ",
+      "paymentMethod": "طريقة الدفع",
+      "creditCard": "بطاقة ائتمان/خصم",
+      "cash": "نقداً",
+      "bankTransfer": "تحويل بنكي",
+      "printStatement": "طباعة البيان",
+      "feeStatement": "بيان الرسوم الدراسية",
+      "feeSummary": "ملخص الرسوم",
+      "financialStatusForPeriod": "الوضع المالي للفترة المختارة.",
+      "dueThisPeriod": "المستحق (هذه الفترة)",
+      "paidThisPeriod": "المدفوع (هذه الفترة)",
+      "balanceThisPeriod": "الرصيد (هذه الفترة)",
+      "carryForwardBalance": "الرصيد المحول",
+      "netBalance": "الرصيد الصافي",
+      "addPayment": "إضافة دفعة",
+      "paymentMonth": "شهر الدفع",
+      "monthlyBreakdown": "تفصيل شهري",
+      "detailedInstallmentsView": "عرض مفصل للأقساط والمدفوعات للفترة المحددة.",
+      "amountDue": "المبلغ المستحق",
+      "amountPaid": "المبلغ المدفوع",
+      "balance": "الرصيد",
+      "paymentHistoryInPeriod": "سجل المدفوعات في الفترة",
+      "monthApplied": "الشهر المطبق عليه",
+      "noPaymentsForPeriod": "لا توجد مدفوعات مسجلة لهذه الفترة.",
+      "editPayment": "تعديل الدفعة",
+      "updatePaymentDetailsFor": "تحديث تفاصيل الدفعة لـ {name}.",
+      "originalDate": "التاريخ الأصلي",
+      "paymentForMonth": "دفعة عن شهر",
+      "errorFetchingFeeInfo": "خطأ في جلب معلومات الرسوم",
+      "paymentRecorded": "تم تسجيل الدفعة بنجاح",
+      "errorRecordingPayment": "خطأ في تسجيل الدفعة",
+      "paymentUpdated": "تم تحديث الدفعة",
+  "errorUpdatingPayment": "خطأ في تحديث الدفعة",
+  "gradeMonthlyLabel": "الرسوم الشهرية (الصف)",
+  "supportMonthlyLabel": "الرسوم الشهرية (برامج الدعم)",
+  "totalMonthlyLabel": "إجمالي الرسوم الشهرية",
+  "print": "طباعة",
+      "feeStatementTitle": "كشف الرسوم",
+      "recordPayment": "تسجيل دفعة",
+      "noFeeStructureFound": "لم يتم العثور على هيكل الرسوم",
+      "setupFeeStructureForGrade": "يرجى إعداد هيكل رسوم للصف {grade} للعام الأكاديمي {year}.",
+      "gotoFeeStructures": "انتقل إلى هياكل الرسوم",
+      "selectPeriodToViewStatement": "يرجى اختيار فترة البداية والنهاية لعرض كشف الرسوم.",
+      "paymentRecordedDesc": "تمت إضافة الدفعة للطالب.",
+      "invalidInput": "بيانات غير صالحة",
+      "selectStudentRange": "يرجى اختيار طالب، نطاق زمني، وشهر الدفع وإدخال مبلغ صالح",
+      "paymentDeleted": "تم حذف الدفعة",
+      "paymentDeletedDesc": "تم حذف سجل الدفعة بنجاح",
+      "payment": {
+        "deleteConfirmation": "سيؤدي هذا إلى حذف سجل الدفعة بقيمة {amount} بشكل دائم."
+      },
       "financeReportsPage": {
         "title": "التقارير المالية",
         "description": "نظرة عامة على الأداء المالي للمدرسة، بما في ذلك الدخل من الرسوم والمصروفات.",
@@ -537,6 +597,10 @@
         "errorRecordingPayment": "خطأ في تسجيل الدفعة",
         "paymentUpdated": "تم تحديث الدفعة",
         "errorUpdatingPayment": "خطأ في تحديث الدفعة"
+        ,
+        "gradeMonthlyLabel": "الرسوم الشهرية (الصف)",
+        "supportMonthlyLabel": "الرسوم الشهرية (برامج الدعم)",
+        "totalMonthlyLabel": "إجمالي الرسوم الشهرية"
       }
     },
     "errors": {
@@ -591,5 +655,279 @@
     "dashboard": {
       "couldNotLoadData": "تعذر تحميل البيانات"
     }
+  }
+  ,
+  "parentPortal": {
+    "title": "بوابة أولياء الأمور"
+  },
+  "pp": {
+    "report": {
+      "generateAi": "توليد باستخدام الذكاء الاصطناعي",
+      "fetching": "جاري جلب البيانات...",
+      "compiling": "جاري تجميع الدرجات...",
+      "writing": "جاري كتابة التعليقات...",
+      "done": "اكتمل!",
+      "missingPeriodTitle": "معلومات مفقودة",
+      "missingPeriodDesc": "الرجاء إدخال فترة التقرير.",
+      "errorTitle": "خطأ في توليد التقرير",
+      "errorDesc": "حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى."
+    },
+    "days": {
+      "mon": "الاثنين",
+      "tue": "الثلاثاء",
+      "wed": "الأربعاء",
+      "thu": "الخميس",
+      "fri": "الجمعة"
+    },
+    "loading": { "checkingLink": "جارٍ التحقق من الرابط..." },
+    "unauthorized": {
+      "title": "غير مصرح",
+      "description": "رابط الوصول غير صالح أو منتهي الصلاحية أو تم إلغاؤه. الرجاء طلب رابط جديد من إدارة المدرسة."
+    },
+  "parentPortal": { "title": "بوابة أولياء الأمور", "description": "اطلع على معلومات الطالب والرسائل والإعلانات من المدرسة" },
+  "gradeAndClass": "الصف {grade} — الفصل {className}"
+  },
+  "loading": {
+    "checkingLink": "جارٍ التحقق من الرابط..."
+  },
+  "unauthorized": {
+    "title": "غير مصرح",
+    "description": "رابط الوصول غير صالح أو منتهي الصلاحية أو تم إلغاؤه. الرجاء طلب رابط جديد من إدارة المدرسة."
+  },
+  "nav": {
+    "assignments": "الواجبات",
+    "calendar": "التقويم",
+    "announcements": "الإعلانات",
+    "messages": "الرسائل"
+  },
+  "student": {
+    "idLabel": "رقم الطالب",
+    "emailLabel": "البريد الإلكتروني",
+    "guardianLabel": "ولي الأمر",
+    "contactLabel": "جهة الاتصال"
+  },
+  "attendance": {
+    "title": "الحضور الأخير",
+    "record": "سجل الحضور",
+    "present": "حاضر",
+    "late": "متأخر",
+    "absent": "غائب"
+  },
+  "assignments": {
+    "cardTitle": "الواجبات",
+    "pageTitle": "الواجبات",
+    "empty": "لا توجد واجبات حالياً.",
+    "courseLabel": "المادة: {{courseName}}",
+    "pointsLabel": "نقاط: {{points}}",
+    "dueLabel": "تاريخ الاستحقاق: {{date}}",
+    "noDue": "لا يوجد موعد نهائي",
+    "fetchError": "تعذر جلب الواجبات."
+  },
+  "calendar": {
+    "cardTitle": "التقويم والتكامل مع الجدول",
+    "pageTitle": "التقويم المدرسي",
+    "eventsForDay": "فعاليات {{date}}",
+    "noEventsToday": "لا توجد فعاليات لهذا اليوم",
+    "weeklyTimetableTitle": "الجدول الأسبوعي (مختصر)",
+    "timetableUnavailable": "الجدول غير متوفر هنا — يُعرض في صفحة الجدول الرئيسية.",
+    "fetchError": "تعذر تحميل التقويم."
+  },
+  "common": {
+    "error": "خطأ",
+    "loading": "جارٍ التحميل..."
+  },
+  "announcements": {
+    "loading": "جاري تحميل الإعلانات...",
+    "noUrgent": "لا توجد إعلانات عاجلة خاصة بطفلك.",
+    "title": "النشرة والإعلانات"
+  },
+  "academic": {
+    "progressTitle": "التقدم الأكاديمي"
+  },
+  "report": {
+    "generateAi": "توليد باستخدام الذكاء الاصطناعي",
+    "fetching": "جاري جلب البيانات...",
+    "compiling": "جاري تجميع الدرجات...",
+    "writing": "جاري كتابة التعليقات...",
+    "done": "اكتمل!",
+    "dialog": {
+      "viewButton": "عرض كشف الدرجات",
+      "title": "توليد كشف درجات رسمي",
+      "description": "أدخل فترة التقرير لتوليد كشف مع تعليقات مدعومة بالذكاء الاصطناعي.",
+      "reportingPeriodLabel": "فترة التقرير",
+      "placeholder": "مثال: الفصل الأول 2024",
+      "closeButton": "إغلاق"
+    },
+    "overviewTitle": "ملخص عام"
+    ,"teacher": "المدرس: {teacherName}"
+  },
+  "courses": {
+    "noGrades": "لا توجد درجات حتى الآن."
+  },
+  "schedule": {
+    "title": "الجدول الأسبوعي",
+    "timeLabel": "الوقت"
+  },
+  "supportPrograms": {
+    "browseAvailable": "تصفح برامج الدعم المتاحة",
+    "noAvailable": "لا توجد برامج دعم متاحة"
+  }
+  ,
+  "files": {
+    "title": "مجلد الطالب — الملفات",
+    "uploadLabel": "رفع ملف جديد",
+    "upload": "رفع",
+    "listTitle": "الملفات",
+    "noFiles": "لا توجد ملفات بعد.",
+    "openDownload": "فتح/تحميل",
+    "fetchError": "تعذر تحميل الملفات.",
+    "chooseFileTitle": "اختر ملفاً",
+    "chooseFileDesc": "الرجاء اختيار ملف للرفع.",
+    "uploadedTitle": "تم الرفع",
+    "uploadedDesc": "{{name}} تم رفعه بنجاح.",
+    "uploadError": "فشل في رفع الملف.",
+    "deletedTitle": "تم الحذف",
+    "deletedDesc": "تم حذف الملف.",
+    "deleteError": "فشل في حذف الملف."
+  },
+  "library": {
+    "title": "مكتبة الطالب",
+    "loanDateLabel": "تاريخ الإعارة",
+    "dueLabel": "المستحق",
+    "loansTitle": "قرض الطالب",
+    "catalogTitle": "كتالوج الكتب",
+    "noLoans": "لا توجد إعارات حالية.",
+    "available": "متاح",
+    "loaned": "معار",
+    "requesting": "جارٍ الطلب...",
+    "request": "طلب إعارة",
+    "fetchError": "فشل في تحميل بيانات المكتبة.",
+    "pageLoadError": "تعذر تحميل صفحة المكتبة.",
+    "notAvailableTitle": "غير متاح",
+    "notAvailableDesc": "هذا الكتاب غير متاح حالياً.",
+    "requestedTitle": "تم الطلب",
+    "requestedDesc": "{{title}} - تاريخ الاستحقاق {{due}}"
+  },
+  "forums": {
+    "by": "بواسطة: {author}",
+    "authorFallback": "ولي الأمر",
+    "title": "المنتديات الصفية",
+    "newThread": {
+      "titlePlaceholder": "عنوان الموضوع",
+      "contentPlaceholder": "نص الموضوع"
+    },
+    "postButton": "نشر الموضوع",
+    "fillFields": "يرجى ملء الحقول",
+    "created": "تم إنشاء الموضوع",
+    "createdDesc": "تم إنشاء موضوع جديد."
+  },
+  "goals": {
+    "title": "أهداف الطالب وتقدمها",
+    "titleRequired": "الرجاء كتابة عنوان الهدف",
+    "added": "تم إضافة الهدف",
+    "prompt": { "note": "ملاحظة (اختياري)" },
+    "titlePlaceholder": "عنوان الهدف",
+    "notesPlaceholder": "ملاحظات (اختياري)",
+    "addButton": "أضف هدف",
+    "savingLabel": "جاري الحفظ...",
+    "noGoals": "لا توجد أهداف بعد.",
+    "targetLabel": "يستهدف",
+    "statusLabel": "الحالة",
+    "addProgress": "أضف تقدم",
+    "markCompleted": "وضع كمكتمل",
+    "progressHeader": "تقدم",
+    "noProgress": "لا يوجد تقدم مسجل.",
+    "percentLabel": "النسبة",
+    "progressRecorded": "تم تسجيل التقدم",
+    "completed": "تم وضع الهدف كمكتمل",
+    "invalidValue": "قيمة غير صالحة"
+  },
+  "clubs": {
+    "title": "الأندية والأنشطة اللامنهجية",
+    "joinRequested": "تم طلب الانضمام",
+    "joinRequestedDesc": "سيراجع المشرفون طلب الانضمام.",
+    "fetchError": "تعذر جلب الأنشطة.",
+    "joinButton": "اطلب الانضمام",
+    "requestingLabel": "جارِ الإرسال…",
+    "noAvailable": "لا توجد أنشطة متاحة حالياً.",
+    "scheduleLabel": "الجدول: {schedule}"
+  },
+  "courses": {
+    "infoTitle": "معلومات المادة",
+    "notFound": "المادة غير موجودة.",
+    "descriptionTitle": "وصف المادة",
+    "noDescription": "لا يوجد وصف متاح.",
+    "resourcesTitle": "الموارد",
+    "resourcesDesc": "روابط ومحاضرات وملفات مقدمة من المعلم",
+    "noResources": "لا توجد موارد منشورة لهذه المادة بعد.",
+    "quickDetails": "تفاصيل سريعة",
+    "contactTeacher": "اتصل بالمعلم",
+    "noTeacherAssigned": "لم يتم تعيين معلم لهذه المادة بعد.",
+    "viewTeacherProfile": "عرض ملف المعلم",
+    "gradeLabel": "الصف",
+    "credits": "الساعات المعتمدة",
+    "departmentLabel": "القسم",
+    "fetchError": "تعذر جلب بيانات المادة.",
+    "notAvailable": "غير متوفر"
+  },
+  "support": {
+    "availableTitle": "البرامج المتاحة",
+    "noAvailable": "لا توجد برامج متاحة الآن.",
+    "requesting": "جارٍ الإرسال...",
+    "request": "طلب التسجيل",
+    "title": "برامج الدعم",
+    "fetchError": "فشل في تحميل البرامج.",
+    "requestSentTitle": "تم إرسال الطلب",
+    "requestSentDesc": "تم إرسال طلب التسجيل إلى المدرسة.",
+    "requestError": "فشل في إرسال الطلب.",
+    "instructor": "المدرس: {name}"
+  },
+  "grades": {
+    "title": "الدرجات والتقارير",
+    "downloadPdf": "تحميل كـ PDF",
+    "chartTitle": "مخطط أداء الطالب حسب المادة",
+    "fetchError": "تعذر تحميل بيانات الدرجات."
+  },
+  "payments": {
+    "title": "المدفوعات والرسوم",
+    "historyTitle": "سجل المدفوعات",
+    "summaryTitle": "ملخص الرسوم",
+    "demoPay": "ادفع الآن (تجريبي)",
+    "makePayment": "إجراء دفعة",
+    "cardDetails": "تفاصيل البطاقة",
+    "cardPayButton": "ادفع بالبطاقة",
+    "processing": "جارٍ المعالجة...",
+    "noPayments": "لا توجد مدفوعات مسجلة.",
+    "method": { "card": "بطاقة", "cash": "نقدي" },
+    "fetchError": "فشل في تحميل بيانات الدفع.",
+    "noStudent": "لم يتم العثور على بيانات الطالب.",
+    "invalidAmountTitle": "مبلغ غير صالح",
+    "invalidAmountDesc": "أدخل مبلغاً صحيحاً.",
+    "startedTitle": "بدأ الدفع",
+    "startedDesc": "تم إنشاء طلب دفع. سيتم تسجيل الدفعة بعد تأكيدها.",
+    "recordedTitle": "تم تسجيل الدفعة",
+    "recordedDesc": "تم تسجيل دفعة {{amount}} {{method}}",
+    "failedTitle": "فشل الدفع",
+    "failedDesc": "حدث خطأ أثناء معالجة الدفعة.",
+    "stripeUnavailable": "Stripe غير متاح حالياً. حاول لاحقاً.",
+    "succeededTitle": "تم الدفع",
+    "succeededDesc": "تم تأكيد الدفع بنجاح.",
+    "feeStructure": "هيكل الرسوم السنوي",
+    "totalPaid": "الإجمالي المدفوع",
+    "balance": "الرصيد"
+  }
+  ,
+  "announcements": {
+    "latestTitle": "آخر الإعلانات",
+    "noForParents": "لا توجد إعلانات موجهة لأولياء الأمور في الوقت الحالي.",
+    "title": "الإعلانات"
+  },
+  "attendance": {
+    "pageTitle": "حضور الطالب",
+    "exportCsv": "تصدير CSV",
+    "recordTitle": "سجل الحضور",
+    "noRecords": "لا توجد سجلات حضور لهذا الطالب.",
+    "columns": { "date": "التاريخ", "status": "الحالة" },
+    "status": { "present": "حاضر", "late": "متأخر", "absent": "غائب" }
   }
 }

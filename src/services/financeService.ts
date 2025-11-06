@@ -40,6 +40,9 @@ import {
 } from "firebase/firestore";
 import type { Expense, FeeStructure, Payment, Payroll } from "@/lib/types";
 import { getPayrolls } from "./payrollService";
+import { getCoursesForStudent } from "./enrollmentService";
+import { getCourse } from "./courseService";
+import { getStudent } from "./studentService";
 
 // --- Expenses ---
 
@@ -155,6 +158,45 @@ export const getFeeStructureForGrade = async (grade: string, academicYear: strin
     }
 };
 
+/**
+ * Compute combined monthly due for a student: grade monthly fee + any support-course monthly fees.
+ * Returns gradeMonthly, supportMonthly, combinedMonthly.
+ */
+export const getCombinedMonthlyDueForStudent = async (studentId: string, academicYear: string): Promise<{ gradeMonthly: number; supportMonthly: number; combinedMonthly: number }> => {
+  try {
+    const student = await getStudent(studentId);
+    if (!student) return { gradeMonthly: 0, supportMonthly: 0, combinedMonthly: 0 };
+
+    // Grade-based monthly fee
+    let gradeMonthly = 0;
+    if (student.grade && student.grade !== 'N/A') {
+      const fs = await getFeeStructureForGrade(student.grade, academicYear);
+      gradeMonthly = fs?.monthlyAmount || 0;
+    }
+
+    // Support courses monthly sum
+    let supportMonthly = 0;
+    const courseIds = await getCoursesForStudent(studentId);
+    for (const cid of courseIds) {
+      try {
+        const course = await getCourse(cid);
+        if (course && course.type === 'support') {
+          supportMonthly += Number((course as any).monthlyFee || 0);
+        }
+      } catch (err) {
+        // ignore individual course errors
+        console.warn('Failed to load course for fee aggregation', cid, err);
+      }
+    }
+
+    const combinedMonthly = gradeMonthly + supportMonthly;
+    return { gradeMonthly, supportMonthly, combinedMonthly };
+  } catch (err) {
+    console.error('Error computing combined monthly due:', err);
+    return { gradeMonthly: 0, supportMonthly: 0, combinedMonthly: 0 };
+  }
+}
+
 export const saveFeeStructure = async (structureData: FeeStructure): Promise<void> => {
   try {
     if (!db) throw new Error('Firestore not initialized. Cannot save fee structure.');
@@ -204,10 +246,10 @@ export const getPaymentsForStudent = async (studentId: string): Promise<Payment[
   }
 };
 
-export const recordPayment = async (paymentData: Omit<Payment, 'id'>): Promise<Payment> => {
+export const recordPayment = async (paymentData: Omit<Payment, 'id'> & { stripePaymentId?: string }): Promise<Payment> => {
   try {
     if (!db) throw new Error('Firestore not initialized. Cannot record payment.');
-    const docRef = await addDoc(collection(db, "payments"), { ...paymentData, date: serverTimestamp() });
+    const docRef = await addDoc(collection(db, "payments"), { ...paymentData, date: serverTimestamp(), stripePaymentId: paymentData.stripePaymentId || null });
     await updateDoc(docRef, { id: docRef.id });
     return { ...paymentData, id: docRef.id, date: new Date().toISOString() } as Payment;
   } catch (error) {

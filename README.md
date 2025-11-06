@@ -16,6 +16,38 @@ Once you have the Firebase CLI installed and you are logged in, you can deploy y
 firebase deploy
 ```
 
+## Payments (Stripe) — local & deployment notes
+
+This project includes server endpoints to create Stripe PaymentIntents and a webhook receiver under `src/pages/api/payments/*`.
+
+Required environment variables (set in `.env.local` for local dev, and in your hosting environment for production):
+
+- `STRIPE_SECRET` — your Stripe secret key (starts with `sk_...`).
+- `STRIPE_WEBHOOK_SECRET` — webhook signing secret (used to verify incoming webhooks).
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — the Stripe publishable key (starts with `pk_...`) used by the client.
+- `STRIPE_CURRENCY` — optional (defaults to `usd`).
+
+Testing webhooks locally:
+
+1. Install the Stripe CLI and log in: `stripe login`.
+2. Forward webhooks to your local server (run this from the repo root):
+
+```bash
+# forward to local api route (adjust port if you use a different dev port)
+stripe listen --forward-to localhost:3000/api/payments/webhook
+```
+
+3. Use the Stripe CLI to trigger test events, for example:
+
+```bash
+stripe trigger payment_intent.succeeded
+```
+
+Notes:
+- The client-side payments page uses Stripe Elements to collect card details and confirm the PaymentIntent. The server creates the PaymentIntent and the webhook records the payment into Firestore via `financeService.recordPayment` when the payment succeeds.
+- Ensure `STRIPE_WEBHOOK_SECRET` matches the signing secret shown by the Stripe CLI when you run `stripe listen` (or the webhook settings in the Stripe Dashboard for production).
+- Make webhook handling idempotent: the webhook handler should tolerate repeated events for the same PaymentIntent. If you want, I can add a uniqueness guard in the webhook (recommended).
+
 CI trigger: test run
 
 ## Local development — Firebase

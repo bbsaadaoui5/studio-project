@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Production-focused rules - conservative defaults.
+    // IMPORTANT: These rules are intentionally restrictive. Customize
+    // the `isAdmin()` and `isOwner()` helpers to match your app's
+    // authentication and document structure before deploying.
+
+    function isAdmin() {
+      return request.auth != null && (request.auth.token.admin == true || request.auth.token.role == 'admin');
+    }
+
+    // Example owner check placeholder. Adapt to your collection layout.
+    // For example, if parents read payments by `studentId`, implement accordingly.
+    function isOwner(resourceOrRequest) {
+      // Placeholder: returns false by default. Replace with a real check.
+      return false;
+    }
+
+    // Payments collection: only server/admins should write payment records.
+    match /payments/{paymentId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Students collection example (customize to your app):
+    match /students/{studentId} {
+      // Allow admins full access
+      allow read, write: if isAdmin();
+    }
+
+    // Default rule: deny everything. Add specific allow rules above as-needed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+/*
+  Deployment: use this rules file for production by referencing it in
+  your Firebase Console or in `firebase.json` as the rules file for
+  Firestore. Example `firebase.json` snippet:
+
+  {
+    "firestore": {
+      "rules": "firestore.rules.prod"
+    }
+  }
+
+  NOTE: Be sure to test rules thoroughly with the Firebase Emulator
+  Suite before deploying to production.
+*/

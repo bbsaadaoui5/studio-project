@@ -1,16 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-// Translation data
 import arTranslations from './locales/ar.json';
+import enTranslations from './locales/en.json';
 import pseudoTranslations from './locales/pseudo.json';
-
-const translations = {
-  ar: arTranslations,
-  en: {}, // We'll use English as fallback
-  pseudo: pseudoTranslations // For testing missing translations
-};
 
 type Language = 'ar' | 'en' | 'pseudo';
 
@@ -21,43 +14,60 @@ interface TranslationContextType {
   dir: 'ltr' | 'rtl';
 }
 
+const translations: Record<Language, Record<string, unknown>> = {
+  ar: arTranslations as unknown as Record<string, unknown>,
+  en: enTranslations as unknown as Record<string, unknown>,
+  pseudo: pseudoTranslations as unknown as Record<string, unknown>,
+};
+
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-export function TranslationProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('ar'); // Default to Arabic
+export function TranslationProvider({ children, initialLanguage }: { children: React.ReactNode; initialLanguage?: Language }) {
+  const [language, setLanguage] = useState<Language>(initialLanguage ?? 'ar');
 
   useEffect(() => {
-    // Check for test language in localStorage
-    const testLang = localStorage.getItem('test-language');
-    if (testLang === 'pseudo') {
-      setLanguage('pseudo');
+    // optional test-language override stored in localStorage
+    try {
+      const testLang = localStorage.getItem('test-language');
+      if (testLang === 'pseudo') setLanguage('pseudo');
+    } catch (e) {
+      // ignore (SSR safety)
     }
   }, []);
 
   useEffect(() => {
-    // Set document direction and language
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
+    // Set document direction and language attributes
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = language;
+    }
   }, [language]);
 
   const t = (key: string, params?: Record<string, unknown>): string => {
     const keys = key.split('.');
-  let value: unknown = translations[language];
-    
+    let value: unknown = translations[language];
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in (value as Record<string, unknown>)) {
         value = (value as Record<string, unknown>)[k];
       } else {
-        // If in pseudo mode, show missing key clearly
-        if (language === 'pseudo') {
-          return `[MISSING: ${key}]`;
+        if (language === 'pseudo') return `[MISSING: ${key}]`;
+        // fallback to english, then to key
+        const fallback = translations.en as Record<string, unknown>;
+        let fb: unknown = fallback;
+        for (const kk of keys) {
+          if (fb && typeof fb === 'object' && kk in (fb as Record<string, unknown>)) {
+            fb = (fb as Record<string, unknown>)[kk];
+          } else {
+            fb = undefined;
+            break;
+          }
         }
-        return key; // Return the key itself if not found
+        return typeof fb === 'string' ? fb : key;
       }
     }
-    
-    // Basic interpolation: replace {var} in the string with values from params if provided
-  let result = typeof value === 'string' ? value : key;
+
+    let result = typeof value === 'string' ? value : key;
     if (params && typeof result === 'string') {
       for (const [k, v] of Object.entries(params)) {
         result = result.replace(new RegExp(`\\{\\s*${k}\\s*\\}`, 'g'), String(v));
@@ -73,17 +83,13 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     dir: language === 'ar' ? 'rtl' : 'ltr',
   };
 
-  return (
-    <TranslationContext.Provider value={value}>
-      {children}
-    </TranslationContext.Provider>
-  );
+  return <TranslationContext.Provider value={value}>{children}</TranslationContext.Provider>;
 }
 
 export function useTranslation() {
   const context = useContext(TranslationContext);
-  if (context === undefined) {
-    throw new Error('useTranslation must be used within a TranslationProvider');
-  }
+  if (!context) throw new Error('useTranslation must be used within a TranslationProvider');
   return context;
 }
+
+export default TranslationProvider;
