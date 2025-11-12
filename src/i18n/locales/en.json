@@ -441,11 +441,11 @@
       }
     },
     "errors": {
-      "fetchData": "Failed to load initial data",
-      "invalidInput": "Invalid input",
-      "selectStudentRange": "Please select a student, time range and month and enter a valid amount",
-      "studentNotFound": "Student not found",
-      "deletePayment": "Failed to delete payment"
+      "fetchData": "Failed to load initial data. Please refresh the page and try again.",
+      "invalidInput": "Invalid input. Please check the form fields.",
+      "selectStudentRange": "Please select a student, a time range, and a month, then enter a valid amount.",
+      "studentNotFound": "Student record not found.",
+      "deletePayment": "Could not delete the payment. Please try again."
     },
     "success": {
       "paymentDeleted": "Payment deleted",
