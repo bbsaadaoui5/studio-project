@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Loader2, GraduationCap } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
@@ -22,6 +23,7 @@ import { getStaffMember } from "@/services/staffService";
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +42,7 @@ export default function LoginPage() {
       }
 
       toast({
-        title: "Login Successful",
+        title: t('auth.loginSuccessful'),
         description: "Welcome back!",
       });
 
@@ -50,11 +52,12 @@ export default function LoginPage() {
         router.push("/dashboard");
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
+      const message = error instanceof Error ? error.message : String(error);
       toast({
-        title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        title: t('auth.loginFailed'),
+        description: message || t('auth.invalidCredentials'),
         variant: "destructive",
       });
     } finally {
@@ -64,19 +67,21 @@ export default function LoginPage() {
 
   return (
     <Card className="w-full max-w-sm">
+  <h1 className="sr-only">{t('auth.title')}</h1>
+  <h2 className="sr-only">{t('auth.title')}</h2>
       <CardHeader className="text-center">
         <div className="mb-4 flex justify-center">
             <div className="bg-primary rounded-md p-3">
                 <GraduationCap className="h-8 w-8 text-primary-foreground" />
             </div>
         </div>
-        <CardTitle className="text-2xl">Almawed Login</CardTitle>
+        <CardTitle className="text-2xl">{t('auth.title')}</CardTitle>
         <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email')}</Label>
             <Input
               id="email"
               type="email"
@@ -87,7 +92,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <Input 
                 id="password" 
                 type="password" 
@@ -98,7 +103,7 @@ export default function LoginPage() {
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="animate-spin" />}
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? t('auth.loggingIn') : t('auth.login')}
           </Button>
         </form>
       </CardContent>

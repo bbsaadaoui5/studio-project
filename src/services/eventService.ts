@@ -23,6 +23,7 @@ export type NewSchoolEvent = Omit<SchoolEvent, "id">;
  */
 export const addEvent = async (eventData: NewSchoolEvent): Promise<string> => {
   try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot add event.');
     const docRef = await addDoc(collection(db, EVENTS_COLLECTION), eventData);
     // Ensure the document ID is stored within the document itself
     await updateDoc(docRef, { id: docRef.id });
@@ -39,6 +40,10 @@ export const addEvent = async (eventData: NewSchoolEvent): Promise<string> => {
  */
 export const getEvents = async (): Promise<SchoolEvent[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getEvents() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, EVENTS_COLLECTION), orderBy("date", "asc"));
     const querySnapshot = await getDocs(q);
     const events: SchoolEvent[] = [];

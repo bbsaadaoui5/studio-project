@@ -25,9 +25,11 @@ import { getStudentStats } from "@/services/studentService";
 import { getCourseCount } from "@/services/courseService";
 import { getStaffCount } from "@/services/staffService";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 
 export default function DashboardPage() {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [stats, setStats] = useState({
         students: 0,
         courses: 0,
@@ -51,8 +53,8 @@ export default function DashboardPage() {
                 });
             } catch (error) {
                  toast({
-                    title: "Error",
-                    description: "Failed to load dashboard statistics.",
+                    title: t("common.error"),
+                    description: t("dashboard.errorLoadingStats"),
                     variant: "destructive",
                 });
             } finally {
@@ -60,7 +62,7 @@ export default function DashboardPage() {
             }
         };
         fetchStats();
-    }, [toast]);
+    }, [toast, t]);
 
     const renderStat = (value: number | null, suffix: string = "") => {
         if (isLoading) {
@@ -74,35 +76,36 @@ export default function DashboardPage() {
 
     return (
         <div className="flex flex-col gap-6">
+            <h1 className="sr-only">{t('dashboard.title')}</h1>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                        <CardTitle as="h2" className="text-sm font-medium">{t("dashboard.totalStudents")}</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         {renderStat(stats.students)}
-                        <p className="text-xs text-muted-foreground">Currently active students</p>
+                        <p className="text-xs text-muted-foreground">{t("dashboard.activeStudents")}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Courses Offered</CardTitle>
+                        <CardTitle as="h2" className="text-sm font-medium">{t("dashboard.availableCourses")}</CardTitle>
                         <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         {renderStat(stats.courses)}
-                        <p className="text-xs text-muted-foreground">Total courses in catalog</p>
+                        <p className="text-xs text-muted-foreground">{t("dashboard.totalCourses")}</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Staff Members</CardTitle>
+                        <CardTitle as="h2" className="text-sm font-medium">{t("dashboard.staffMembers")}</CardTitle>
                         <Briefcase className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         {renderStat(stats.staff)}
-                        <p className="text-xs text-muted-foreground">All active staff</p>
+                        <p className="text-xs text-muted-foreground">{t("dashboard.activeStaff")}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -112,9 +115,9 @@ export default function DashboardPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BarChart className="h-5 w-5" />
-                            New Student Enrollments
+                            {t("dashboard.studentEnrollment")}
                         </CardTitle>
-                        <CardDescription>Monthly new student enrollment over the last 6 months.</CardDescription>
+                        <CardDescription>{t("dashboard.enrollmentSubtitle")}</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px] w-full">
                         <StudentEnrollmentChart />
@@ -124,9 +127,9 @@ export default function DashboardPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                            <PieChart className="h-5 w-5" />
-                            Student Distribution
+                            {t("dashboard.studentDistribution")}
                         </CardTitle>
-                        <CardDescription>Distribution of students across different classes.</CardDescription>
+                        <CardDescription>{t("dashboard.distributionSubtitle")}</CardDescription>
                     </CardHeader>
                      <CardContent className="h-[300px] w-full">
                         <StudentClassDistributionChart />
@@ -138,9 +141,9 @@ export default function DashboardPage() {
                      <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                            <Calendar className="h-5 w-5" />
-                            School Calendar
+                            {t("dashboard.schoolCalendar")}
                         </CardTitle>
-                        <CardDescription>Click on a date to see events.</CardDescription>
+                        <CardDescription>{t("dashboard.calendarSubtitle")}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex justify-center">
                        <DashboardCalendar />

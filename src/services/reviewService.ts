@@ -14,6 +14,7 @@ export type NewStaffReview = Omit<StaffReview, 'id'>;
  */
 export const addStaffReview = async (reviewData: NewStaffReview): Promise<string> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot add staff review.');
     const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), { ...reviewData, reviewDate: serverTimestamp() });
     await setDoc(docRef, { id: docRef.id }, { merge: true });
     return docRef.id;
@@ -30,6 +31,10 @@ export const addStaffReview = async (reviewData: NewStaffReview): Promise<string
  */
 export const getReviewsForStaff = async (staffId: string): Promise<StaffReview[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getReviewsForStaff() returning empty list.');
+      return [];
+    }
     const q = query(
       collection(db, REVIEWS_COLLECTION),
       where("staffId", "==", staffId)

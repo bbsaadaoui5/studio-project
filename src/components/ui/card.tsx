@@ -29,19 +29,15 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
-const CardTitle = React.forwardRef<
-  HTMLHeadingElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
+// CardTitle supports rendering as different heading levels via `as` prop.
+// Use permissive types here to avoid complex union types that break the Next.js build.
+const CardTitle = React.forwardRef<any, any>(({ className, as: Component = 'h3', ...props }, ref) => {
+  return React.createElement(Component as any, {
+    ref,
+    className: cn("text-2xl font-semibold leading-none tracking-tight", className),
+    ...props,
+  });
+});
 CardTitle.displayName = "CardTitle"
 
 const CardDescription = React.forwardRef<

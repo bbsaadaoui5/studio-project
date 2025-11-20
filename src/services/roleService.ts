@@ -32,6 +32,7 @@ export const addRole = async (roleData: NewRole): Promise<string> => {
       ...roleData,
       userCount: 0, // New roles start with 0 users
     };
+    if (!db) throw new Error('Firestore not initialized. Cannot add role.');
     const docRef = await addDoc(collection(db, ROLES_COLLECTION), newRole);
     await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
@@ -47,6 +48,10 @@ export const addRole = async (roleData: NewRole): Promise<string> => {
  */
 export const getRoles = async (): Promise<Role[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getRoles() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, ROLES_COLLECTION), orderBy("name"));
     const querySnapshot = await getDocs(q);
     const roles: Role[] = [];

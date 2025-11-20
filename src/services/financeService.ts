@@ -1,3 +1,25 @@
+// تحديث مصروف
+export const updateExpense = async (expenseId: string, expenseData: Partial<Expense>): Promise<void> => {
+  try {
+    if (!db) throw new Error('Firestore not initialized. Cannot update expense.');
+    const docRef = doc(db, "expenses", expenseId);
+    await updateDoc(docRef, expenseData);
+  } catch (error) {
+    console.error("Error updating expense:", error);
+    throw new Error("Could not update expense.");
+  }
+}
+// حذف مصروف
+export const deleteExpense = async (expenseId: string): Promise<void> => {
+  try {
+    if (!db) throw new Error('Firestore not initialized. Cannot delete expense.');
+    const docRef = doc(db, "expenses", expenseId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting expense:", error);
+    throw new Error("Could not delete expense.");
+  }
+}
 
 import { db } from "@/lib/firebase-client";
 import { 
@@ -18,11 +40,18 @@ import {
 } from "firebase/firestore";
 import type { Expense, FeeStructure, Payment, Payroll } from "@/lib/types";
 import { getPayrolls } from "./payrollService";
+import { getCoursesForStudent } from "./enrollmentService";
+import { getCourse } from "./courseService";
+import { getStudent } from "./studentService";
 
 // --- Expenses ---
 
 export const getExpenses = async (from?: Date, to?: Date): Promise<Expense[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getExpenses() returning empty list.');
+      return [];
+    }
     const expensesCol = collection(db, "expenses");
     let q;
 
@@ -54,15 +83,17 @@ export const getExpenses = async (from?: Date, to?: Date): Promise<Expense[]> =>
 export const addExpense = async (expenseData: Omit<Expense, 'id'>) => {
 
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot add expense.');
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expenseData,
       date: serverTimestamp() // Use server timestamp
     });
-     await updateDoc(docRef, { id: docRef.id });
+    await updateDoc(docRef, { id: docRef.id });
     return { 
       id: docRef.id, 
-      ...expenseData 
-    } as Omit<Expense, 'date'> & { date: any };
+      ...expenseData,
+      date: new Date().toISOString(),
+    } as Omit<Expense, 'date'> & { date: string };
   } catch (error) {
     console.error("Error adding expense:", error);
     throw new Error("Could not add expense.");
@@ -81,7 +112,11 @@ export const getExpenseSummary = async (): Promise<Record<string, number>> => {
 
 export const getFeeStructures = async (): Promise<FeeStructure[]> => {
     try {
-        const querySnapshot = await getDocs(collection(db, "feeStructures"));
+    if (!db) {
+      console.warn('Firestore not initialized. getFeeStructures() returning empty list.');
+      return [];
+    }
+    const querySnapshot = await getDocs(collection(db, "feeStructures"));
         const structures: FeeStructure[] = [];
         querySnapshot.forEach((doc) => {
             structures.push(doc.data() as FeeStructure);
@@ -97,8 +132,12 @@ export const getFeeStructureForGrade = async (grade: string, academicYear: strin
     try {
         // First try exact match
         const docId = `${grade}-${academicYear}`;
-        const docRef = doc(db, "feeStructures", docId);
-        const docSnap = await getDoc(docRef);
+    if (!db) {
+      console.warn('Firestore not initialized. getFeeStructureForGrade() returning null.');
+      return null;
+    }
+    const docRef = doc(db, "feeStructures", docId);
+    const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
             return docSnap.data() as FeeStructure;
@@ -119,8 +158,48 @@ export const getFeeStructureForGrade = async (grade: string, academicYear: strin
     }
 };
 
+/**
+ * Compute combined monthly due for a student: grade monthly fee + any support-course monthly fees.
+ * Returns gradeMonthly, supportMonthly, combinedMonthly.
+ */
+export const getCombinedMonthlyDueForStudent = async (studentId: string, academicYear: string): Promise<{ gradeMonthly: number; supportMonthly: number; combinedMonthly: number }> => {
+  try {
+    const student = await getStudent(studentId);
+    if (!student) return { gradeMonthly: 0, supportMonthly: 0, combinedMonthly: 0 };
+
+    // Grade-based monthly fee
+    let gradeMonthly = 0;
+    if (student.grade && student.grade !== 'N/A') {
+      const fs = await getFeeStructureForGrade(student.grade, academicYear);
+      gradeMonthly = fs?.monthlyAmount || 0;
+    }
+
+    // Support courses monthly sum
+    let supportMonthly = 0;
+    const courseIds = await getCoursesForStudent(studentId);
+    for (const cid of courseIds) {
+      try {
+        const course = await getCourse(cid);
+        if (course && course.type === 'support') {
+          supportMonthly += Number((course as any).monthlyFee || 0);
+        }
+      } catch (err) {
+        // ignore individual course errors
+        console.warn('Failed to load course for fee aggregation', cid, err);
+      }
+    }
+
+    const combinedMonthly = gradeMonthly + supportMonthly;
+    return { gradeMonthly, supportMonthly, combinedMonthly };
+  } catch (err) {
+    console.error('Error computing combined monthly due:', err);
+    return { gradeMonthly: 0, supportMonthly: 0, combinedMonthly: 0 };
+  }
+}
+
 export const saveFeeStructure = async (structureData: FeeStructure): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot save fee structure.');
     const docRef = doc(db, "feeStructures", structureData.id);
     await setDoc(docRef, structureData);
   } catch (error) {
@@ -131,6 +210,7 @@ export const saveFeeStructure = async (structureData: FeeStructure): Promise<voi
 
 export const updateFeeStructure = async (structureId: string, structureData: Partial<FeeStructure>): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot update fee structure.');
     const docRef = doc(db, "feeStructures", structureId);
     await updateDoc(docRef, structureData);
   } catch (error) {
@@ -144,6 +224,10 @@ export const updateFeeStructure = async (structureId: string, structureData: Par
 
 export const getPaymentsForStudent = async (studentId: string): Promise<Payment[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getPaymentsForStudent() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, "payments"), where("studentId", "==", studentId));
     const querySnapshot = await getDocs(q);
     const payments: Payment[] = [];
@@ -162,9 +246,10 @@ export const getPaymentsForStudent = async (studentId: string): Promise<Payment[
   }
 };
 
-export const recordPayment = async (paymentData: Omit<Payment, 'id'>): Promise<Payment> => {
+export const recordPayment = async (paymentData: Omit<Payment, 'id'> & { stripePaymentId?: string }): Promise<Payment> => {
   try {
-    const docRef = await addDoc(collection(db, "payments"), { ...paymentData, date: serverTimestamp() });
+    if (!db) throw new Error('Firestore not initialized. Cannot record payment.');
+    const docRef = await addDoc(collection(db, "payments"), { ...paymentData, date: serverTimestamp(), stripePaymentId: paymentData.stripePaymentId || null });
     await updateDoc(docRef, { id: docRef.id });
     return { ...paymentData, id: docRef.id, date: new Date().toISOString() } as Payment;
   } catch (error) {
@@ -175,6 +260,7 @@ export const recordPayment = async (paymentData: Omit<Payment, 'id'>): Promise<P
 
 export const updatePayment = async (paymentId: string, paymentData: Partial<Payment>): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot update payment.');
     const docRef = doc(db, "payments", paymentId);
     await updateDoc(docRef, paymentData);
   } catch (error) {
@@ -185,6 +271,7 @@ export const updatePayment = async (paymentId: string, paymentData: Partial<Paym
 
 export const deletePayment = async (paymentId: string): Promise<void> => {
   try {
+    if (!db) throw new Error('Firestore not initialized. Cannot delete payment.');
     const docRef = doc(db, "payments", paymentId);
     await deleteDoc(docRef);
   } catch (error) {
@@ -196,8 +283,12 @@ export const deletePayment = async (paymentId: string): Promise<void> => {
 
 export const getIncomeSummary = async (): Promise<Record<string, number>> => {
     try {
-        const querySnapshot = await getDocs(collection(db, "payments"));
-        return querySnapshot.docs.reduce((acc, doc) => {
+    if (!db) {
+      console.warn('Firestore not initialized. getIncomeSummary() returning empty summary.');
+      return {};
+    }
+    const querySnapshot = await getDocs(collection(db, "payments"));
+    return querySnapshot.docs.reduce((acc, doc) => {
             const payment = doc.data() as Payment;
             const month = new Date(payment.date).toLocaleString('default', { month: 'long' });
             acc[month] = (acc[month] || 0) + payment.amount;

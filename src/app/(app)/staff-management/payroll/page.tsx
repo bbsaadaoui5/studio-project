@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Loader2, Wallet, History, ReceiptText, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { generatePayroll, getPayrolls, deletePayroll } from "@/services/payrollService";
 import type { Payroll, Payslip } from "@/lib/types";
 import { format } from "date-fns";
@@ -27,26 +28,27 @@ import { useRouter } from "next/navigation";
 export default function PayrollPage() {
     const { toast } = useToast();
     const router = useRouter();
+    const { t } = useTranslation();
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
     const [payrollHistory, setPayrollHistory] = useState<Payroll[]>([]);
     const [payrollToDelete, setPayrollToDelete] = useState<Payroll | null>(null);
 
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         setIsLoadingHistory(true);
         try {
             const history = await getPayrolls();
             setPayrollHistory(history);
         } catch (error) {
-            toast({ title: "Error", description: "Could not fetch payroll history.", variant: "destructive" });
+            toast({ title: "خطأ", description: "حدث خطأ أثناء جلب بيانات الرواتب", variant: "destructive" });
         } finally {
             setIsLoadingHistory(false);
         }
-    }
+    }, [toast]);
 
     useEffect(() => {
-        fetchHistory();
-    }, [toast]);
+        void fetchHistory();
+    }, [fetchHistory]);
 
     const handleRunPayroll = async () => {
         setIsGenerating(true);
@@ -56,13 +58,13 @@ export default function PayrollPage() {
             
             if (result.success) {
                  toast({
-                    title: "Payroll Generated",
-                    description: `Successfully ran payroll for ${currentMonthYear}. Click on the payroll to view details.`,
+                    title: "تم تحديث الرواتب",
+                    description: "تم حفظ التغييرات بنجاح",
                 });
                 await fetchHistory(); // Refresh history
             } else {
                  toast({
-                    title: "Could Not Run Payroll",
+                    title: "خطأ",
                     description: result.reason,
                     variant: "destructive",
                 });
@@ -70,8 +72,8 @@ export default function PayrollPage() {
         } catch(error) {
             console.error("An unexpected error occurred in handleRunPayroll:", error);
             toast({ 
-                title: "An Unknown Error Occurred", 
-                description: "Failed to run payroll due to an unexpected error. Please try again.", 
+                title: "خطأ غير متوقع", 
+                description: "حدث خطأ غير متوقع", 
                 variant: "destructive" 
             });
         } finally {
@@ -83,10 +85,10 @@ export default function PayrollPage() {
         if (!payrollToDelete) return;
         try {
             await deletePayroll(payrollToDelete.id);
-            toast({ title: "Payroll Deleted", description: `Payroll for ${payrollToDelete.period} has been deleted.`});
+            toast({ title: t('common.success'), description: t('staff.payroll.changesSaved')});
             fetchHistory();
         } catch (error) {
-            toast({ title: "Error", description: "Failed to delete payroll.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('staff.payroll.failedToSave'), variant: "destructive" });
         } finally {
             setPayrollToDelete(null);
         }
@@ -100,21 +102,21 @@ export default function PayrollPage() {
         <div className="flex flex-col gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Staff Payroll</CardTitle>
+                    <CardTitle>سجل الرواتب</CardTitle>
                     <CardDescription>
-                        Generate and manage payroll for all active staff members.
+                        يمكنك إدارة وإنشاء الرواتب للموظفين هنا
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="p-8 border-4 border-dashed border-muted rounded-lg text-center">
                         <Wallet className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-medium">Run Payroll for {format(new Date(), "MMMM yyyy")}</h3>
+                        <h3 className="mt-4 text-lg font-medium">إنشاء الرواتب لشهر {format(new Date(), "MMMM yyyy")}</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            This will calculate salaries, deductions, and net pay for all active staff.
+                            يمكنك إنشاء الرواتب للموظفين لهذا الشهر
                         </p>
                         <Button className="mt-6 btn-gradient btn-click-effect" onClick={handleRunPayroll} disabled={isGenerating}>
                             {isGenerating && <Loader2 className="animate-spin" />}
-                            {isGenerating ? "Generating..." : "Run Payroll"}
+                            {isGenerating ? "جاري الإنشاء..." : "إنشاء الرواتب"}
                         </Button>
                     </div>
                 </CardContent>
@@ -124,10 +126,10 @@ export default function PayrollPage() {
                  <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <History />
-                        Payroll History
+                        سجل الرواتب السابقة
                     </CardTitle>
                     <CardDescription>
-                       View previously generated payrolls.
+                       عرض الرواتب السابقة
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -139,10 +141,10 @@ export default function PayrollPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Period</TableHead>
-                                    <TableHead>Run Date</TableHead>
-                                    <TableHead className="text-right">Total Amount</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>الفترة</TableHead>
+                                    <TableHead>تاريخ التنفيذ</TableHead>
+                                    <TableHead className="text-right">المبلغ الإجمالي</TableHead>
+                                    <TableHead className="text-right">الإجراءات</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -154,30 +156,31 @@ export default function PayrollPage() {
                                             <TableCell className="text-right">{formatCurrency(payroll.totalAmount)}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex gap-1">
-                                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/staff-management/payroll/${payroll.id}/summary`); }} className="btn-glass btn-click-effect">
+                                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/staff-management/payroll/${payroll.id}/summary`); }} className="btn-glass btn-click-effect" aria-label="View payroll summary">
                                                         <ReceiptText className="mr-2 h-4 w-4" />
                                                         View
                                                     </Button>
-                                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/staff-management/payroll/${payroll.id}/edit`); }} className="btn-glass btn-click-effect">
+                                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/staff-management/payroll/${payroll.id}/edit`); }} className="btn-glass btn-click-effect" aria-label="Edit payroll">
                                                         <Edit className="mr-2 h-4 w-4" />
                                                         Edit
                                                     </Button>
                                                     <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="sm" className="btn-glass btn-click-effect" onClick={(e) => { e.stopPropagation(); setPayrollToDelete(payroll); }}>
+                                                            <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="btn-glass btn-click-effect" onClick={(e) => { e.stopPropagation(); setPayrollToDelete(payroll); }} aria-label={t('staff.payroll.deletePayroll')}>
                                                                 <Trash2 className="h-4 w-4 text-destructive" />
+                                                                <span className="sr-only">{t('staff.payroll.deletePayroll')}</span>
                                                             </Button>
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    This will permanently delete the payroll record for {payrollToDelete?.period}. This action cannot be undone.
+                                                                    سيتم حذف سجل الرواتب للفترة {payrollToDelete?.period} بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel onClick={() => setPayrollToDelete(null)}>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={handleDeletePayroll}>Delete</AlertDialogAction>
+                                                                <AlertDialogCancel onClick={() => setPayrollToDelete(null)}>إلغاء</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={handleDeletePayroll}>حذف</AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
@@ -188,7 +191,7 @@ export default function PayrollPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-24 text-center">
-                                            No payroll history found.
+                                            لا يوجد سجلات رواتب سابقة
                                         </TableCell>
                                     </TableRow>
                                 )}

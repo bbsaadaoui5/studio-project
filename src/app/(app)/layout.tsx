@@ -19,11 +19,11 @@ export default function AppLayout({
           <div className="no-print">
             <Header />
           </div>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-            <Suspense fallback={<div>Loading content...</div>}> 
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            <Suspense fallback={<div>جاري تحميل المحتوى...</div>}> 
               {children}
             </Suspense>
-          </main>
+          </div>
         </div>
       </div>
     </SidebarProvider>

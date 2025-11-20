@@ -1,0 +1,74 @@
+name: Playwright E2E + Axe
+
+on:
+  push:
+    branches: [ ci/run-e2e, main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Start app (background)
+        run: |
+          npm run build
+          npm run start &
+          # wait for the server
+          npx wait-on http://localhost:3000
+
+      - name: Run Playwright tests
+        env:
+          BASE_URL: http://localhost:3000
+          TEST_PARENT_EMAIL: ${{ secrets.TEST_PARENT_EMAIL }}
+          TEST_PARENT_PASSWORD: ${{ secrets.TEST_PARENT_PASSWORD }}
+        run: |
+          # Run tests with GitHub and HTML reporters so we generate a report
+          npx playwright test --project=chromium --reporter=github,html || true
+
+      - name: Debug: list workspace and report folders
+        run: |
+          echo "PWD: $(pwd)"
+          echo "List root:"; ls -la
+          echo "Find playwright-report:"; find . -maxdepth 6 -type d -name 'playwright-report' -print || true
+          echo "List playwright-report if exists:"; ls -la playwright-report || true
+          echo "List test-results if exists:"; ls -la test-results || true
+
+      - name: Debug: capture HTML report head (if present)
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "Found playwright-report/index.html - saving head to playwright-report/report-head.html"
+            head -n 200 playwright-report/index.html > playwright-report/report-head.html || true
+            echo "Report head:"; sed -n '1,120p' playwright-report/report-head.html || true
+          else
+            echo "No playwright-report/index.html found"
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+      - name: Upload axe artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axe-results
+          path: test-results/

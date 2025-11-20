@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getFeeStructures, saveFeeStructure, getFeeStructureForGrade, updateFeeStructure } from "@/services/financeService";
 import { getSettings } from "@/services/settingsService";
 import type { FeeStructure } from "@/lib/types";
@@ -46,17 +47,18 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const structureSchema = z.object({
-    grade: z.string().min(1, "Please select a grade."),
-    monthlyAmount: z.coerce.number().positive("Amount must be a positive number."),
-});
-
-const editStructureSchema = z.object({
-    monthlyAmount: z.coerce.number().positive("Amount must be a positive number."),
-});
-
 export function FeeStructuresSettings() {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  
+  const structureSchema = z.object({
+    grade: z.string().min(1, t('settings.feeStructures.pleaseSelectGrade')),
+    monthlyAmount: z.coerce.number().min(1, t('settings.feeStructures.monthlyAmountRequired')),
+  });
+
+  const editStructureSchema = z.object({
+    monthlyAmount: z.coerce.number().positive(t('settings.feeStructures.amountMustBePositive')),
+  });
   const [structures, setStructures] = useState<FeeStructure[]>([]);
   const [academicYear, setAcademicYear] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +82,7 @@ export function FeeStructuresSettings() {
     },
   });
 
-  const fetchPageData = async () => {
+  const fetchPageData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [fetchedStructures, settings] = await Promise.all([
@@ -91,18 +93,18 @@ export function FeeStructuresSettings() {
       setAcademicYear(settings.academicYear);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Could not fetch fee structures.",
+        title: t('common.error'),
+        description: t('settings.feeStructures.couldNotFetchStructures'),
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, t]);
 
   useEffect(() => {
-    fetchPageData();
-  }, [toast]);
+    void fetchPageData();
+  }, [fetchPageData]);
 
   useEffect(() => {
     if (selectedStructure) {
@@ -119,7 +121,7 @@ export function FeeStructuresSettings() {
         const existingStructure = await getFeeStructureForGrade(values.grade, academicYear);
 
         if(existingStructure) {
-            toast({ title: "Structure Exists", description: `A fee structure for Grade ${values.grade} already exists for this year.`, variant: "destructive" });
+            toast({ title: t('settings.feeStructures.structureExists'), description: t('settings.feeStructures.structureExistsMessage').replace('{grade}', values.grade), variant: "destructive" });
             setIsSubmitting(false);
             return;
         }
@@ -132,16 +134,16 @@ export function FeeStructuresSettings() {
         }
       await saveFeeStructure(newStructure);
       toast({
-        title: "Fee Structure Saved",
-        description: `The fee structure for Grade ${values.grade} has been saved.`,
+        title: t('settings.feeStructures.feeStructureSaved'),
+        description: t('settings.feeStructures.feeStructureSavedMessage').replace('{grade}', values.grade),
       });
       fetchPageData();
       form.reset({ grade: "", monthlyAmount: 0 });
       setIsAddDialogOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save fee structure.",
+        title: t('common.error'),
+        description: t('settings.feeStructures.errorSavingStructure'),
         variant: "destructive",
       });
     } finally {
@@ -157,16 +159,16 @@ export function FeeStructuresSettings() {
             monthlyAmount: values.monthlyAmount
         });
         toast({
-            title: "Fee Structure Updated",
-            description: `The fee for Grade ${selectedStructure.grade} has been updated.`,
+            title: t('settings.feeStructures.feeStructureUpdated'),
+            description: t('settings.feeStructures.feeUpdatedMessage', { grade: selectedStructure.grade }),
         });
         fetchPageData();
         setIsEditDialogOpen(false);
         setSelectedStructure(null);
     } catch (error) {
         toast({
-            title: "Error",
-            description: "Failed to update fee structure.",
+            title: t('common.error'),
+            description: t('settings.feeStructures.errorUpdatingStructure'),
             variant: "destructive",
         });
     } finally {
@@ -187,23 +189,23 @@ export function FeeStructuresSettings() {
     <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Fee Structures</CardTitle>
-            <CardDescription>
-              Define the monthly tuition fees for each grade for the {academicYear} academic year.
+            <CardTitle className="text-right">{t('settings.feeStructures.title')}</CardTitle>
+            <CardDescription className="text-right">
+              {t('settings.feeStructures.academicYearDescription', { academicYear })}
             </CardDescription>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="text-right">
                 <PlusCircle />
-                Add New Structure
+                {t('settings.feeStructures.addNewStructure')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Add Fee Structure</DialogTitle>
-                <DialogDescription>
-                  Define the monthly fee for a grade level.
+                <DialogTitle className="text-right">{t('settings.feeStructures.addFeeStructure')}</DialogTitle>
+                <DialogDescription className="text-right">
+                  {t('settings.feeStructures.defineMonthlyFee')}
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -213,9 +215,9 @@ export function FeeStructuresSettings() {
                     name="grade"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Grade</FormLabel>
+                        <FormLabel className="text-right">{t('settings.feeStructures.grade')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a grade" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="text-right"><SelectValue placeholder={t('settings.feeStructures.selectGrade')} /></SelectTrigger></FormControl>
                             <SelectContent>
                               <SelectItem value="Kindergarten">Kindergarten</SelectItem>
                               <SelectItem value="Pre-K">Pre-K</SelectItem>
@@ -233,16 +235,16 @@ export function FeeStructuresSettings() {
                     name="monthlyAmount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Monthly Fee Amount</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 2500" {...field} /></FormControl>
+                        <FormLabel className="text-right">{t('settings.feeStructures.monthlyFeeAmount')}</FormLabel>
+                        <FormControl><Input type="number" placeholder={t('settings.feeStructures.exampleAmount')} className="text-right" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <DialogFooter className="pt-4">
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting} className="text-right">
                       {isSubmitting && <Loader2 className="animate-spin" />}
-                      {isSubmitting ? "Saving..." : "Save Structure"}
+                      {isSubmitting ? t('common.saving') : t('settings.feeStructures.saveStructure')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -259,22 +261,22 @@ export function FeeStructuresSettings() {
              <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Grade</TableHead>
-                    <TableHead>Academic Year</TableHead>
-                    <TableHead>Monthly Fee</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">{t('settings.feeStructures.grade')}</TableHead>
+                    <TableHead className="text-right">{t('settings.feeStructures.academicYear')}</TableHead>
+                    <TableHead className="text-right">{t('settings.feeStructures.monthlyFee')}</TableHead>
+                    <TableHead className="text-right">{t('common.actions')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {structures.length > 0 ? (
                     structures.sort((a,b) => parseInt(a.grade) - parseInt(b.grade)).map((structure) => (
                         <TableRow key={structure.id}>
-                            <TableCell className="font-medium">Grade {structure.grade}</TableCell>
-                            <TableCell>{structure.academicYear}</TableCell>
-                            <TableCell>{formatCurrency(structure.monthlyAmount)}</TableCell>
+                            <TableCell className="font-medium text-right">{t('common.grade')} {structure.grade}</TableCell>
+                            <TableCell className="text-right">{structure.academicYear}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(structure.monthlyAmount)}</TableCell>
                             <TableCell className="text-right">
-                                <Button variant="outline" size="sm" onClick={() => handleEditClick(structure)}>
-                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                <Button variant="outline" size="sm" onClick={() => handleEditClick(structure)} className="text-right">
+                                    <Edit className="ml-2 h-4 w-4" /> {t('common.edit')}
                                 </Button>
                             </TableCell>
                         </TableRow>
@@ -282,7 +284,7 @@ export function FeeStructuresSettings() {
                     ) : (
                     <TableRow>
                         <TableCell colSpan={4} className="h-24 text-center">
-                            No fee structures defined for this year.
+                            {t('settings.feeStructures.noStructuresForYear')}
                         </TableCell>
                     </TableRow>
                     )}
@@ -294,9 +296,9 @@ export function FeeStructuresSettings() {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Edit Fee Structure</DialogTitle>
-                    <DialogDescription>
-                        Update the monthly fee for Grade {selectedStructure?.grade}.
+                    <DialogTitle className="text-right">{t('settings.feeStructures.editFeeStructure')}</DialogTitle>
+                    <DialogDescription className="text-right">
+                        {t('settings.feeStructures.updateMonthlyFee', { grade: selectedStructure?.grade })}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...editForm}>
@@ -306,16 +308,16 @@ export function FeeStructuresSettings() {
                             name="monthlyAmount"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>New Monthly Fee Amount</FormLabel>
-                                    <FormControl><Input type="number" placeholder="e.g., 2500" {...field} /></FormControl>
+                                    <FormLabel className="text-right">{t('settings.feeStructures.newMonthlyFeeAmount')}</FormLabel>
+                                    <FormControl><Input type="number" placeholder={t('settings.feeStructures.exampleAmount')} className="text-right" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
                         <DialogFooter className="pt-4">
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting} className="text-right">
                                 {isSubmitting && <Loader2 className="animate-spin" />}
-                                {isSubmitting ? "Saving..." : "Save Changes"}
+                                {isSubmitting ? t('common.saving') : t('settings.feeStructures.saveChanges')}
                             </Button>
                         </DialogFooter>
                     </form>

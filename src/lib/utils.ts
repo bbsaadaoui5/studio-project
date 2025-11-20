@@ -14,12 +14,12 @@ export function groupAndCountBy<T>(arr: T[], key: keyof T) {
   }, {} as Record<string, number>);
 }
 
-export function debounce<F extends (...args: any[]) => any>(func: F, timeout = 300) {
-  let timer: NodeJS.Timeout;
+export function debounce<F extends (...args: any[]) => any>(func: F, timeout = 300): (...args: Parameters<F>) => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   return (...args: Parameters<F>): void => {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
-      func.apply(null, args);
+      (func as (...a: Parameters<F>) => any)(...args);
     }, timeout);
   };
 }

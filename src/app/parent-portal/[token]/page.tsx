@@ -26,13 +26,15 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { getAnnouncements } from "@/services/announcementService";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useTranslation } from "@/i18n/translation-provider";
 
 type CourseWithGrade = Course & { finalGrade: number | null };
 type GeneratingState = "idle" | "fetching" | "compiling" | "writing" | "done";
 
 
-const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const daysOfWeek = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 const timeSlots = [
   "08:00 - 09:00",
   "09:00 - 10:00",
@@ -44,13 +46,16 @@ const timeSlots = [
 ];
 
 export default function ParentPortalPage() {
-  const params = useParams();
-  const token = params.token as string;
+  const { t } = useTranslation();
+    const params = useParams();
+    const token = params?.token as string | undefined;
   const { toast } = useToast();
   
   const [student, setStudent] = useState<Student | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<CourseWithGrade[]>([]);
   const [supportCourses, setSupportCourses] = useState<Course[]>([]);
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(true);
   const [attendance, setAttendance] = useState<any[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
@@ -62,22 +67,22 @@ export default function ParentPortalPage() {
   const [generatedReport, setGeneratedReport] = useState<ReportCard | null>(null);
   const [generatingState, setGeneratingState] = useState<GeneratingState>("idle");
 
-  const generatingMessages: Record<GeneratingState, string> = {
-    idle: "Generate with AI",
-    fetching: "Fetching data...",
-    compiling: "Compiling grades...",
-    writing: "Writing comments...",
-    done: "Done!",
-  };
+    const generatingMessages: Record<GeneratingState, string> = {
+            idle: t('pp.report.generateAi'),
+            fetching: t('pp.report.fetching'),
+            compiling: t('pp.report.compiling'),
+            writing: t('pp.report.writing'),
+            done: t('pp.report.done'),
+    };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const studentId = await validateParentAccessToken(token);
-        if (!studentId) {
-          setIsValidToken(false);
-          return;
-        }
+                const studentId = await validateParentAccessToken(token as string);
+                if (!studentId) {
+                    setIsValidToken(false);
+                    return;
+                }
         setIsValidToken(true);
 
         const studentData = await getStudent(studentId);
@@ -125,9 +130,39 @@ export default function ParentPortalPage() {
     fetchData();
   }, [token]);
 
+    // Load a small set of announcements for the prominent board
+    useEffect(() => {
+        const loadAnnouncements = async () => {
+            if (!token) return;
+            setIsAnnouncementsLoading(true);
+            try {
+                const studentId = await validateParentAccessToken(token as string);
+                if (!studentId) {
+                    setAnnouncements([]);
+                    setIsAnnouncementsLoading(false);
+                    return;
+                }
+                const student = await getStudent(studentId);
+                const all = await getAnnouncements(5);
+                const filtered = all.filter((a: any) => {
+                    if (a.audience && a.audience !== 'both' && a.audience !== 'parents') return false;
+                    if (a.grade && student && String(a.grade) !== String(student.grade)) return false;
+                    if (a.className && student && String(a.className) !== String(student.className)) return false;
+                    return true;
+                });
+                setAnnouncements(filtered.slice(0,3));
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsAnnouncementsLoading(false);
+            }
+        };
+        void loadAnnouncements();
+    }, [token, toast]);
+
   const handleGenerateReport = async () => {
     if (!student || !reportingPeriod) {
-        toast({ title: "Missing Information", description: "Please enter a reporting period.", variant: "destructive"});
+                toast({ title: "معلومات مفقودة", description: "الرجاء إدخال فترة التقرير.", variant: "destructive"});
         return;
     }
     setGeneratedReport(null);
@@ -135,14 +170,15 @@ export default function ParentPortalPage() {
         setGeneratingState("fetching");
         await new Promise(res => setTimeout(res, 500));
         setGeneratingState("compiling");
-        const report = { report: "Mock report card" };
-        setGeneratingState("writing");
-        await new Promise(res => setTimeout(res, 1500));
-        setGeneratedReport(report);
+    setGeneratingState("writing");
+    // Use the service to create a (mock) report card object matching the ReportCard type
+    const report = await generateReportCard(student.id, reportingPeriod);
+    await new Promise(res => setTimeout(res, 500));
+    setGeneratedReport(report);
         setGeneratingState("done");
     } catch (error) {
         console.error(error);
-        toast({ title: "Error Generating Report", description: "An unexpected error occurred. Please try again.", variant: "destructive"});
+        toast({ title: "خطأ في توليد التقرير", description: "حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.", variant: "destructive"});
         setGeneratingState("idle");
     } finally {
         setTimeout(() => setGeneratingState("idle"), 2000);
@@ -157,48 +193,62 @@ export default function ParentPortalPage() {
     return timetable.find(entry => entry.day === day && entry.timeSlot === timeSlot);
   }
   
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-muted">
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-muted">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Verifying access...</p>
-      </div>
-    );
-  }
+    <p className="mt-4 text-foreground">{t('pp.loading.checkingLink')}</p>
+            </div>
+        );
+    }
 
-  if (!isValidToken || !student) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
-        <Card className="w-full max-w-md text-center">
-            <CardHeader>
-                <CardTitle className="flex justify-center">
-                    <ShieldX className="h-16 w-16 text-destructive" />
-                </CardTitle>
-                <CardTitle className="text-2xl">Access Denied</CardTitle>
+    if (!isValidToken || !student) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
+                <Card className="w-full max-w-md text-center">
+                        <CardHeader>
+                                <CardTitle className="flex justify-center">
+                                        <ShieldX className="h-16 w-16 text-destructive" />
+                                </CardTitle>
+                <CardTitle className="text-2xl">{t('pp.unauthorized.title')}</CardTitle>
                 <CardDescription>
-                    The access link is invalid, expired, or has been revoked. Please request a new link from the school administration.
+                    {t('pp.unauthorized.description')}
                 </CardDescription>
-            </CardHeader>
-        </Card>
-      </div>
-    );
-  }
+                        </CardHeader>
+                </Card>
+            </div>
+        );
+    }
   
   const isGenerating = generatingState !== 'idle' && generatingState !== 'done';
 
   return (
     <div className="min-h-screen bg-muted/40">
         <header className="bg-background border-b">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
                  <div className="flex items-center gap-2">
                     <div className="bg-primary rounded-md p-1.5">
                         <GraduationCap className="h-6 w-6 text-primary-foreground" />
                     </div>
-                    <span className="text-lg font-semibold">Almawed Parent Portal</span>
+                    <span className="text-lg font-semibold">{t('pp.parentPortal.title')}</span>
                 </div>
                 <div className="text-right text-sm">
                     <p className="font-semibold">{student.name}</p>
-                    <p className="text-muted-foreground">Grade {student.grade}, Class {student.className}</p>
+                    <p className="text-muted-foreground">الصف {student.grade} — الفصل {student.className}</p>
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                        <Link href={`./assignments`}>
+                            <Button size="sm">{t('nav.assignments')}</Button>
+                        </Link>
+                        <Link href={`./calendar`}>
+                            <Button size="sm" variant="outline">{t('nav.calendar')}</Button>
+                        </Link>
+                            <Link href={`./announcements`}>
+                                <Button size="sm" variant="ghost">{t('nav.announcements')}</Button>
+                            </Link>
+                            <Link href={`/communication/messages?withStudentId=${student.id}&parentName=${encodeURIComponent(student.parentName)}`}>
+                                <Button size="sm" variant="ghost">{t('nav.messages')}</Button>
+                            </Link>
+                    </div>
                 </div>
             </div>
         </header>
@@ -212,23 +262,23 @@ export default function ParentPortalPage() {
                                 <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                             </Avatar>
                             <CardTitle className="text-2xl">{student.name}</CardTitle>
-                            <CardDescription>Grade {student.grade} - Class {student.className}</CardDescription>
+                            <CardDescription>الصف {student.grade} — الفصل {student.className}</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <Separator className="my-4" />
-                             <div className="space-y-2 text-sm">
-                                <p><span className="font-semibold">Student ID:</span> {student.id}</p>
-                                <p><span className="font-semibold">Email:</span> {student.email}</p>
-                                <p><span className="font-semibold">Guardian:</span> {student.parentName}</p>
-                                <p><span className="font-semibold">Contact:</span> {student.contact}</p>
-                             </div>
+                                              <div className="space-y-2 text-sm">
+                                                  <p><span className="font-semibold">{t('student.idLabel')}:</span> {student.id}</p>
+                                                  <p><span className="font-semibold">{t('student.emailLabel')}:</span> {student.email}</p>
+                                                  <p><span className="font-semibold">{t('student.guardianLabel')}:</span> {student.parentName}</p>
+                                                  <p><span className="font-semibold">{t('student.contactLabel')}:</span> {student.contact}</p>
+                                              </div>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <CalendarCheck />
-                                Recent Attendance
+                                {t('attendance.title')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -237,47 +287,69 @@ export default function ParentPortalPage() {
                                     {attendance.map((att, index) => (
                                         <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                                             <div>
-                                                 <p className="font-medium">Daily Attendance</p>
+                                                 <p className="font-medium">{t('attendance.record')}</p>
                                                  <p className="text-sm text-muted-foreground">{format(new Date(att.date), "PPP")}</p>
                                             </div>
                                             <Badge variant={att.status === 'present' ? 'secondary' : (att.status === 'late' ? 'default' : 'destructive')} className="capitalize">
-                                                {att.status}
+                                                {att.status === 'present' ? t('attendance.present') : (att.status === 'late' ? t('attendance.late') : t('attendance.absent'))}
                                             </Badge>
                                         </div>
                                     ))}
                                 </div>
-                           ): (
-                                <p className="text-sm text-muted-foreground text-center py-8">No attendance records found.</p>
+                           ) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">لا توجد سجلات حضور.</p>
                            )}
                         </CardContent>
                     </Card>
                 </div>
                 <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                            <CardHeader className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-2">{t('announcements.title')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isAnnouncementsLoading ? (
+                                <p>{t('announcements.loading')}</p>
+                            ) : announcements.length === 0 ? (
+                                <p className="text-muted-foreground">{t('announcements.noUrgent')}</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {announcements.map(a => (
+                                        <article key={a.id} className="p-3 border rounded-md">
+                                            <h3 className="font-semibold">{a.title}</h3>
+                                            <p className="text-sm text-muted-foreground mt-2">{a.content}</p>
+                                            <div className="text-xs text-muted-foreground mt-2">{a.createdAt}</div>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                      <Card>
                         <CardHeader className="flex justify-between items-center">
                             <CardTitle className="flex items-center gap-2">
                                 <BookOpen />
-                                Academic Progress
+                                {t('academic.progressTitle')}
                             </CardTitle>
                             <Dialog open={isReportCardOpen} onOpenChange={setIsReportCardOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline"><FileText /> View Report Card</Button>
+                                    <DialogTrigger asChild>
+                                    <Button variant="outline"><FileText /> {t('report.dialog.viewButton')}</Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-3xl">
                                     <DialogHeader>
-                                        <DialogTitle>Generate Official Report Card</DialogTitle>
+                                        <DialogTitle>{t('report.dialog.title')}</DialogTitle>
                                         <DialogDescription>
-                                            Enter the reporting period to generate a report with AI-powered comments.
+                                            {t('report.dialog.description')}
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="py-4">
                                         {!generatedReport && (
                                             <div className="flex items-end gap-2">
                                                 <div className="flex-1 space-y-2">
-                                                    <Label htmlFor="reporting-period">Reporting Period</Label>
+                                                    <Label htmlFor="reporting-period">{t('report.dialog.reportingPeriodLabel')}</Label>
                                                     <Input 
                                                         id="reporting-period" 
-                                                        placeholder="e.g., Semestre d'automne 2024"
+                                                        placeholder={t('report.dialog.placeholder')}
                                                         value={reportingPeriod}
                                                         onChange={e => setReportingPeriod(e.target.value)}
                                                     />
@@ -303,7 +375,7 @@ export default function ParentPortalPage() {
                                                 </div>
                                                 <div className="space-y-4">
                                                     <div>
-                                                        <h4 className="font-semibold">Overall Summary</h4>
+                                                        <h4 className="font-semibold">{t('report.overviewTitle')}</h4>
                                                         <p className="text-sm text-muted-foreground italic">"{generatedReport.overallSummary}"</p>
                                                     </div>
                                                     <Separator />
@@ -314,7 +386,7 @@ export default function ParentPortalPage() {
                                                                     <p>{course.courseName}</p>
                                                                     <p>{course.finalGrade}</p>
                                                                 </div>
-                                                                <p className="text-xs text-muted-foreground">Taught by {course.teacherName}</p>
+                                                                <p className="text-xs text-muted-foreground">المدرس: {course.teacherName}</p>
                                                                 <p className="text-sm mt-1">{course.comments}</p>
                                                             </div>
                                                         ))}
@@ -324,7 +396,7 @@ export default function ParentPortalPage() {
                                         )}
                                     </div>
                                     <DialogFooter>
-                                        <Button variant="secondary" onClick={() => { setIsReportCardOpen(false); setGeneratedReport(null); setReportingPeriod("")}}>Close</Button>
+                                        <Button variant="secondary" onClick={() => { setIsReportCardOpen(false); setGeneratedReport(null); setReportingPeriod("")}}>{t('report.dialog.closeButton')}</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
@@ -335,9 +407,9 @@ export default function ParentPortalPage() {
                                     {enrolledCourses.map(course => (
                                         <div key={course.id}>
                                             <div className="flex justify-between items-center mb-2">
-                                                <p className="font-medium">{course.name}</p>
-                                                <span className={`font-semibold ${course.finalGrade === null ? 'text-muted-foreground' : course.finalGrade < 50 ? 'text-destructive' : 'text-primary'}`}>
-                                                    {course.finalGrade !== null ? `${course.finalGrade.toFixed(1)}%` : 'N/A'}
+                                                <Link href={`./courses/${course.id}`} className="font-medium text-primary underline">{course.name}</Link>
+                                                    <span className={`font-semibold ${course.finalGrade === null ? 'text-muted-foreground' : course.finalGrade < 50 ? 'text-destructive' : 'text-primary'}`}>
+                                                    {course.finalGrade !== null ? `${course.finalGrade.toFixed(1)}%` : 'غير متوفر'}
                                                 </span>
                                             </div>
                                             <Progress value={course.finalGrade} className="h-2" />
@@ -345,7 +417,7 @@ export default function ParentPortalPage() {
                                     ))}
                                 </div>
                             ): (
-                                <p className="text-sm text-muted-foreground text-center py-8">No grades available yet.</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">{t('courses.noGrades')}</p>
                             )}
                         </CardContent>
                     </Card>
@@ -353,13 +425,13 @@ export default function ParentPortalPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Clock />
-                                Weekly Timetable
+                                {t('schedule.title')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                              <div className="border rounded-lg overflow-hidden">
                                 <div className="grid grid-cols-[1fr_repeat(5,2fr)] text-xs md:text-sm">
-                                    <div className="font-semibold bg-muted p-2 border-b border-r">Time</div>
+                                    <div className="font-semibold bg-muted p-2 border-b border-r">الوقت</div>
                                     {daysOfWeek.map(day => (
                                         <div key={day} className="font-semibold bg-muted p-2 text-center border-b border-r last:border-r-0">{day.substring(0,3)}</div>
                                     ))}
@@ -392,10 +464,10 @@ export default function ParentPortalPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Star />
-                                Support & Extracurricular Programs
+                                {t('supportPrograms')}
                             </CardTitle>
                             <CardDescription>
-                                Browse available support programs and activities.
+                                {t('supportPrograms.browseAvailable')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -406,7 +478,7 @@ export default function ParentPortalPage() {
                                             <AccordionTrigger>
                                                 <div className="flex flex-col items-start text-left">
                                                     <p className="font-semibold">{course.name}</p>
-                                                    <p className="text-sm text-muted-foreground">Instructor: {course.teacher}</p>
+                                                    <p className="text-sm text-muted-foreground">Instructor: {course.teachers?.[0]?.name || 'TBA'}</p>
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent>
@@ -416,7 +488,7 @@ export default function ParentPortalPage() {
                                    ))}
                                </Accordion>
                            ): (
-                                <p className="text-sm text-muted-foreground text-center py-8">No support programs are available at this time.</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">{t('supportPrograms.noAvailable')}</p>
                            )}
                         </CardContent>
                     </Card>

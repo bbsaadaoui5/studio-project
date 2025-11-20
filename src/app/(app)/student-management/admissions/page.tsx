@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -64,7 +64,7 @@ export default function AdmissionsPage() {
         },
     });
 
-    const fetchApplications = async () => {
+    const fetchApplications = useCallback(async () => {
         setIsLoading(true);
         try {
             const fetchedApplications = await getAdmissionApplications();
@@ -74,11 +74,11 @@ export default function AdmissionsPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [toast]);
 
     useEffect(() => {
-        fetchApplications();
-    }, [toast]);
+        void fetchApplications();
+    }, [fetchApplications]);
     
     async function onSubmit(values: z.infer<typeof applicationSchema>) {
         setIsSubmitting(true);
@@ -141,23 +141,23 @@ export default function AdmissionsPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Admissions Dashboard</CardTitle>
+                        <CardTitle>طلبات الالتحاق و القبول</CardTitle>
                         <CardDescription>
-                            Review and manage new student admission applications.
+                            مراجعة وإدارة طلبات قبول الطلاب الجدد.
                         </CardDescription>
                     </div>
                     <GlassModal open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <GlassModalTrigger asChild>
-                            <Button className="btn-gradient">
-                                <PlusCircle />
-                                Add Application
-                            </Button>
+                                <Button className="btn-gradient">
+                                    <PlusCircle />
+                                    إضافة طلب قبول
+                                </Button>
                         </GlassModalTrigger>
                         <GlassModalContent>
                             <GlassModalHeader>
-                                <GlassModalTitle>Add New Admission Application</GlassModalTitle>
+                                <GlassModalTitle>إضافة طلب قبول جديد</GlassModalTitle>
                                 <GlassModalDescription>
-                                    Enter the details of the new applicant.
+                                    أدخل بيانات المتقدم الجديد.
                                 </GlassModalDescription>
                             </GlassModalHeader>
                             <Form {...form}>
@@ -167,9 +167,9 @@ export default function AdmissionsPage() {
                                         name="applicantName"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Applicant's Full Name</FormLabel>
+                                            <FormLabel>الاسم الكامل للمتقدم</FormLabel>
                                             <FormControl>
-                                                <Input className="glass-input" placeholder="e.g., Layla Bennani" {...field} />
+                                                <Input className="glass-input" placeholder="مثال: ليلى بناني" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -180,9 +180,9 @@ export default function AdmissionsPage() {
                                         name="applicantEmail"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Applicant's Email</FormLabel>
+                                            <FormLabel>البريد الإلكتروني للمتقدم</FormLabel>
                                             <FormControl>
-                                                <Input className="glass-input" type="email" placeholder="e.g., layla.b@example.com" {...field} />
+                                                <Input className="glass-input" type="email" placeholder="مثال: layla.b@example.com" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -193,12 +193,12 @@ export default function AdmissionsPage() {
                                         name="gradeApplyingFor"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Grade Applying For</FormLabel>
+                                            <FormLabel>الصف المطلوب</FormLabel>
                                              <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger><SelectValue placeholder="Select a grade" /></SelectTrigger>
+                                                    <SelectTrigger><SelectValue placeholder="اختر الصف" /></SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>{[...Array(12)].map((_, i) => (<SelectItem key={i+1} value={`${i + 1}`}>Grade {i + 1}</SelectItem>))}</SelectContent>
+                                                <SelectContent>{[...Array(12)].map((_, i) => (<SelectItem key={i+1} value={`${i + 1}`}>الصف {i + 1}</SelectItem>))}</SelectContent>
                                             </Select>
                                             <FormMessage />
                                         </FormItem>
@@ -209,9 +209,9 @@ export default function AdmissionsPage() {
                                         name="parentName"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Parent/Guardian Name</FormLabel>
+                                            <FormLabel>اسم ولي الأمر</FormLabel>
                                             <FormControl>
-                                                <Input className="glass-input" placeholder="e.g., Omar Bennani" {...field} />
+                                                <Input className="glass-input" placeholder="مثال: عمر بناني" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -222,9 +222,9 @@ export default function AdmissionsPage() {
                                         name="parentContact"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Parent Contact Number</FormLabel>
+                                            <FormLabel>هاتف ولي الأمر</FormLabel>
                                             <FormControl>
-                                                <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
+                                                <Input className="glass-input" placeholder="مثال: +212 600-000000" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -235,9 +235,9 @@ export default function AdmissionsPage() {
                                         name="previousSchool"
                                         render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Previous School (Optional)</FormLabel>
+                                            <FormLabel>المدرسة السابقة (اختياري)</FormLabel>
                                             <FormControl>
-                                                <Input className="glass-input" placeholder="e.g., Al-Khwarizmi High School" {...field} />
+                                                <Input className="glass-input" placeholder="مثال: ثانوية الخوارزمي" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -246,7 +246,7 @@ export default function AdmissionsPage() {
                                     <div className="flex justify-end pt-4">
                                         <Button type="submit" disabled={isSubmitting} className="btn-gradient">
                                             {isSubmitting && <Loader2 className="animate-spin" />}
-                                            {isSubmitting ? "Submitting..." : "Submit Application"}
+                                            {isSubmitting ? "جاري الإرسال..." : "إرسال الطلب"}
                                         </Button>
                                     </div>
                                 </form>
@@ -263,12 +263,12 @@ export default function AdmissionsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Applicant Name</TableHead>
-                                    <TableHead>Grade</TableHead>
-                                    <TableHead>Parent</TableHead>
-                                    <TableHead>Application Date</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>اسم المتقدم</TableHead>
+                                    <TableHead>الصف</TableHead>
+                                    <TableHead>ولي الأمر</TableHead>
+                                    <TableHead>تاريخ التقديم</TableHead>
+                                    <TableHead>الحالة</TableHead>
+                                    <TableHead className="text-right">الإجراءات</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -276,7 +276,7 @@ export default function AdmissionsPage() {
                                     applications.map(app => (
                                         <TableRow key={app.id}>
                                             <TableCell className="font-medium">{app.applicantName}</TableCell>
-                                            <TableCell>Grade {app.gradeApplyingFor}</TableCell>
+                                            <TableCell>الصف {app.gradeApplyingFor}</TableCell>
                                             <TableCell>{app.parentName}</TableCell>
                                             <TableCell>{format(new Date(app.applicationDate), 'PPP')}</TableCell>
                                             <TableCell>
@@ -284,7 +284,7 @@ export default function AdmissionsPage() {
                                                     variant={app.status === 'approved' ? 'default' : app.status === 'rejected' ? 'destructive' : 'secondary'}
                                                     className="capitalize"
                                                 >
-                                                    {app.status}
+                                                    {app.status === 'approved' ? 'مقبول' : app.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -292,11 +292,11 @@ export default function AdmissionsPage() {
                                                     <div className="flex justify-end gap-2">
                                                         <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(app.id, 'approved')} disabled={isUpdating}>
                                                             <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                                            Approve
+                                                            قبول
                                                         </Button>
                                                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(app.id, 'rejected')} disabled={isUpdating}>
                                                             <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                                            Reject
+                                                            رفض
                                                         </Button>
                                                     </div>
                                                 )}
@@ -305,7 +305,7 @@ export default function AdmissionsPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">No admission applications found.</TableCell>
+                                        <TableCell colSpan={6} className="text-center h-24">لا توجد طلبات قبول.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

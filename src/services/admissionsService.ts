@@ -24,6 +24,7 @@ export type NewApplication = Omit<AdmissionApplication, 'id' | 'status' | 'appli
  * @returns The ID of the newly created application.
  */
 export const addAdmissionApplication = async (applicationData: NewApplication): Promise<string> => {
+  if (!db) throw new Error('Firestore is not initialized. Cannot add admission application.');
   const batch = writeBatch(db);
   const newDocRef = doc(collection(db, ADMISSIONS_COLLECTION));
 
@@ -50,6 +51,10 @@ export const addAdmissionApplication = async (applicationData: NewApplication): 
  */
 export const getAdmissionApplications = async (): Promise<AdmissionApplication[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getAdmissionApplications() returning empty list.');
+      return [];
+    }
     const q = query(collection(db, ADMISSIONS_COLLECTION), orderBy("applicationDate", "desc"));
     const querySnapshot = await getDocs(q);
     const applications: AdmissionApplication[] = [];
@@ -75,8 +80,9 @@ export const getAdmissionApplications = async (): Promise<AdmissionApplication[]
  */
 export const updateApplicationStatus = async (applicationId: string, status: 'approved' | 'rejected'): Promise<void> => {
     try {
-        const appRef = doc(db, ADMISSIONS_COLLECTION, applicationId);
-        await updateDoc(appRef, { status });
+    if (!db) throw new Error('Firestore is not initialized. Cannot update application status.');
+    const appRef = doc(db, ADMISSIONS_COLLECTION, applicationId);
+    await updateDoc(appRef, { status });
     } catch (error) {
         console.error("Error updating application status:", error);
         throw new Error("Failed to update application status.");

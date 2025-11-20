@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Student, AttendanceStatus } from "@/lib/types";
 import { getStudents, getStudentsByClass } from "@/services/studentService";
 import { saveAttendance, getAttendance } from "@/services/attendanceService";
@@ -20,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AttendancePage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [selectedGrade, setSelectedGrade] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -37,8 +39,8 @@ export default function AttendancePage() {
         setAllStudents(fetchedStudents.filter(s => s.status === 'active'));
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to fetch student data.",
+          title: t("common.error"),
+          description: t("attendance.errorFetchingStudents"),
           variant: "destructive",
         });
       } finally {
@@ -46,7 +48,7 @@ export default function AttendancePage() {
       }
     };
     fetchStudents();
-  }, [toast]);
+  }, [toast, t]);
 
   const grades = useMemo(() => [...new Set(allStudents.map(s => s.grade))].sort((a,b) => parseInt(a)-parseInt(b)), [allStudents]);
   
@@ -115,33 +117,33 @@ export default function AttendancePage() {
   }
 
   const handleSaveAttendance = async () => {
-    if (!selectedGrade || !selectedClass) {
-        toast({ title: "Please select a grade and class.", variant: "destructive" });
-        return;
-    }
-    setIsSaving(true);
-    try {
-        const dateString = format(selectedDate, "yyyy-MM-dd");
-        await saveAttendance({
-            grade: selectedGrade,
-            className: selectedClass,
-            date: dateString,
-            studentRecords: attendance,
-            studentIds: studentsInClass.map(s => s.id)
-        });
-        toast({
-            title: "Attendance Saved",
-            description: `Attendance for Grade ${selectedGrade} - ${selectedClass} on ${format(selectedDate, "PPP")} has been saved.`
-        });
-    } catch (error) {
-         toast({
-            title: "Error",
-            description: "Failed to save attendance. Please try again.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsSaving(false);
-    }
+  if (!selectedGrade || !selectedClass) {
+    toast({ title: "يرجى اختيار المستوى والقسم أولاً", variant: "destructive" });
+    return;
+  }
+  setIsSaving(true);
+  try {
+    const dateString = format(selectedDate, "yyyy-MM-dd");
+    await saveAttendance({
+      grade: selectedGrade,
+      className: selectedClass,
+      date: dateString,
+      studentRecords: attendance,
+      studentIds: studentsInClass.map(s => s.id)
+    });
+    toast({
+      title: "تم تسجيل الحضور",
+      description: `تسجيل حضور المستوى ${selectedGrade} - القسم ${selectedClass} بتاريخ ${format(selectedDate, "PPP")}`
+    });
+  } catch (error) {
+     toast({
+      title: "خطأ",
+      description: "فشل في حفظ بيانات الحضور",
+      variant: "destructive",
+    });
+  } finally {
+    setIsSaving(false);
+  }
   }
 
 
@@ -149,44 +151,44 @@ export default function AttendancePage() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Take Attendance by Class</CardTitle>
+          <CardTitle>تسجيل الحضور</CardTitle>
           <CardDescription>
-            Select a grade, class, and date to mark student attendance.
+            اختر المستوى، القسم، والتاريخ لتسجيل حضور الطلاب.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-6">
            <div className="space-y-2">
-            <Label>Select Grade</Label>
+            <Label>المستوى الدراسي</Label>
             <Select onValueChange={setSelectedGrade} value={selectedGrade}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a grade" />
+                <SelectValue placeholder="اختر المستوى الدراسي" />
               </SelectTrigger>
               <SelectContent>
                 {grades.map((grade) => (
                   <SelectItem key={grade} value={grade}>
-                    Grade {grade}
+                    المستوى {grade}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
            <div className="space-y-2">
-            <Label>Select Class</Label>
+            <Label>القسم</Label>
             <Select onValueChange={setSelectedClass} value={selectedClass} disabled={!selectedGrade}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a class" />
+                <SelectValue placeholder="اختر القسم" />
               </SelectTrigger>
               <SelectContent>
                 {classNamesForGrade.map((className) => (
                   <SelectItem key={className} value={className}>
-                    Class {className}
+                    القسم {className}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
            <div className="space-y-2">
-             <Label>Select Date</Label>
+             <Label>التاريخ</Label>
              <Popover>
                 <PopoverTrigger asChild>
                 <Button
@@ -197,7 +199,7 @@ export default function AttendancePage() {
                     )}
                 >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    {selectedDate ? format(selectedDate, "PPP") : <span>اختر التاريخ</span>}
                 </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -224,12 +226,12 @@ export default function AttendancePage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>Attendance Sheet</CardTitle>
-                        <CardDescription>
-                            Class: Grade {selectedGrade} - {selectedClass} | Date: {format(selectedDate, "PPP")}
-                        </CardDescription>
+            <CardTitle>كشف الحضور</CardTitle>
+            <CardDescription>
+              القسم: المستوى {selectedGrade} - {selectedClass} | التاريخ: {format(selectedDate, "PPP")}
+            </CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => markAll('present')}>Mark All Present</Button>
+                    <Button variant="outline" size="sm" onClick={() => markAll('present')}>تحديد الكل حاضر</Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -244,15 +246,15 @@ export default function AttendancePage() {
                             >
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="present" id={`${student.id}-present`} />
-                                    <Label htmlFor={`${student.id}-present`}>Present</Label>
+                                    <Label htmlFor={`${student.id}-present`}>حاضر</Label>
                                 </div>
                                  <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="absent" id={`${student.id}-absent`} />
-                                    <Label htmlFor={`${student.id}-absent`}>Absent</Label>
+                                    <Label htmlFor={`${student.id}-absent`}>غائب</Label>
                                 </div>
                                  <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="late" id={`${student.id}-late`} />
-                                    <Label htmlFor={`${student.id}-late`}>Late</Label>
+                                    <Label htmlFor={`${student.id}-late`}>متأخر</Label>
                                 </div>
                             </RadioGroup>
                         </div>
@@ -261,7 +263,7 @@ export default function AttendancePage() {
                  <div className="flex justify-end mt-6">
                     <Button onClick={handleSaveAttendance} disabled={isSaving}>
                         {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-                        {isSaving ? "Saving..." : "Save Attendance"}
+                        {isSaving ? "جاري الحفظ..." : "حفظ الحضور"}
                     </Button>
                 </div>
             </CardContent>
@@ -271,10 +273,10 @@ export default function AttendancePage() {
        {!isLoading && selectedGrade && selectedClass && studentsInClass.length === 0 && (
          <Card>
             <CardContent className="py-12 text-center">
-                <h3 className="text-lg font-medium">No Students Found</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                    There are no active students in this class to take attendance for.
-                </p>
+        <h3 className="text-lg font-medium">لا يوجد طلاب</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          لا يوجد طلاب نشطون في هذا القسم لتسجيل حضورهم.
+        </p>
             </CardContent>
         </Card>
       )}

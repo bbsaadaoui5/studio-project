@@ -4,6 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, notFound, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getPayroll } from "@/services/payrollService";
 import { getStaffMember } from "@/services/staffService";
 import { getSettings } from "@/services/settingsService";
@@ -18,8 +19,9 @@ export default function PayslipPage() {
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
-    const payrollId = params.id as string;
-    const staffId = params.staffId as string;
+    const { t } = useTranslation();
+    const payrollId = params?.id as string | undefined;
+    const staffId = params?.staffId as string | undefined;
 
     const [payslip, setPayslip] = useState<Payslip | null>(null);
     const [payroll, setPayroll] = useState<Payroll | null>(null);
@@ -56,7 +58,7 @@ export default function PayslipPage() {
                 setSettings(settingsData);
 
             } catch (error) {
-                toast({ title: "Error", description: "Failed to fetch payslip data.", variant: "destructive" });
+                toast({ title: "خطأ", description: "فشل في جلب بيانات قسيمة الراتب.", variant: "destructive" });
             } finally {
                 setIsLoading(false);
             }
@@ -82,15 +84,15 @@ export default function PayslipPage() {
         <div className="flex flex-col gap-6 no-print">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => router.back()}>
+                    <Button variant="outline" size="icon" onClick={() => router.back()} aria-label={t("common.back") || 'Back'}> 
                         <ArrowLeft />
-                        <span className="sr-only">Back</span>
+                        <span className="sr-only">{t("common.back") || 'Back'}</span>
                     </Button>
-                    <h1 className="text-2xl font-bold">Payslip Details</h1>
+                    <h1 className="text-2xl font-bold">{t("common.payslipDetails")}</h1>
                 </div>
-                <Button onClick={handlePrint}>
+                <Button onClick={handlePrint} aria-label={t('staff.payroll.printPayslip')}>
                     <Printer />
-                    Print Payslip
+                    {t('staff.payroll.printPayslip')}
                 </Button>
             </div>
         </div>
@@ -119,15 +121,15 @@ export default function PayslipPage() {
                     <CardContent className="p-6">
                         <div className="grid grid-cols-2 gap-x-12 gap-y-4">
                             <div>
-                                <h3 className="font-semibold text-lg border-b pb-2 mb-2">Earnings</h3>
-                                <div className="flex justify-between"><span>Base Salary</span><span>{formatCurrency(payslip.salary)}</span></div>
-                                <div className="flex justify-between"><span>Bonus</span><span>{formatCurrency(payslip.bonus)}</span></div>
+                                <h3 className="font-semibold text-lg border-b pb-2 mb-2">{t("staff.payroll.earnings")}</h3>
+                                <div className="flex justify-between"><span>{t("staff.payroll.baseSalary")}</span><span>{formatCurrency(payslip.salary)}</span></div>
+                                <div className="flex justify-between"><span>{t("staff.payroll.bonus")}</span><span>{formatCurrency(payslip.bonus)}</span></div>
                                 <Separator className="my-2" />
-                                <div className="flex justify-between font-bold"><span>Total Earnings</span><span>{formatCurrency(payslip.salary + payslip.bonus)}</span></div>
+                                <div className="flex justify-between font-bold"><span>{t("staff.payroll.totalEarnings")}</span><span>{formatCurrency(payslip.salary + payslip.bonus)}</span></div>
                             </div>
                             <div>
-                                <h3 className="font-semibold text-lg border-b pb-2 mb-2">Deductions</h3>
-                                <div className="flex justify-between"><span>Standard Deductions</span><span>{formatCurrency(payslip.deductions)}</span></div>
+                                <h3 className="font-semibold text-lg border-b pb-2 mb-2">{t("staff.payroll.deductionsTitle")}</h3>
+                                <div className="flex justify-between"><span>{t("staff.payroll.standardDeductions")}</span><span>{formatCurrency(payslip.deductions)}</span></div>
                                 <Separator className="my-2" />
                                 <div className="flex justify-between font-bold"><span>Total Deductions</span><span>{formatCurrency(payslip.deductions)}</span></div>
                             </div>

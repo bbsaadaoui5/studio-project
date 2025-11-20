@@ -48,11 +48,13 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { debounce } from "@/lib/utils";
 
 export default function StudentDirectoryPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [students, setStudents] = React.useState<Student[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -63,24 +65,25 @@ export default function StudentDirectoryPage() {
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
-   React.useEffect(() => {
-    const fetchStudents = async () => {
-      setIsLoading(true);
-      try {
-        const fetchedStudents = await getStudents();
-        setStudents(fetchedStudents);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Could not fetch students. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchStudents();
-  }, [toast]);
+   const fetchStudents = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedStudents = await getStudents();
+      setStudents(fetchedStudents);
+    } catch (error) {
+      toast({
+        title: t("common.error"),
+        description: t("students.errorFetchingStudents"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast, t]);
+
+  React.useEffect(() => {
+    void fetchStudents();
+  }, [fetchStudents]);
 
   const columns: ColumnDef<Student>[] = [
     {
@@ -107,7 +110,7 @@ export default function StudentDirectoryPage() {
     },
     {
       accessorKey: "name",
-      header: "Name",
+  header: t("common.name"),
       cell: ({ row }) => (
         <Button variant="link" asChild className="p-0">
           <Link href={`/student-management/directory/${row.original.id}`} className="font-medium">
@@ -124,7 +127,7 @@ export default function StudentDirectoryPage() {
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Email
+            {t("common.email")}
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         );
@@ -133,22 +136,22 @@ export default function StudentDirectoryPage() {
     },
       {
       accessorKey: "grade",
-      header: "Grade",
+  header: t("students.grade"),
       cell: ({ row }) => {
         const student = row.original;
         return (
-            <div>{student.studentType === 'regular' ? `Grade ${student.grade}` : 'Support Program'}</div>
+            <div>{student.studentType === 'regular' ? `${t('students.grade')} ${student.grade}` : t('students.supportProgram')}</div>
         )
       },
     },
     {
       accessorKey: "className",
-      header: "Class",
+  header: t("students.className"),
       cell: ({ row }) => <div>{row.original.className}</div>,
     },
     {
       accessorKey: "status",
-      header: "Status",
+  header: t("common.status"),
       cell: ({ row }) => {
          const status = row.getValue("status") as string;
          const variant = status === "active" ? "default" : "destructive";
@@ -157,7 +160,7 @@ export default function StudentDirectoryPage() {
     },
      {
       accessorKey: "enrollmentDate",
-      header: "Enrolled On",
+  header: t("common.date"),
       cell: ({ row }) => (
         <div>{new Date(row.getValue("enrollmentDate")).toLocaleDateString()}</div>
       ),
@@ -168,29 +171,29 @@ export default function StudentDirectoryPage() {
       cell: ({ row }) => {
         const student = row.original;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(student.id)}
-              >
-                Copy student ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(`/student-management/directory/${student.id}`)}>
-                View profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(`/student-management/directory/${student.id}/edit`)}>
-                Edit record
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/student-management/directory/${student.id}`)}
+            >
+              {t('common.viewDetails')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/student-management/directory/${student.id}/edit`)}
+            >
+              {t('common.edit')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {/* تنفيذ حذف الطالب هنا */}}
+            >
+              {t('common.delete')}
+            </Button>
+          </div>
         );
       },
     },
@@ -235,13 +238,13 @@ export default function StudentDirectoryPage() {
      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
-                <CardTitle>Student Directory</CardTitle>
-                <CardDescription>Browse and manage student records.</CardDescription>
+                <CardTitle>{t("students.directory")}</CardTitle>
+                <CardDescription>{t('students.browseAndManage')}</CardDescription>
             </div>
              <Button asChild className="btn-glass-primary btn-click-effect">
                 <Link href="/student-management/directory/new">
                     <PlusCircle />
-                    Add New Student
+                    {t("students.addNew")}
                 </Link>
             </Button>
         </CardHeader>
@@ -249,14 +252,14 @@ export default function StudentDirectoryPage() {
             <div className="w-full">
                 <div className="flex items-center py-4">
                     <Input
-                    placeholder="Filter by name..."
+                    placeholder={t("common.search") + "..."}
                     onChange={(event) => debouncedSetFilter(event.target.value)}
                     className="max-w-sm"
                     />
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="ml-auto btn-glass btn-click-effect">
-                        Columns <ChevronDown className="ml-2 h-4 w-4" />
+                        {t('common.columns')} <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -273,7 +276,17 @@ export default function StudentDirectoryPage() {
                                 column.toggleVisibility(!!value)
                                 }
                             >
-                                {column.id}
+                                {(() => {
+                                  switch (column.id) {
+                                    case 'name': return t('common.name');
+                                    case 'email': return t('common.email');
+                                    case 'grade': return t('students.grade');
+                                    case 'className': return t('students.className');
+                                    case 'status': return t('common.status');
+                                    case 'enrollmentDate': return t('students.enrollmentDate');
+                                    default: return column.id;
+                                  }
+                                })()}
                             </DropdownMenuCheckboxItem>
                             );
                         })}
@@ -323,7 +336,7 @@ export default function StudentDirectoryPage() {
                             colSpan={columns.length}
                             className="h-24 text-center"
                             >
-                            No results.
+                            {t('common.noResultsFound')}
                             </TableCell>
                         </TableRow>
                         )}
@@ -332,8 +345,7 @@ export default function StudentDirectoryPage() {
                 </div>
                 <div className="flex items-center justify-end space-x-2 py-4">
                     <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
+                    {table.getFilteredSelectedRowModel().rows.length} {t('common.of')} {table.getFilteredRowModel().rows.length} {t('common.rowsSelected')}.
                     </div>
                     <div className="space-x-2">
                     <Button
@@ -343,7 +355,7 @@ export default function StudentDirectoryPage() {
                         disabled={!table.getCanPreviousPage()}
                         className="btn-glass btn-click-effect"
                     >
-                        Previous
+                        {t('common.previous')}
                     </Button>
                     <Button
                         variant="outline"
@@ -352,7 +364,7 @@ export default function StudentDirectoryPage() {
                         disabled={!table.getCanNextPage()}
                         className="btn-glass btn-click-effect"
                     >
-                        Next
+                        {t('common.next')}
                     </Button>
                     </div>
                 </div>

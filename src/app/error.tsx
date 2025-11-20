@@ -16,12 +16,14 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
         <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
         <p className="mb-4">{error.message || "An unexpected error occurred. Please try again or contact support."}</p>
         <button
+          type="button"
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           onClick={() => reset()}
         >
           Try Again
         </button>
         <button
+          type="button"
           className="ml-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
           onClick={() => router.push("/")}
         >

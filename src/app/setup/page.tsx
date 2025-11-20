@@ -17,10 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, GraduationCap, ShieldCheck } from "lucide-react";
-// Firebase service imports temporarily disabled
-// import { getStaffMembers, addStaffMember } from "@/services/staffService";
+import { useTranslation } from "@/i18n/translation-provider";
+// Staff service helpers
+import { getStaffMembers, addStaffMember } from "@/services/staffService";
 
 export default function SetupPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
@@ -87,11 +89,12 @@ export default function SetupPage() {
 
       router.push("/login");
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
+      const message = error instanceof Error ? error.message : String(error);
       toast({
         title: "Setup Failed",
-        description: error.message || "Could not create the administrator account.",
+        description: message || "Could not create the administrator account.",
         variant: "destructive",
       });
     } finally {
@@ -117,7 +120,7 @@ export default function SetupPage() {
                 </div>
             </div>
             <CardTitle className="text-2xl">Initial Administrator Setup</CardTitle>
-            <CardDescription>Create the first admin account for Almawed.</CardDescription>
+            <CardDescription>{t('app.createFirstAdmin')}</CardDescription>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleCreateAdmin} className="space-y-4">

@@ -31,8 +31,9 @@ type GeneratePayrollResult =
  */
 export const generatePayroll = async (period: string): Promise<GeneratePayrollResult> => {
   try {
-    const existingPayrollQuery = query(collection(db, PAYROLL_COLLECTION), where("period", "==", period));
-    const existingPayrollSnapshot = await getDocs(existingPayrollQuery);
+  if (!db) return { success: false, reason: 'Firestore not initialized. Cannot generate payroll.' };
+  const existingPayrollQuery = query(collection(db, PAYROLL_COLLECTION), where("period", "==", period));
+  const existingPayrollSnapshot = await getDocs(existingPayrollQuery);
     if (!existingPayrollSnapshot.empty) {
       return { success: false, reason: `Payroll for ${period} has already been generated.` };
     }
@@ -69,7 +70,8 @@ export const generatePayroll = async (period: string): Promise<GeneratePayrollRe
       payslips,
     };
 
-    const docRef = await addDoc(collection(db, PAYROLL_COLLECTION), { ...newPayrollData, runDate: serverTimestamp() });
+  if (!db) return { success: false, reason: 'Firestore not initialized. Cannot generate payroll.' };
+  const docRef = await addDoc(collection(db, PAYROLL_COLLECTION), { ...newPayrollData, runDate: serverTimestamp() });
     const finalPayroll = { id: docRef.id, ...newPayrollData, runDate: new Date().toISOString() };
     await updateDoc(docRef, { id: docRef.id });
 
@@ -86,6 +88,10 @@ export const generatePayroll = async (period: string): Promise<GeneratePayrollRe
  */
 export const getPayrolls = async (): Promise<Payroll[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getPayrolls() returning empty list.');
+      return [];
+    }
     const q = query(
       collection(db, PAYROLL_COLLECTION),
       orderBy("runDate", "desc")
@@ -114,8 +120,12 @@ export const getPayrolls = async (): Promise<Payroll[]> => {
  */
 export const getPayroll = async (id: string): Promise<Payroll | null> => {
     try {
-        const docRef = doc(db, PAYROLL_COLLECTION, id);
-        const docSnap = await getDoc(docRef);
+    if (!db) {
+      console.warn('Firestore not initialized. getPayroll() returning null.');
+      return null;
+    }
+    const docRef = doc(db, PAYROLL_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.runDate && typeof data.runDate.toDate === 'function') {
@@ -137,8 +147,9 @@ export const getPayroll = async (id: string): Promise<Payroll | null> => {
  */
 export const updatePayroll = async (id: string, payrollData: Partial<Payroll>): Promise<void> => {
     try {
-        const payrollRef = doc(db, PAYROLL_COLLECTION, id);
-        await updateDoc(payrollRef, payrollData);
+    if (!db) throw new Error('Firestore not initialized. Cannot update payroll.');
+    const payrollRef = doc(db, PAYROLL_COLLECTION, id);
+    await updateDoc(payrollRef, payrollData);
     } catch (error) {
         console.error("Error updating payroll:", error);
         throw new Error("Failed to update payroll.");
@@ -151,8 +162,9 @@ export const updatePayroll = async (id: string, payrollData: Partial<Payroll>): 
  */
 export const deletePayroll = async (id: string): Promise<void> => {
     try {
-        const payrollRef = doc(db, PAYROLL_COLLECTION, id);
-        await deleteDoc(payrollRef);
+    if (!db) throw new Error('Firestore not initialized. Cannot delete payroll.');
+    const payrollRef = doc(db, PAYROLL_COLLECTION, id);
+    await deleteDoc(payrollRef);
     } catch (error) {
         console.error("Error deleting payroll:", error);
         throw new Error("Failed to delete payroll.");

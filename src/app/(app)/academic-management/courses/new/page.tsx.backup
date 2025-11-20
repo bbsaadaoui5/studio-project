@@ -109,7 +109,7 @@ export default function NewCoursePage() {
                 <span className="sr-only">Back to Courses</span>
             </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Add New Course {gradeParam && `for Grade ${gradeParam}`}</h1>
+  <h1 className="text-2xl font-bold">إضافة مقرر جديد {gradeParam && `للمستوى ${gradeParam}`}</h1>
       </div>
       <Card>
         <CardHeader>

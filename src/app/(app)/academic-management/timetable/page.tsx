@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +20,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, CalendarDays, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getTimetableForClass, addTimetableEntry } from "@/services/timetableService";
+import dynamic from 'next/dynamic'
+
+const TimetableAdmin = dynamic(() => import('@/components/TimetableAdmin'), { ssr: false })
 import { getCourses } from "@/services/courseService";
 import { getStudents } from "@/services/studentService";
 import { getSettings } from "@/services/settingsService";
@@ -61,6 +65,7 @@ const timetableSchema = z.object({
 
 export default function TimetablePage() {
   const { toast } = useToast();
+    const { t } = useTranslation();
   const [allClasses, setAllClasses] = useState<ClassInfo[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
@@ -120,23 +125,23 @@ export default function TimetablePage() {
   
   const selectedClassInfo = useMemo(() => allClasses.find(c => c.id === selectedClassId), [allClasses, selectedClassId]);
 
-  const fetchTimetable = async (grade: string, className: string) => {
-    setIsLoading(true);
-    try {
-      const fetchedTimetable = await getTimetableForClass(grade, className);
-      setTimetable(fetchedTimetable);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch timetable.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const fetchTimetable = useCallback(async (grade: string, className: string) => {
+        setIsLoading(true);
+        try {
+            const fetchedTimetable = await getTimetableForClass(grade, className);
+            setTimetable(fetchedTimetable);
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to fetch timetable.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
 
 
-  useEffect(() => {
-    if (!selectedClassInfo) return;
-    fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className);
-  }, [selectedClassInfo]);
+    useEffect(() => {
+        if (!selectedClassInfo) return;
+        fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className);
+    }, [selectedClassInfo, fetchTimetable]);
   
   const getEntryForSlot = (day: string, timeSlot: string) => {
     return timetable.find(entry => entry.day === day && entry.timeSlot === timeSlot);
@@ -157,7 +162,7 @@ export default function TimetablePage() {
             timeSlot: values.timeSlot,
             courseId: values.courseId,
             courseName: selectedCourse.name,
-            teacherName: selectedCourse.teacher,
+            teacherName: selectedCourse.teachers?.[0]?.name || 'TBA',
             notes: values.notes,
         };
         await addTimetableEntry(newEntry);
@@ -179,6 +184,17 @@ export default function TimetablePage() {
 
   return (
     <>
+        <div className="p-4">
+            <div className="flex justify-end mb-4">
+                <details className="ml-2">
+                    <summary className="cursor-pointer">لوحة الإدارة — عرض الجدول (إدارة)</summary>
+                    <div className="mt-3">
+                        {/* Client component handles loading via /api/timetable */}
+                        <TimetableAdmin />
+                    </div>
+                </details>
+            </div>
+        </div>
     <div className="flex flex-col gap-6 no-print">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -229,7 +245,7 @@ export default function TimetablePage() {
                                         <SelectContent>
                                         {courses.map(course => (
                                             <SelectItem key={course.id} value={course.id}>
-                                            {course.name} - {course.teacher}
+                                                {course.name} - {course.teachers?.[0]?.name || 'TBA'}
                                             </SelectItem>
                                         ))}
                                         </SelectContent>
@@ -295,7 +311,7 @@ export default function TimetablePage() {
                         </Form>
                     </DialogContent>
                 </Dialog>
-                <Button variant="outline" onClick={handlePrint} disabled={!selectedClassId || isLoading}>
+                <Button variant="outline" onClick={handlePrint} disabled={!selectedClassId || isLoading} aria-label={t('common.print') || 'Print timetable'}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print
                 </Button>

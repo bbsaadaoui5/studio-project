@@ -1,12 +1,162 @@
-name: Test PAT Permissions
+name: Accessibility & PAT Tests
 
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
+  accessibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000
+
+      - name: Run accessibility script on key routes
+        run: |
+          node scripts/run-axe.js \
+            http://localhost:3000/login \
+            http://localhost:3000/dashboard \
+            http://localhost:3000/parent-portal/test-token \
+            http://localhost:3000/communication/messages
+
+      - name: "Debug: list workspace and audit folder"
+        run: |
+          echo "PWD: $(pwd)"
+          echo "List root:"; ls -la
+          echo "List audit folder:"; ls -la audit || true
+          echo "Show a sample audit file head (if exists):"; head -n 200 $(ls audit/*.json 2>/dev/null | head -n1) || true
+
+      - name: "Debug: capture HTML report head (if present)"
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "Found playwright-report/index.html - saving head to playwright-report/report-head.html"
+            mkdir -p playwright-report || true
+            head -n 200 playwright-report/index.html > playwright-report/report-head.html || true
+            echo "Report head:"; sed -n '1,120p' playwright-report/report-head.html || true
+          else
+            echo "No playwright-report/index.html found"
+          fi
+
+      - name: Sanitize audit filenames
+        if: always()
+        run: |
+          # replace characters that are invalid in artifact filenames on some systems
+          if [ -d audit ]; then
+            for old in audit/*; do
+              [ -f "$old" ] || continue
+              base=$(basename "$old")
+              safe=$(printf '%s' "$base" | sed 's/[?&=:#%]/_/g')
+              if [ "$safe" != "$base" ]; then
+                mv -- "$old" "audit/$safe"
+                echo "renamed $base -> $safe"
+              fi
+            done
+          fi
+
+      - name: Create audit archive (zip, fallback to tar.gz)
+        if: always()
+        run: |
+          if [ -d audit ]; then
+            if command -v zip >/dev/null 2>&1; then
+              zip -r accessibility-audit.zip audit || true
+              echo "Created accessibility-audit.zip"
+            else
+              tar -czf accessibility-audit.tar.gz audit || true
+              echo "Created accessibility-audit.tar.gz"
+            fi
+          else
+            echo "No audit directory to archive"
+          fi
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-audit
+          path: accessibility-audit.*
+
+      - name: Upload Playwright HTML report (if present)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report || ''
+
+      - name: Upload test-results (traces / json) (if present)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results || ''
+
+      - name: Post accessibility summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const auditDir = path.join(process.cwd(), 'audit')
+            if (!fs.existsSync(auditDir)) {
+              console.log('No audit directory found, skipping comment')
+              return
+            }
+            const files = fs.readdirSync(auditDir).filter(f=>f.endsWith('.json'))
+            if (files.length === 0) {
+              console.log('No audit reports found, skipping comment')
+              return
+            }
+            let body = '## Accessibility audit summary\\n\\n'
+            for (const f of files) {
+              try {
+                const r = JSON.parse(fs.readFileSync(path.join(auditDir, f), 'utf8'))
+                body += `### ${f}\\n- Violations: **${r.violations?.length || 0}**\\n`
+                for (const v of (r.violations || []).slice(0,5)) {
+                  body += `  - ${v.id} (${v.impact}): ${v.help} — ${v.nodes.length} node(s)\\n`
+                }
+                body += '\\n'
+              } catch (e) {
+                body += `Failed to parse ${f}: ${e.message}\\n\\n`
+              }
+            }
+            const pr = context.payload && context.payload.pull_request && context.payload.pull_request.number
+            if (!pr) {
+              console.log('Not a PR context, skipping comment')
+              return
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+              body
+            })
+
   test-pat:
     runs-on: ubuntu-latest
+    needs: accessibility
     steps:
       - name: Checkout
         uses: actions/checkout@v4

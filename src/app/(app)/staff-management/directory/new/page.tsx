@@ -30,6 +30,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { addStaffMember } from "@/services/staffService";
 import { getCourses } from "@/services/courseService";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -39,15 +40,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { Course } from "@/lib/types";
 
 const staffSchema = z.object({
-  name: z.string().min(3, "Full name must be at least 3 characters."),
+  name: z.string().min(3, "يجب أن يكون الاسم الكامل 3 أحرف على الأقل."),
   courseIds: z.array(z.string()).optional(),
-  email: z.string().email("Please enter a valid email address."),
-  phone: z.string().min(10, "Please enter a valid phone number."),
+  email: z.string().email("يرجى إدخال بريد إلكتروني صحيح."),
+  phone: z.string().min(10, "يرجى إدخال رقم هاتف صحيح."),
   altPhone: z.string().optional(),
   gender: z.enum(["male", "female"]),
-  address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
-  qualifications: z.string().min(10, "Please enter qualifications."),
+  address: z.string().min(10, "يرجى إدخال عنوان صحيح."),
+  dateOfBirth: z.date({ required_error: "تاريخ الميلاد مطلوب." }),
+  qualifications: z.string().min(10, "يرجى إدخال المؤهلات."),
   role: z.enum(["teacher", "admin", "support"]),
   department: z.string().optional(),
   paymentType: z.enum(["salary", "commission", "headcount"]).optional(),
@@ -56,11 +57,12 @@ const staffSchema = z.object({
 
 });
 
-export default function NewInstructorPage() {
+export default function NewStaffPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     getCourses().then(setCourses).catch(console.error);
@@ -94,14 +96,14 @@ export default function NewInstructorPage() {
       });
       
       toast({
-        title: "Staff Member Added",
-        description: `Successfully added ${values.name} to the staff directory.`,
+  title: "تمت إضافة الأستاذ",
+        description: `تمت إضافة ${values.name} إلى دليل الطاقم بنجاح.`,
       });
       router.push(`/staff-management/directory/${staffId}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to add the staff member. Please try again.",
+        title: "خطأ",
+  description: "فشل في إضافة الأستاذ. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {
@@ -117,7 +119,7 @@ export default function NewInstructorPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold ml-2">Add New Instructor</h1>
+  <h1 className="text-2xl font-bold ml-2">إضافة أستاذ جديد</h1>
       </div>
 
       <div className="glass-card p-6">
@@ -127,9 +129,9 @@ export default function NewInstructorPage() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
-          }}>Instructor Information</h2>
+          }}>معلومات الأستاذ</h2>
           <p className="text-sm text-muted-foreground">
-            Fill in the details to add a new instructor to the staff directory.
+            يرجى تعبئة البيانات لإضافة أستاذ جديد إلى دليل الطاقم.
           </p>
         </div>
           <Form {...form}>
@@ -140,7 +142,7 @@ export default function NewInstructorPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>{t("common.fullName")}</FormLabel>
                       <FormControl>
                         <Input className="glass-input" {...field} />
                       </FormControl>
@@ -153,7 +155,7 @@ export default function NewInstructorPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("common.email")}</FormLabel>
                       <FormControl>
                         <Input className="glass-input" {...field} type="email" />
                       </FormControl>
@@ -166,7 +168,7 @@ export default function NewInstructorPage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>{t("common.phone")}</FormLabel>
                       <FormControl>
                         <Input className="glass-input" {...field} />
                       </FormControl>
@@ -179,7 +181,7 @@ export default function NewInstructorPage() {
                   name="altPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Alt. Phone (Optional)</FormLabel>
+                      <FormLabel>هاتف بديل (اختياري)</FormLabel>
                       <FormControl>
                         <Input className="glass-input" {...field} value={field.value ?? ""} />
                       </FormControl>
@@ -192,7 +194,7 @@ export default function NewInstructorPage() {
                   name="gender"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gender</FormLabel>
+                      <FormLabel>{t("common.gender")}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -200,8 +202,8 @@ export default function NewInstructorPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="male">ذكر</SelectItem>
+                          <SelectItem value="female">أنثى</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -213,7 +215,7 @@ export default function NewInstructorPage() {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role</FormLabel>
+                      <FormLabel>الدور</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -221,9 +223,9 @@ export default function NewInstructorPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="teacher">Teacher</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="support">Support</SelectItem>
+                          <SelectItem value="teacher">معلم</SelectItem>
+                          <SelectItem value="admin">إداري</SelectItem>
+                          <SelectItem value="support">دعم</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -235,7 +237,7 @@ export default function NewInstructorPage() {
                   name="dateOfBirth"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Date of Birth</FormLabel>
+                      <FormLabel>تاريخ الميلاد</FormLabel>
                       <FormControl>
                         <Input
                           className="glass-input"
@@ -253,7 +255,7 @@ export default function NewInstructorPage() {
                   name="address"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Address</FormLabel>
+                      <FormLabel>العنوان</FormLabel>
                       <FormControl>
                         <Textarea className="glass-input" {...field} />
                       </FormControl>
@@ -266,7 +268,7 @@ export default function NewInstructorPage() {
                   name="qualifications"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Qualifications</FormLabel>
+                      <FormLabel>المؤهلات</FormLabel>
                       <FormControl>
                         <Textarea className="glass-input" {...field} />
                       </FormControl>
@@ -279,7 +281,7 @@ export default function NewInstructorPage() {
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Department</FormLabel>
+                      <FormLabel>القسم</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -287,13 +289,13 @@ export default function NewInstructorPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Mathematics">Mathematics</SelectItem>
-                          <SelectItem value="English">English</SelectItem>
-                          <SelectItem value="Science">Science</SelectItem>
-                          <SelectItem value="History">History</SelectItem>
-                          <SelectItem value="Arts">Arts</SelectItem>
-                          <SelectItem value="Administration">Administration</SelectItem>
-                          <SelectItem value="Support">Support</SelectItem>
+                          <SelectItem value="Mathematics">الرياضيات</SelectItem>
+                          <SelectItem value="English">الإنجليزية</SelectItem>
+                          <SelectItem value="Science">العلوم</SelectItem>
+                          <SelectItem value="History">التاريخ</SelectItem>
+                          <SelectItem value="Arts">الفنون</SelectItem>
+                          <SelectItem value="Administration">الإدارة</SelectItem>
+                          <SelectItem value="Support">الدعم</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -305,7 +307,7 @@ export default function NewInstructorPage() {
                   name="paymentType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Payment Type</FormLabel>
+                      <FormLabel>نوع الدفع</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -313,9 +315,9 @@ export default function NewInstructorPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="salary">Salary</SelectItem>
-                          <SelectItem value="commission">Commission</SelectItem>
-                          <SelectItem value="headcount">Headcount</SelectItem>
+                          <SelectItem value="salary">راتب</SelectItem>
+                          <SelectItem value="commission">عمولة</SelectItem>
+                          <SelectItem value="headcount">حسب العدد</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -329,7 +331,7 @@ export default function NewInstructorPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          {form.watch("paymentType") === "salary" ? "Salary" : "Rate"}
+                          {form.watch("paymentType") === "salary" ? "الراتب" : "المعدل"}
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -344,13 +346,13 @@ export default function NewInstructorPage() {
                     )}
                   />
                 )}
-                {form.watch("role") === "teacher" && (
+                {form.watch("role") === "support" && (
                   <FormField
                     control={form.control}
                     name="courseIds"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
-                        <FormLabel>Courses to Teach</FormLabel>
+                        <FormLabel>المقررات التي سيدرسها</FormLabel>
                         <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-3">
                           {courses.map((course) => (
                             <div key={course.id} className="flex items-center space-x-2">
@@ -367,7 +369,7 @@ export default function NewInstructorPage() {
                                 }}
                               />
                               <label htmlFor={course.id} className="text-sm">
-                                {course.name} ({course.type === "academic" ? `Grade ${course.grade}` : "Support"})
+                                {course.name} ({course.type === "academic" ? `الصف ${course.grade}` : "دعم"})
                               </label>
                             </div>
                           ))}
@@ -385,11 +387,11 @@ export default function NewInstructorPage() {
                   variant="outline"
                   onClick={() => router.back()}
                 >
-                  Cancel
+                  إلغاء
                 </Button>
                 <Button type="submit" disabled={isSaving} className="btn-gradient btn-click-effect">
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isSaving ? "Adding..." : "Add Instructor"}
+                  {isSaving ? "جاري الإضافة..." : "إضافة الأستاذ"}
                 </Button>
               </div>
             </form>

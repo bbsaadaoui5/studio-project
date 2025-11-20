@@ -1,0 +1,72 @@
+name: E2E Tests (Playwright)
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set E2E env (optional)
+        run: echo "Setting optional E2E env vars from secrets"
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000
+
+      - name: Run Playwright tests (generate HTML report)
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: |
+          # Run tests with both GitHub annotations and HTML reporter so we have a downloadable report
+          npx playwright test --reporter=github,html
+
+      - name: Debug: capture HTML report head (if present)
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "Found playwright-report/index.html - saving head to playwright-report/report-head.html"
+            head -n 200 playwright-report/index.html > playwright-report/report-head.html || true
+            echo "Report head:"; sed -n '1,120p' playwright-report/report-head.html || true
+          else
+            echo "No playwright-report/index.html found"
+          fi
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+
+      - name: Upload test-results (traces / json)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results

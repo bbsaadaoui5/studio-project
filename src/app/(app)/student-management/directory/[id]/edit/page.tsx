@@ -35,8 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getStudent, updateStudent } from "@/services/studentService";
 import { getCoursesByType } from "@/services/courseService";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { Student } from "@/lib/types";
+import { Student, Course } from "@/lib/types";
 import { getYear, getMonth, getDate } from "date-fns";
+import { useTranslation } from "@/i18n/translation-provider";
 
 const studentSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
@@ -83,10 +84,11 @@ const months = [
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditStudentPage() {
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string | undefined;
   const { toast } = useToast();
+  const { t } = useTranslation();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -113,9 +115,9 @@ export default function EditStudentPage() {
             medicalNotes: fetchedStudent.medicalNotes || '',
             altContact: fetchedStudent.altContact || '',
             email: fetchedStudent.email || '',
-            supportCourseId: (fetchedStudent as any).supportCourseId || '',
-            teacher: (fetchedStudent as any).teacher || '',
-            teacherId: (fetchedStudent as any).teacherId || '',
+            supportCourseId: fetchedStudent.supportCourseId || '',
+            teacher: fetchedStudent.teacher || '',
+            teacherId: fetchedStudent.teacherId || '',
           });
         } else {
           notFound();
@@ -145,15 +147,14 @@ export default function EditStudentPage() {
       form.setValue('teacherId', '');
       return;
     }
-    const course = courses.find((c) => c.id === supportCourseId);
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
     if (course) {
-      const firstTeacher = (course as any).teachers?.[0];
+      const firstTeacher = course.teachers?.[0];
       if (firstTeacher) {
         form.setValue('teacher', firstTeacher.name);
         form.setValue('teacherId', firstTeacher.id || '');
       } else {
-        const teacherName = (course as any).teacher || '';
-        form.setValue('teacher', teacherName);
+        form.setValue('teacher', '');
         form.setValue('teacherId', '');
       }
     } else {
@@ -165,15 +166,12 @@ export default function EditStudentPage() {
   // Default teacher to first option when options exist but no teacher selected
   useEffect(() => {
     if (studentType !== 'support' || !supportCourseId) return;
-    const course: any = courses.find((c) => c.id === supportCourseId);
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
     if (!course) return;
     const firstTeacher = course?.teachers?.[0];
     if (firstTeacher && !form.getValues('teacher')) {
       form.setValue('teacher', firstTeacher.name);
       form.setValue('teacherId', firstTeacher.id || '');
-    } else if (course?.teacher && !form.getValues('teacher')) {
-      form.setValue('teacher', course.teacher);
-      form.setValue('teacherId', '');
     }
   }, [studentType, supportCourseId, courses, form]);
 
@@ -192,7 +190,11 @@ export default function EditStudentPage() {
         altContact: values.altContact || '',
         email: values.email || '',
       };
-      await updateStudent(id, dataToUpdate);
+      if (!id) {
+        toast({ title: "Error", description: "Invalid student id.", variant: "destructive" });
+        return;
+      }
+      await updateStudent(id as string, dataToUpdate);
       toast({
         title: "Student Updated",
         description: `Successfully updated ${values.name}'s record.`,
@@ -221,12 +223,12 @@ export default function EditStudentPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
-          <Link href={`/student-management/directory/${id}`}>
+            <Link href={`/student-management/directory/${id}`}>
             <ArrowLeft />
-            <span className="sr-only">Back to Profile</span>
+            <span className="sr-only">{t('common.backToProfile') || 'Back to profile'}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Edit Student Information</h1>
+  <h1 className="text-2xl font-bold">{t("students.editStudentInformation")}</h1>
       </div>
       <div className="glass-card p-6">
         <div className="mb-6">
@@ -235,9 +237,9 @@ export default function EditStudentPage() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
-          }}>Editing: {student.name}</h2>
+          }}>تعديل: {student.name}</h2>
           <p className="text-sm text-muted-foreground">
-            Update the student's information below.
+            قم بتحديث بيانات الطالب أدناه.
           </p>
         </div>
         <Form {...form}>
@@ -250,9 +252,9 @@ export default function EditStudentPage() {
                 name="name" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>الاسم الكامل</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Youssef El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="مثال: يوسف العمراني" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -263,9 +265,9 @@ export default function EditStudentPage() {
                 name="email" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address (Optional)</FormLabel>
+                    <FormLabel>البريد الإلكتروني (اختياري)</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., youssef.elamrani@example.com" {...field} />
+                      <Input className="glass-input" placeholder="مثال: youssef.elamrani@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -277,7 +279,7 @@ export default function EditStudentPage() {
                 name="dateOfBirth"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Date of Birth</FormLabel>
+                    <FormLabel>تاريخ الميلاد</FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <Select onValueChange={(val) => { 
                         const d = new Date(field.value || Date.now()); 
@@ -286,7 +288,7 @@ export default function EditStudentPage() {
                       }} value={field.value ? String(getYear(field.value)) : ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Year" />
+                            <SelectValue placeholder="السنة" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -300,7 +302,7 @@ export default function EditStudentPage() {
                       }} value={field.value ? String(getMonth(field.value)) : ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Month" />
+                            <SelectValue placeholder="الشهر" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -314,7 +316,7 @@ export default function EditStudentPage() {
                       }} value={field.value ? String(getDate(field.value)) : ''}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Day" />
+                            <SelectValue placeholder="اليوم" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -332,7 +334,7 @@ export default function EditStudentPage() {
                 name="gender" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
+                    <FormLabel>الجنس</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -340,8 +342,8 @@ export default function EditStudentPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="male">ذكر</SelectItem>
+                        <SelectItem value="female">أنثى</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -353,16 +355,16 @@ export default function EditStudentPage() {
                 name="status" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>الحالة</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a status" />
+                          <SelectValue placeholder="اختر الحالة" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="active">نشط</SelectItem>
+                        <SelectItem value="inactive">غير نشط</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -374,7 +376,7 @@ export default function EditStudentPage() {
                 name="studentType" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Student Type</FormLabel>
+                    <FormLabel>نوع الطالب</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -382,8 +384,8 @@ export default function EditStudentPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="regular">Regular (Grade-based)</SelectItem>
-                        <SelectItem value="support">Support Program</SelectItem>
+                        <SelectItem value="regular">عادي (حسب الصف)</SelectItem>
+                        <SelectItem value="support">برنامج دعم</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -398,17 +400,17 @@ export default function EditStudentPage() {
                     name="grade" 
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Grade</FormLabel>
+                        <FormLabel>الصف</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a grade" />
+                              <SelectValue placeholder="اختر الصف" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {[...Array(12)].map((_, i) => (
                               <SelectItem key={i + 1} value={`${i + 1}`}>
-                                Grade {i + 1}
+                                الصف {i + 1}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -422,9 +424,9 @@ export default function EditStudentPage() {
                     name="className" 
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Class Name</FormLabel>
+                        <FormLabel>اسم الفصل</FormLabel>
                         <FormControl>
-                          <Input className="glass-input" placeholder="e.g., A" {...field} />
+                          <Input className="glass-input" placeholder="مثال: أ" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -439,11 +441,11 @@ export default function EditStudentPage() {
                     name="supportCourseId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Support Course</FormLabel>
+                        <FormLabel>مقرر الدعم</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a course" />
+                              <SelectValue placeholder="اختر المقرر" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -460,14 +462,14 @@ export default function EditStudentPage() {
                     control={form.control}
                     name="teacher"
                     render={({ field }) => {
-                      const selectedCourse = courses.find((c) => c.id === supportCourseId) as any;
+                      const selectedCourse: Course | undefined = courses.find((c) => c.id === supportCourseId);
                       const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
                         ? selectedCourse.teachers
-                        : (selectedCourse?.teacher ? [{ name: selectedCourse.teacher }] : []);
+                        : [];
                       const hasTeachers = teacherOptions.length > 0;
                       return (
                         <FormItem>
-                          <FormLabel>Teacher</FormLabel>
+                          <FormLabel>المعلم</FormLabel>
                           <Select 
                             onValueChange={(value) => {
                               const selectedTeacher = teacherOptions.find(t => t.name === value);
@@ -479,7 +481,7 @@ export default function EditStudentPage() {
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={hasTeachers ? "Select a teacher" : "No teachers available"} />
+                                <SelectValue placeholder={hasTeachers ? "اختر المعلم" : "لا يوجد معلمين متاحين"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -501,9 +503,9 @@ export default function EditStudentPage() {
                 name="parentName" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent/Guardian Name</FormLabel>
+                    <FormLabel>اسم ولي الأمر</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Leila El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder="مثال: ليلى العمراني" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -514,9 +516,9 @@ export default function EditStudentPage() {
                 name="contact" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent/Guardian Contact</FormLabel>
+                    <FormLabel>هاتف ولي الأمر</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
+                      <Input className="glass-input" placeholder="مثال: +212 600-000000" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -527,9 +529,9 @@ export default function EditStudentPage() {
                 name="altContact" 
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Alternative Contact (Optional)</FormLabel>
+                    <FormLabel>هاتف بديل (اختياري)</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., +212 600-000001" {...field} />
+                      <Input className="glass-input" placeholder="مثال: +212 600-000001" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -540,9 +542,9 @@ export default function EditStudentPage() {
                 name="address" 
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>العنوان</FormLabel>
                     <FormControl>
-                      <Textarea className="glass-input" placeholder="e.g., 456 Park Avenue, Casablanca, Morocco" {...field} />
+                      <Textarea className="glass-input" placeholder="مثال: 456 شارع الحديقة، الدار البيضاء، المغرب" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -553,9 +555,9 @@ export default function EditStudentPage() {
                 name="medicalNotes" 
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Medical Notes (Optional)</FormLabel>
+                    <FormLabel>ملاحظات طبية (اختياري)</FormLabel>
                     <FormControl>
-                      <Textarea className="glass-input" placeholder="e.g., Allergic to peanuts" {...field} />
+                      <Textarea className="glass-input" placeholder="مثال: حساسية من الفول السوداني" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -564,7 +566,7 @@ export default function EditStudentPage() {
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isSaving} className="btn-gradient btn-click-effect">
                   {isSaving && <Loader2 className="animate-spin" />}
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
                 </Button>
               </div>
           </form>

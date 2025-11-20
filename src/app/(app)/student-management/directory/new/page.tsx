@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addStudent } from "@/services/studentService";
 import { enrollStudentInCourses } from "@/services/enrollmentService";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "@/i18n/translation-provider";
 
 const studentSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
@@ -58,6 +59,7 @@ const studentSchema = z.object({
 
 export default function NewStudentPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -97,15 +99,14 @@ export default function NewStudentPage() {
       return;
     }
     
-    const course = courses.find((c) => c.id === supportCourseId);
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
     if (course) {
-      const firstTeacher = (course as any).teachers?.[0];
+      const firstTeacher = course.teachers?.[0];
       if (firstTeacher) {
         form.setValue("teacher", firstTeacher.name);
         form.setValue("teacherId", firstTeacher.id || "");
       } else {
-        const teacherName = (course as any).teacher || "";
-        form.setValue("teacher", teacherName);
+        form.setValue("teacher", "");
         form.setValue("teacherId", "");
       }
     } else {
@@ -117,15 +118,12 @@ export default function NewStudentPage() {
   // Default teacher to first option when options exist but no teacher selected
   useEffect(() => {
     if (studentType !== "support" || !supportCourseId) return;
-    const course: any = courses.find((c) => c.id === supportCourseId);
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
     if (!course) return;
     const firstTeacher = course?.teachers?.[0];
     if (firstTeacher && !form.getValues("teacher")) {
       form.setValue("teacher", firstTeacher.name);
       form.setValue("teacherId", firstTeacher.id || "");
-    } else if (course?.teacher && !form.getValues("teacher")) {
-      form.setValue("teacher", course.teacher);
-      form.setValue("teacherId", "");
     }
   }, [studentType, supportCourseId, courses, form]);
 
@@ -203,10 +201,10 @@ export default function NewStudentPage() {
         <Button variant="outline" size="icon" asChild>
           <Link href="/student-management/directory">
             <ArrowLeft />
-            <span className="sr-only">Back to Directory</span>
+            <span className="sr-only">{t('common.backToDirectory')}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Add New Student</h1>
+        <h1 className="text-2xl font-bold">{t("students.addNew")}</h1>
       </div>
       <div className="glass-card p-6">
         <div className="mb-6">
@@ -215,9 +213,9 @@ export default function NewStudentPage() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
-          }}>Student Information</h2>
+          }}>{t("students.addNewStudent")}</h2>
           <p className="text-sm text-muted-foreground">
-            Fill out the form below to enroll a new student.
+            {t("students.fillFormToEnroll")}
           </p>
         </div>
         <Form {...form}>
@@ -227,9 +225,9 @@ export default function NewStudentPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>{t("students.fullName")}</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Youssef El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder={t("students.fullNamePlaceholder") || "مثال: يوسف العمراني"} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -240,9 +238,9 @@ export default function NewStudentPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address (Optional)</FormLabel>
+                    <FormLabel>{t("students.email")}</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., youssef.elamrani@example.com" {...field} />
+                      <Input className="glass-input" placeholder={t("students.emailPlaceholder") || "مثال: youssef.elamrani@example.com"} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -253,12 +251,12 @@ export default function NewStudentPage() {
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
+                    <FormLabel>{t("students.gender")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="male">{t("students.male")}</SelectItem>
+                        <SelectItem value="female">{t("students.female")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -270,12 +268,12 @@ export default function NewStudentPage() {
                 name="studentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Student Type</FormLabel>
+                    <FormLabel>{t("students.studentType")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="regular">Regular (Grade-based)</SelectItem>
-                        <SelectItem value="support">Support Program</SelectItem>
+                        <SelectItem value="regular">{t("students.regular")}</SelectItem>
+                        <SelectItem value="support">{t("students.support")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -290,9 +288,9 @@ export default function NewStudentPage() {
                     name="grade"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Grade</FormLabel>
+                        <FormLabel>{t("students.grade")}</FormLabel>
                         <FormControl>
-                          <Input className="glass-input" placeholder="e.g., 5" {...field} />
+                          <Input className="glass-input" placeholder={t("students.gradePlaceholder") || "مثال: 5"} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -303,9 +301,9 @@ export default function NewStudentPage() {
                     name="className"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Class Name</FormLabel>
+                        <FormLabel>{t("students.className")}</FormLabel>
                         <FormControl>
-                          <Input className="glass-input" placeholder="e.g., A" {...field} />
+                          <Input className="glass-input" placeholder={t("students.classNamePlaceholder") || "مثال: أ"} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -321,7 +319,7 @@ export default function NewStudentPage() {
                     name="supportCourseId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Support Course</FormLabel>
+                        <FormLabel>{t("students.supportCourse")}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -347,14 +345,14 @@ export default function NewStudentPage() {
                     control={form.control}
                     name="teacher"
                     render={({ field }) => {
-                      const selectedCourse = courses.find((c) => c.id === supportCourseId) as any;
+                      const selectedCourse: Course | undefined = courses.find((c) => c.id === supportCourseId);
                       const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
                         ? selectedCourse.teachers
-                        : (selectedCourse?.teacher ? [{ name: selectedCourse.teacher }] : []);
+                        : [];
                       const hasTeachers = teacherOptions.length > 0;
                       return (
                         <FormItem>
-                          <FormLabel>Teacher</FormLabel>
+                          <FormLabel>{t("students.teacher")}</FormLabel>
                           <Select 
                             onValueChange={(value) => {
                               const selectedTeacher = teacherOptions.find(t => t.name === value);
@@ -387,9 +385,9 @@ export default function NewStudentPage() {
                 name="parentName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent/Guardian Name</FormLabel>
+                    <FormLabel>{t("students.parentName")}</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., Leila El-Amrani" {...field} />
+                      <Input className="glass-input" placeholder={t("students.parentNamePlaceholder") || "مثال: ليلى العمراني"} {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -400,9 +398,9 @@ export default function NewStudentPage() {
                 name="contact"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent/Guardian Contact</FormLabel>
+                    <FormLabel>{t("students.contact")}</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., +212 600-000000" {...field} />
+                      <Input className="glass-input" placeholder={t("students.contactPlaceholder") || "مثال: +212 600-000000"} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -415,7 +413,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Alternative Contact (Optional)</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., +212 600-000001" {...field} />
+                      <Input className="glass-input" placeholder={t("students.altContactPlaceholder") || "مثال: +212 600-000001"} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -428,7 +426,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input className="glass-input" placeholder="e.g., 123 Main St, Casablanca" {...field} />
+                      <Input className="glass-input" placeholder={t("students.addressPlaceholder") || "مثال: 123 شارع رئيسي، الدار البيضاء"} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -441,7 +439,7 @@ export default function NewStudentPage() {
                   <FormItem>
                     <FormLabel>Medical Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea className="glass-input" placeholder="e.g., Allergies, medications, etc." {...field} />
+                      <Textarea className="glass-input" placeholder={t("students.medicalNotesPlaceholder") || "مثال: حساسية، أدوية، إلخ."} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -455,11 +453,12 @@ export default function NewStudentPage() {
                     <FormLabel>Date of Birth</FormLabel>
                     <FormControl>
                       <Input
-                        className="glass-input"
-                        type="date"
-                        value={field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().substring(0, 10) : ""}
-                        onChange={e => field.onChange(new Date(e.target.value))}
-                      />
+                          className="glass-input"
+                          type="date"
+                          value={field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().substring(0, 10) : ""}
+                          onChange={e => field.onChange(new Date(e.target.value))}
+                          placeholder={t("students.dateOfBirthPlaceholder") || "اختر تاريخ الميلاد"}
+                        />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -468,7 +467,7 @@ export default function NewStudentPage() {
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Enroll Student
+                  {t("students.enrollStudent")}
                 </Button>
               </div>
           </form>

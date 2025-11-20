@@ -11,7 +11,13 @@ const PARENT_ACCESS_COLLECTION = "parentAccess";
  * @param studentId - The ID of the student.
  * @returns The generated access token.
  */
-export const generateParentAccessToken = async (studentId: string): Promise<string> => {
+/**
+ * Generate a parent access token and optionally attach parent identity info.
+ * @param studentId - student id the token will be bound to
+ * @param opts.parentId - optional parent user id (auth uid)
+ * @param opts.parentName - optional parent display name to show in parent portal/messages
+ */
+export const generateParentAccessToken = async (studentId: string, opts?: { parentId?: string; parentName?: string }): Promise<string> => {
   try {
     // Generate a secure random token
     const token = crypto.randomUUID();
@@ -19,11 +25,13 @@ export const generateParentAccessToken = async (studentId: string): Promise<stri
     const accessRecord: Omit<ParentAccess, 'createdAt'> = {
       id: token,
       studentId,
+      parentId: opts?.parentId,
+      parentName: opts?.parentName,
     };
-    
+    if (!db) throw new Error('Firestore not initialized. Cannot generate parent access token.');
     const tokenRef = doc(db, PARENT_ACCESS_COLLECTION, token);
     await setDoc(tokenRef, { ...accessRecord, createdAt: serverTimestamp() });
-    
+
     // Also save the token reference on the student's access doc for easy lookup
     const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
     await setDoc(studentAccessRef, { token });
@@ -42,8 +50,12 @@ export const generateParentAccessToken = async (studentId: string): Promise<stri
  */
 export const getParentAccessLink = async (studentId: string): Promise<string | null> => {
     try {
-        const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
-        const docSnap = await getDoc(studentAccessRef);
+    if (!db) {
+      console.warn('Firestore not initialized. getParentAccessLink() returning null.');
+      return null;
+    }
+    const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
+    const docSnap = await getDoc(studentAccessRef);
         if (docSnap.exists()) {
             const token = docSnap.data().token;
             // This assumes the app is hosted at the root. Adjust if needed.
@@ -56,6 +68,25 @@ export const getParentAccessLink = async (studentId: string): Promise<string | n
     }
 }
 
+/**
+ * Retrieve the full access record for a token (includes parentName if set)
+ */
+export const getParentAccessRecord = async (token: string): Promise<ParentAccess | null> => {
+  try {
+    if (!db) {
+      console.warn('Firestore not initialized. getParentAccessRecord() returning null.');
+      return null;
+    }
+    const docRef = doc(db, PARENT_ACCESS_COLLECTION, token);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+    return { id: docSnap.id, ...(docSnap.data() as any) } as ParentAccess;
+  } catch (error) {
+    console.error('Error getting parent access record:', error);
+    return null;
+  }
+}
+
 
 /**
  * Validates a parent access token and returns the associated student ID.
@@ -64,8 +95,12 @@ export const getParentAccessLink = async (studentId: string): Promise<string | n
  */
 export const validateParentAccessToken = async (token: string): Promise<string | null> => {
     try {
-        const docRef = doc(db, PARENT_ACCESS_COLLECTION, token);
-        const docSnap = await getDoc(docRef);
+    if (!db) {
+      console.warn('Firestore not initialized. validateParentAccessToken() returning null.');
+      return null;
+    }
+    const docRef = doc(db, PARENT_ACCESS_COLLECTION, token);
+    const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             // Optional: Add token expiration logic here if needed

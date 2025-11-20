@@ -17,17 +17,17 @@ import { BookOpenCheck, PlusCircle, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Badge } from "@/components/ui/badge";
 
 export default function CoursesByGradePage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
-  if (!params?.grade) { return <div>Grade parameter not found</div>; }
-const grade = params.grade as string;
-  
+  const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const grade = params?.grade as string | undefined;
 
   useEffect(() => {
     if (!grade) {
@@ -51,25 +51,27 @@ const grade = params.grade as string;
     fetchCourses();
   }, [grade, toast]);
 
+  if (!grade) { return <div>Grade parameter not found</div>; }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
-                <Link href="/academic-management/courses">
-                    <ArrowLeft />
-                    <span className="sr-only">Back to Grades</span>
-                </Link>
+          <Link href="/academic-management/courses">
+          <ArrowLeft />
+          <span className="sr-only">{t('common.backToCourses') || 'Back to Grades'}</span>
+        </Link>
             </Button>
             <div>
-                <h1 className="text-2xl font-bold">Course Catalog</h1>
-                <p className="text-muted-foreground">Showing all courses for Grade {grade}.</p>
+                <h1 className="text-2xl font-bold">دليل المقررات</h1>
+                <p className="text-muted-foreground">عرض جميع المقررات للمستوى {grade}.</p>
             </div>
         </div>
         <Button asChild>
             <Link href={`/academic-management/courses/new?grade=${grade}`}>
                 <PlusCircle />
-                <span>Add New Course for Grade {grade}</span>
+                <span>إضافة مقرر جديد للمستوى {grade}</span>
             </Link>
         </Button>
       </div>
@@ -81,9 +83,9 @@ const grade = params.grade as string;
       ) : courses.length === 0 ? (
          <Card>
             <CardContent className="py-12 text-center">
-                <h3 className="text-lg font-medium">No courses found for Grade {grade}.</h3>
+                <h3 className="text-lg font-medium">لا توجد مقررات للمستوى {grade}.</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                    Get started by adding a new course.
+                    يمكنك البدء بإضافة مقرر جديد.
                 </p>
             </CardContent>
         </Card>
@@ -95,7 +97,7 @@ const grade = params.grade as string;
                     <div className="flex items-start justify-between">
                     <div>
                         <CardTitle className="text-xl">{course.name}</CardTitle>
-                        <CardDescription>{course.teacher}</CardDescription>
+                        <CardDescription>{course.teachers?.[0]?.name || 'TBA'}</CardDescription>
                     </div>
                     <Badge variant="secondary" className="capitalize">
                         {course.department}

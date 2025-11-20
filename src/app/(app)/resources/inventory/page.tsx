@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n/translation-provider";
 import { getInventoryItems, addInventoryItem, updateItemStatus } from "@/services/inventoryService";
 import type { InventoryItem } from "@/lib/types";
 import { Loader2, PlusCircle, Search } from "lucide-react";
@@ -63,6 +64,7 @@ const itemSchema = z.object({
 
 export default function InventoryPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -78,7 +80,7 @@ export default function InventoryPage() {
     }
   });
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
       const fetchedItems = await getInventoryItems();
@@ -92,11 +94,11 @@ export default function InventoryPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    fetchItems();
-  }, [toast]);
+    void fetchItems();
+  }, [fetchItems]);
 
   async function onSubmit(values: z.infer<typeof itemSchema>) {
     setIsSubmitting(true);
@@ -139,23 +141,24 @@ export default function InventoryPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>School Inventory</CardTitle>
+            <CardTitle>جرد المدرسة</CardTitle>
             <CardDescription>
-              Manage and track all school assets and equipment.
+              إدارة وتتبع جميع ممتلكات ومعدات المدرسة.
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button aria-label={t('resources.addItem') || 'Add item'}>
                 <PlusCircle />
-                Add New Item
+                <span className="sr-only">{t('resources.addItem') || 'Add item'}</span>
+                إضافة عنصر جديد
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add a New Inventory Item</DialogTitle>
+                <DialogTitle>إضافة عنصر جديد للجرد</DialogTitle>
                 <DialogDescription>
-                  Enter the details of the new asset to add it to the inventory.
+                  أدخل تفاصيل الأصل الجديد لإضافته إلى الجرد.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -165,8 +168,8 @@ export default function InventoryPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Item Name</FormLabel>
-                        <FormControl><Input placeholder="e.g., Dell Latitude Laptop" {...field} /></FormControl>
+                        <FormLabel>اسم العنصر</FormLabel>
+                        <FormControl><Input placeholder="مثال: حاسوب محمول Dell" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -176,17 +179,17 @@ export default function InventoryPage() {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="electronics">Electronics</SelectItem>
-                                <SelectItem value="furniture">Furniture</SelectItem>
-                                <SelectItem value="lab-equipment">Lab Equipment</SelectItem>
-                                <SelectItem value="sports-gear">Sports Gear</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                        </Select>
+            <FormLabel>الفئة</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl><SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger></FormControl>
+              <SelectContent>
+                <SelectItem value="electronics">إلكترونيات</SelectItem>
+                <SelectItem value="furniture">أثاث</SelectItem>
+                <SelectItem value="lab-equipment">معدات مختبر</SelectItem>
+                <SelectItem value="sports-gear">معدات رياضية</SelectItem>
+                <SelectItem value="other">أخرى</SelectItem>
+              </SelectContent>
+            </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -196,8 +199,8 @@ export default function InventoryPage() {
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl><Input placeholder="e.g., Library, Room 102" {...field} /></FormControl>
+                        <FormLabel>الموقع</FormLabel>
+                        <FormControl><Input placeholder="مثال: المكتبة، غرفة 102" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -207,7 +210,7 @@ export default function InventoryPage() {
                     name="purchaseDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Purchase Date</FormLabel>
+                        <FormLabel>تاريخ الشراء</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -221,7 +224,7 @@ export default function InventoryPage() {
                                 {field.value ? (
                                   format(field.value, "PPP")
                                 ) : (
-                                  <span>Pick a date</span>
+                                  <span>اختر التاريخ</span>
                                 )}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
@@ -246,7 +249,7 @@ export default function InventoryPage() {
                   <DialogFooter className="pt-4">
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting && <Loader2 className="animate-spin" />}
-                      {isSubmitting ? "Adding..." : "Add Item"}
+                      {isSubmitting ? "...يتم الإضافة" : "إضافة العنصر"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -259,7 +262,7 @@ export default function InventoryPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Filter by name, category, or location..."
+                  placeholder="بحث حسب الاسم أو الفئة أو الموقع..."
                   onChange={(e) => debouncedSetSearchQuery(e.target.value)}
                   className="w-full rounded-lg bg-background pl-8 md:w-1/3"
                 />
@@ -273,11 +276,11 @@ export default function InventoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Purchase Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>الاسم</TableHead>
+                  <TableHead>الفئة</TableHead>
+                  <TableHead>الموقع</TableHead>
+                  <TableHead>تاريخ الشراء</TableHead>
+                  <TableHead>الحالة</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -303,7 +306,7 @@ export default function InventoryPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center h-24">
-                      No inventory items found.
+                      لا يوجد عناصر في الجرد.
                     </TableCell>
                   </TableRow>
                 )}

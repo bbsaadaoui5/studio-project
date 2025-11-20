@@ -9,6 +9,7 @@ export type NewAnnouncement = Omit<Announcement, 'id' | 'createdAt'>;
 // Function to add a new announcement to Firestore
 export const addAnnouncement = async (announcementData: NewAnnouncement): Promise<string> => {
   try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot add announcement.');
     const docRef = await addDoc(collection(db, "announcements"), {
         ...announcementData,
         createdAt: serverTimestamp(),
@@ -23,6 +24,10 @@ export const addAnnouncement = async (announcementData: NewAnnouncement): Promis
 // Function to get all announcements from Firestore, ordered by creation date
 export const getAnnouncements = async (count: number = 5): Promise<Announcement[]> => {
   try {
+    if (!db) {
+      console.warn('Firestore not initialized. getAnnouncements() returning empty list.');
+      return [];
+    }
     const announcementsRef = collection(db, "announcements");
     const q = query(announcementsRef, orderBy("createdAt", "desc"), limit(count));
     const querySnapshot = await getDocs(q);
