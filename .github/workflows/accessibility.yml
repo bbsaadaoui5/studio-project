@@ -1,7 +1,9 @@
-name: Accessibility Audit (Playwright + axe)
+name: Accessibility & PAT Tests
 
 on:
   push:
+    branches: [ main ]
+  pull_request:
     branches: [ main ]
   pull_request:
     branches: [ main ]
@@ -177,7 +179,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: '## PAT Test Successful!\n✅ The PAT has correct permissions'
+                body: '## PAT Test Successful!\\n✅ The PAT has correct permissions'
               });
               console.log('Comment created successfully!');
             } catch (error) {
