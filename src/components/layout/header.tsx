@@ -205,12 +205,12 @@ export function Header() {
                                 <DialogContent>
                                         <DialogHeader>
                                                 <DialogTitle>{t("header.viewParentPortal")}</DialogTitle>
-                                                <DialogDescription>Select a grade, then a student to view their parent portal.</DialogDescription>
+                                                <DialogDescription>{t("header.selectGradeThenStudent")}</DialogDescription>
                                         </DialogHeader>
                                         <div className="space-y-4">
                                             {/* Grade Selector */}
                                             <div>
-                                                <Label htmlFor="grade-select">Grade</Label>
+                                                <Label htmlFor="grade-select">{t('header.selectGrade')}</Label>
                                                 <Select
                                                     onValueChange={(grade) => {
                                                         setViewSelectedStudent("");
@@ -219,7 +219,7 @@ export function Header() {
                                                     value={selectedGrade || ""}
                                                 >
                                                     <SelectTrigger id="grade-select">
-                                                        <SelectValue placeholder="Select a grade..." />
+                                                        <SelectValue placeholder={t('header.selectGrade') + '...'} />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {[...new Set(students.map(s => s.grade))].sort().map(grade => (
@@ -230,14 +230,14 @@ export function Header() {
                                             </div>
                                             {/* Student Selector */}
                                             <div>
-                                                <Label htmlFor="student-select">Student</Label>
+                                                <Label htmlFor="student-select">{t('header.selectStudent')}</Label>
                                                 <Select
                                                     onValueChange={setViewSelectedStudent}
                                                     value={viewSelectedStudent || ""}
                                                     disabled={!selectedGrade}
                                                 >
-                                                    <SelectTrigger id="student-select">
-                                                        <SelectValue placeholder={selectedGrade ? "Select a student..." : "Select a grade first"} />
+                                                        <SelectTrigger id="student-select">
+                                                        <SelectValue placeholder={selectedGrade ? t('header.selectAStudent') : t('header.selectGradeFirst')} />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {students.filter(s => s.grade === selectedGrade).map(student => (
@@ -247,10 +247,10 @@ export function Header() {
                                                 </Select>
                                             </div>
                                         </div>
-                                        <DialogFooter>
+                                            <DialogFooter>
                                             <Button onClick={handleViewParentPortal} disabled={!viewSelectedStudent || isLoadingData || isSubmitting}>
                                                 {isSubmitting || isLoadingData ? <Loader2 className="animate-spin" /> : <Eye />}
-                                                View Portal
+                                                {t('header.viewParentPortal')}
                                             </Button>
                                         </DialogFooter>
                                 </DialogContent>

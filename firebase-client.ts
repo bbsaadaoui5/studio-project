@@ -17,7 +17,7 @@ const firebaseConfig = {
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth } from "firebase/auth"; // <-- THIS IS VITAL
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore"; // <-- THIS IS VITAL
+import { getFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence, setLogLevel } from "firebase/firestore"; // <-- THIS IS VITAL
 import { getStorage } from "firebase/storage"; // <-- THIS IS VITAL
 import { getAnalytics, isSupported as isAnalyticsSupported } from "firebase/analytics";
 
@@ -39,7 +39,14 @@ export const initializeClientSideServices = async () => {
     if (typeof window !== 'undefined') {
         // Enable offline persistence
         try {
-            await enableIndexedDbPersistence(db);
+            // Prefer multi-tab persistence when available to avoid primary-lease contention between tabs.
+            // Falls back to single-tab persistence where multi-tab is not supported.
+            try {
+                await enableMultiTabIndexedDbPersistence(db);
+            } catch (multiErr) {
+                // If multi-tab persistence is not available, fall back to single-tab persistence.
+                await enableIndexedDbPersistence(db);
+            }
         } catch (err: unknown) {
             const e = err as { code?: string };
             if (e.code === 'failed-precondition') {
@@ -47,6 +54,13 @@ export const initializeClientSideServices = async () => {
             } else if (e.code === 'unimplemented') {
                 console.warn('Firestore offline persistence not available in this browser.');
             }
+        }
+
+        // Reduce Firestore SDK log verbosity in the browser to avoid noisy internal logs about primary lease.
+        try {
+            setLogLevel('error');
+        } catch (err) {
+            // ignore if not supported
         }
 
         // Enable Analytics
