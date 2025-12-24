@@ -15,7 +15,8 @@ export const createAuthUser = async (email: string, password: string):Promise<st
     return userCredential.user.uid;
 }
 
-export const getStaffByEmail = async (email: string) => {
+export const getStaffByEmail = async (email?: string) => {
+    if (!email) return null;
     if (!db) {
         console.warn('Firestore not initialized. getStaffByEmail() returning null.');
         return null;

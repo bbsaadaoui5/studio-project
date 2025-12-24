@@ -162,7 +162,7 @@ export default function EditStaffPage() {
             >
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{t('common.fullName')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -171,7 +171,7 @@ export default function EditStaffPage() {
               )} />
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('common.email')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -180,7 +180,7 @@ export default function EditStaffPage() {
               )} />
               <FormField control={form.control} name="phone" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>{t('common.phone')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -189,7 +189,7 @@ export default function EditStaffPage() {
               )} />
               <FormField control={form.control} name="altPhone" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Alt. Phone</FormLabel>
+                  <FormLabel>{t('students.altContact')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -198,14 +198,14 @@ export default function EditStaffPage() {
               )} />
               <FormField control={form.control} name="gender" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Gender</FormLabel>
+                  <FormLabel>{t('students.gender')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="male">{t('students.male')}</SelectItem>
+                      <SelectItem value="female">{t('students.female')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -213,14 +213,14 @@ export default function EditStaffPage() {
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>{t('common.status')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="active">{t('students.active')}</SelectItem>
+                      <SelectItem value="inactive">{t('students.inactive')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -228,7 +228,7 @@ export default function EditStaffPage() {
               )} />
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Date of Birth</FormLabel>
+                  <FormLabel>{t('students.dateOfBirth')}</FormLabel>
                   <div className="grid grid-cols-3 gap-2">
                     <Controller name="dateOfBirth" control={form.control} render={({ field: dobField }) => (
                       <Select onValueChange={(val) => {const d = new Date(dobField.value || Date.now()); d.setFullYear(parseInt(val)); dobField.onChange(d);}} value={String(getYear(dobField.value || Date.now()))}>

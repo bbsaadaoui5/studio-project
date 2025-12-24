@@ -41,24 +41,32 @@ export default function TeacherStudentsPage() {
               <td className="p-2 font-semibold">{student.name}</td>
               <td className="p-2">{student.grade}</td>
               <td className="p-2">
+                <label htmlFor={`present-${student.id}`} className="sr-only">حالة الحضور: {student.name}</label>
                 <input
+                  id={`present-${student.id}`}
+                  name={`present-${student.id}`}
                   type="checkbox"
                   checked={student.present}
                   onChange={() => toggleAttendance(student.id)}
                   className="w-5 h-5"
+                  aria-label={`حالة الحضور ل${student.name}`}
                 />
                 <span className={student.present ? "text-green-600 ml-2" : "text-red-600 ml-2"}>
                   {student.present ? "حاضر" : "غائب"}
                 </span>
               </td>
               <td className="p-2">
+                <label htmlFor={`score-${student.id}`} className="sr-only">درجة الطالب: {student.name}</label>
                 <input
+                  id={`score-${student.id}`}
+                  name={`score-${student.id}`}
                   type="number"
                   min={0}
                   max={20}
                   value={student.score}
                   onChange={e => updateScore(student.id, Number(e.target.value))}
                   className="border rounded px-2 py-1 w-20 text-center"
+                  aria-label={`درجة ${student.name}`}
                 />
               </td>
             </tr>

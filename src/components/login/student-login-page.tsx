@@ -29,17 +29,29 @@ export default function StudentLoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <Input
-              placeholder="رقم الطالب أو البريد الإلكتروني"
-              value={studentId}
-              onChange={e => setStudentId(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="كلمة المرور"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
+            <div className="space-y-2">
+              <label htmlFor="student-login-id" className="sr-only">رقم الطالب أو البريد الإلكتروني</label>
+              <Input
+                id="student-login-id"
+                name="studentId"
+                placeholder="رقم الطالب أو البريد الإلكتروني"
+                value={studentId}
+                onChange={e => setStudentId(e.target.value)}
+                autoComplete="username"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="student-login-password" className="sr-only">كلمة المرور</label>
+              <Input
+                id="student-login-password"
+                name="password"
+                type="password"
+                placeholder="كلمة المرور"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
             {error && <div className="text-red-500 text-sm">{error}</div>}
             <Button type="submit" className="w-full">دخول</Button>
           </form>

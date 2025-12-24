@@ -55,15 +55,22 @@ export default function TeacherAssignmentsPage() {
       </table>
       <div className="bg-white rounded-lg shadow p-4 mb-4">
         <h3 className="font-bold mb-2">نشر واجب جديد</h3>
-        <div className="flex flex-col md:flex-row gap-2 items-center">
+          <div className="flex flex-col md:flex-row gap-2 items-center">
+          <label htmlFor="assignment-title" className="sr-only">عنوان الواجب</label>
           <input
+            id="assignment-title"
+            name="title"
             type="text"
             placeholder="عنوان الواجب"
             value={newAssignment.title}
             onChange={e => setNewAssignment({ ...newAssignment, title: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="off"
           />
+          <label htmlFor="assignment-due" className="sr-only">تاريخ الاستحقاق</label>
           <input
+            id="assignment-due"
+            name="due"
             type="date"
             value={newAssignment.due}
             onChange={e => setNewAssignment({ ...newAssignment, due: e.target.value })}

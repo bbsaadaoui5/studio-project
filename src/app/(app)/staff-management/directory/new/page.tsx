@@ -42,7 +42,7 @@ import type { Course } from "@/lib/types";
 const staffSchema = z.object({
   name: z.string().min(3, "يجب أن يكون الاسم الكامل 3 أحرف على الأقل."),
   courseIds: z.array(z.string()).optional(),
-  email: z.string().email("يرجى إدخال بريد إلكتروني صحيح."),
+  email: z.string().email("يرجى إدخال بريد إلكتروني صحيح.").optional().or(z.literal("")),
   phone: z.string().min(10, "يرجى إدخال رقم هاتف صحيح."),
   altPhone: z.string().optional(),
   gender: z.enum(["male", "female"]),

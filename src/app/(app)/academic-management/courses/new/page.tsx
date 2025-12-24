@@ -31,13 +31,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 
 const courseSchema = z.object({
-  name: z.string().min(3, "Course name is required."),
-  description: z.string().min(5, "Description is required."),
-  credits: z.coerce.number().min(1, "Credits required."),
-  department: z.string().min(2, "Department required."),
-  grade: z.string().min(1, "Grade required."),
-  type: z.enum(["academic", "support"]),
-  teachers: z.array(z.string()).min(1, "Select at least one teacher."),
+    name: z.string().min(3, "اسم المقرر مطلوب."),
+    description: z.string().min(5, "الوصف مطلوب."),
+    credits: z.coerce.number().min(1, "عدد الساعات مطلوب."),
+    department: z.string().min(2, "القسم مطلوب."),
+    grade: z.string().min(1, "الصف مطلوب."),
+    type: z.enum(["academic", "support"]),
+    teachers: z.array(z.string()).min(1, "يرجى اختيار معلم واحد على الأقل."),
 });
 
 export default function NewCoursePage() {

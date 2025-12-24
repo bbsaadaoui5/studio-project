@@ -15,7 +15,8 @@ export const getPublicFirebaseProjectId = () => firebaseConfig.projectId || null
 
 
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import type { Auth } from "firebase/auth";
 // firebase/storage does not export a stable 'Storage' type across versions used in this repo.
 // Use `any` here to avoid a type import error while preserving runtime behavior.

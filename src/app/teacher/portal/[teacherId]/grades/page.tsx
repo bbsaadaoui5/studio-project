@@ -35,7 +35,10 @@ export default function TeacherGradesPage() {
               <td className="p-2 font-semibold">{student.name}</td>
               <td className="p-2">{student.grade}</td>
               <td className="p-2">
+                <label htmlFor={`score-${student.id}`} className="sr-only">درجة {student.name}</label>
                 <input
+                  id={`score-${student.id}`}
+                  name={`score-${student.id}`}
                   type="number"
                   min={0}
                   max={20}

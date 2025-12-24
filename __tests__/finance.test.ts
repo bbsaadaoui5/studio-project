@@ -1,9 +1,9 @@
 import { jest } from '@jest/globals';
 
 // Mock dependent services before importing the finance service
-const getStudentMock = jest.fn();
-const getCoursesForStudentMock = jest.fn();
-const getCourseMock = jest.fn();
+const getStudentMock = jest.fn() as any;
+const getCoursesForStudentMock = jest.fn() as any;
+const getCourseMock = jest.fn() as any;
 
 jest.mock('@/services/studentService', () => ({
   getStudent: (...args: any[]) => getStudentMock(...args),

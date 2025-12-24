@@ -250,7 +250,12 @@ export type TimetableEntry = {
     courseId: string;
     courseName: string;
     teacherName: string;
-    notes?: string;
+  notes?: string;
+  // Optional location fields (some older entries or mocks may use different keys)
+  location?: string;
+  classroom?: string;
+  venue?: string;
+  room?: string;
 }
 
 export type StaffReview = {

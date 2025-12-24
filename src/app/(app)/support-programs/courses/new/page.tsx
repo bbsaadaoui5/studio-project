@@ -33,9 +33,9 @@ export default function NewSupportCoursePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const courseSchema = z.object({
-    name: z.string().min(3, "Course name must be at least 3 characters."),
-  teacher: z.string().min(1, "يرجى اختيار الأستاذ."),
-    department: z.string().min(1, "يرجى اختيار القسم."),
+    name: z.string().min(3, t('courses.nameMinLength')),
+    teacher: z.string().min(1, t('courses.selectTeacher')),
+    department: z.string().min(1, t('courses.selectDepartment')),
     description: z.string(),
   });
   const form = useForm<z.infer<typeof courseSchema>>({

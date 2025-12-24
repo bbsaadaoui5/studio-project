@@ -58,12 +58,16 @@ export default function TeacherTimetablePage() {
           <select value={newEntry.slot} onChange={e => setNewEntry({ ...newEntry, slot: e.target.value })} className="border rounded px-2 py-1">
             {slots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
           </select>
+          <label htmlFor="tt-subject" className="sr-only">المادة</label>
           <input
+            id="tt-subject"
+            name="subject"
             type="text"
             placeholder="المادة"
             value={newEntry.subject}
             onChange={e => setNewEntry({ ...newEntry, subject: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="off"
           />
           <button type="button" onClick={addEntry} className="bg-blue-600 text-white rounded px-4 py-2">إضافة</button>
         </div>

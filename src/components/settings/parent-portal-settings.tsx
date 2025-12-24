@@ -17,7 +17,7 @@ export function ParentPortalSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [parentLink, setParentLink] = useState<string | null>(null);
-  const [parentDisplayName, setParentDisplayName] = useState<string>('');
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +38,7 @@ export function ParentPortalSettings() {
     if (!selectedStudentId) return;
     setIsGenerating(true);
     try {
-      await generateParentAccessToken(selectedStudentId, { parentName: parentDisplayName || undefined });
+      await generateParentAccessToken(selectedStudentId);
       const link = await getParentAccessLink(selectedStudentId);
       setParentLink(link);
       toast({ title: t('common.success'), description: t('settings.parentPortal.linkGenerated') });
@@ -82,15 +82,12 @@ export function ParentPortalSettings() {
               >
                 <option value="">{t('settings.parentPortal.selectStudentOption')}</option>
                 {students.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.grade} - {s.className})</option>
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
-              <div className="mt-2">
-                <Label htmlFor="parent-name" className="text-right">{t('settings.parentPortal.parentName') || 'اسم ولي الأمر (اختياري)'}</Label>
-                <Input id="parent-name" value={parentDisplayName} onChange={e => setParentDisplayName(e.target.value)} placeholder="مثال: فاطمة محمد" />
-              </div>
+              {/* parent name input intentionally removed — only select student is required */}
             </div>
-            <Button onClick={handleGenerateLink} disabled={!selectedStudentId || isGenerating} className="text-right">
+            <Button onClick={handleGenerateLink} disabled={!selectedStudentId || isGenerating} className="w-full md:w-auto text-right whitespace-normal break-words">
               {isGenerating ? <Loader2 className="animate-spin ml-2" /> : <Link2 className="ml-2" />}
               {isGenerating ? t('settings.parentPortal.generating') : t('settings.parentPortal.generateRefreshLink')}
             </Button>
@@ -99,9 +96,16 @@ export function ParentPortalSettings() {
                 <div className="font-medium text-right">
                   {t('settings.parentPortal.selectedStudent')}: {students.find(s => s.id === selectedStudentId)?.name || ''}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input value={parentLink || ''} readOnly className="flex-1" />
-                  <Button variant="outline" onClick={handleCopy} className="text-right"><Copy className="ml-1 h-4 w-4" />{t('common.copy')}</Button>
+                <div className="flex flex-col md:flex-row items-center gap-2">
+                  <Input value={parentLink || ''} readOnly className="flex-1 whitespace-normal break-words break-all" />
+                  <div className="flex w-full md:w-auto gap-2">
+                    <Button variant="outline" onClick={handleCopy} className="w-full md:w-auto text-right whitespace-normal break-words">
+                      <Copy className="ml-1 h-4 w-4" />{t('common.copy')}
+                    </Button>
+                    <Button onClick={() => window.open(parentLink || '', '_blank')} className="w-full md:w-auto text-right whitespace-normal break-words">
+                      <Link2 className="ml-1 h-4 w-4" />{t('settings.parentPortal.openPortal' ) || t('header.viewParentPortal')}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

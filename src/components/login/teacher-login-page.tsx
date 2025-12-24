@@ -29,17 +29,29 @@ export default function TeacherLoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <Input
-              placeholder="رقم الأستاذ أو البريد الإلكتروني"
-              value={teacherId}
-              onChange={e => setTeacherId(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="كلمة المرور"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
+            <div className="space-y-2">
+              <label htmlFor="teacher-login-id" className="sr-only">رقم الأستاذ أو البريد الإلكتروني</label>
+              <Input
+                id="teacher-login-id"
+                name="teacherId"
+                placeholder="رقم الأستاذ أو البريد الإلكتروني"
+                value={teacherId}
+                onChange={e => setTeacherId(e.target.value)}
+                autoComplete="username"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="teacher-login-password" className="sr-only">كلمة المرور</label>
+              <Input
+                id="teacher-login-password"
+                name="password"
+                type="password"
+                placeholder="كلمة المرور"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
             {error && <div className="text-red-500 text-sm">{error}</div>}
             <Button type="submit" className="w-full">دخول</Button>
           </form>

@@ -56,13 +56,17 @@ export default function TeacherResourcesPage() {
       </table>
       <div className="bg-white rounded-lg shadow p-4 mb-4">
         <h3 className="font-bold mb-2">إضافة مورد جديد</h3>
-        <div className="flex flex-col md:flex-row gap-2 items-center">
+          <div className="flex flex-col md:flex-row gap-2 items-center">
+          <label htmlFor="resource-title" className="sr-only">العنوان</label>
           <input
+            id="resource-title"
+            name="title"
             type="text"
             placeholder="العنوان"
             value={newResource.title}
             onChange={e => setNewResource({ ...newResource, title: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="off"
           />
           <select value={newResource.type} onChange={e => setNewResource({ ...newResource, type: e.target.value })} className="border rounded px-2 py-1">
             <option value="PDF">PDF</option>
@@ -70,12 +74,16 @@ export default function TeacherResourcesPage() {
             <option value="PowerPoint">PowerPoint</option>
             <option value="Link">رابط خارجي</option>
           </select>
+          <label htmlFor="resource-link" className="sr-only">رابط الملف</label>
           <input
+            id="resource-link"
+            name="link"
             type="text"
             placeholder="رابط الملف أو المورد"
             value={newResource.link}
             onChange={e => setNewResource({ ...newResource, link: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="url"
           />
           <button type="button" onClick={addResource} className="bg-blue-600 text-white rounded px-4 py-2">إضافة</button>
         </div>
