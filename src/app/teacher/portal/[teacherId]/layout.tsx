@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getStaffMember } from "@/services/staffService";
+import { redirect } from "next/navigation";
+
+// Feature flag: enable the teacher portal only when the env var
+// `TEACHER_PORTAL_ENABLED` is set to the string 'true'. Default is disabled.
+const TEACHER_PORTAL_ENABLED = process.env.TEACHER_PORTAL_ENABLED === 'true';
 
 const nav = [
   { label: "لوحة التحكم", href: "dashboard" },
@@ -21,6 +26,11 @@ export default async function TeacherPortalLayout({ children, params }: { childr
   // `params` can be a Promise in some Next.js dynamic APIs; await it before use
   const awaitedParams = await params;
   const teacherId = (awaitedParams && (awaitedParams.teacherId ?? awaitedParams.teacherid)) ?? 'me';
+  // If the teacher portal is disabled via feature flag, redirect to dashboard.
+  if (!TEACHER_PORTAL_ENABLED) {
+    // Use a redirect so the portal is inaccessible until re-enabled.
+    return redirect('/dashboard');
+  }
   let teacherName = 'بوابة الأستاذ';
   try {
     if (teacherId) {

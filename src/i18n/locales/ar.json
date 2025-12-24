@@ -1,8 +1,8 @@
 {
   "app": {
     "name": "مؤسسة الموعد",
-    "createFirstAdmin": "",
-    "installApp": ""
+    "createFirstAdmin": "إنشاء أول مشرف",
+    "installApp": "تثبيت التطبيق"
   },
   "navigation": {
     "dashboard": "لوحة التحكم",
@@ -60,7 +60,7 @@
     "teachingMaterials": "المواد التدريسية",
     "myLibrary": "مكتبتي",
     "schedule": "جدول الحصص",
-    "toggleSidebar": ""
+    "toggleSidebar": "تبديل الشريط الجانبي"
   },
   "sidebar": {
     "overview": "لوحة التحكم",
@@ -72,37 +72,33 @@
     "communication": "التواصل",
     "resources": "موارد تعليمية",
     "settings": "إعداداتي",
-    "teacherPortal": ""
+    "teacherPortal": "بوابة المعلمين"
   },
   "settings": {
     "userManagement": {
-      "addNewRole": "إضافة دور جديد",
-      "users": "المستخدمون",
       "title": "إدارة المستخدمين",
-      "description": "إضافة وتعديل الأدوار والصلاحيات للمستخدمين.",
-      "role": "الدور",
+      "description": "الوصف",
+      "roleName": "اسم الدور",
+      "roleNamePlaceholder": "أدخل اسم الدور",
+      "roleNameMinLength": "يجب أن يتكون اسم الدور من {min} أحرف على الأقل",
+      "descriptionPlaceholder": "أدخل وصف الدور",
+      "descriptionMinLength": "يجب أن يكون الوصف مكوَّناً من {min} أحرف على الأقل",
+      "addNewRole": "إضافة دور جديد",
+      "createNewRole": "إنشاء دور جديد",
+      "createRoleDescription": "قم بإنشاء دور مع اسم وصلاحيات.",
+      "saveRole": "حفظ الدور",
+      "failedToCreateRole": "فشل في إنشاء الدور",
+      "roleCreated": "تم إنشاء الدور",
+      "roleCreatedMessage": "تم إنشاء الدور {name} بنجاح",
       "userRolesPermissions": "صلاحيات الأدوار",
       "defineRolesDescription": "حدد صلاحيات كل دور في النظام.",
-      "addRole": "إضافة دور جديد",
-      "editRole": "تعديل الدور",
-      "deleteRole": "حذف الدور",
+      "editPermissions": "تعديل الصلاحيات",
+      "role": "الدور",
+      "users": "المستخدمون",
+      "usersCount": "{count} مستخدم",
       "noCustomRoles": "لا توجد أدوار مخصصة",
       "save": "حفظ",
-      "cancel": "إلغاء",
-      "success": "تم حفظ الأدوار بنجاح",
-      "error": "حدث خطأ أثناء حفظ الأدوار",
-      "couldNotFetchRoles": "",
-      "createNewRole": "",
-      "createRoleDescription": "",
-      "descriptionMinLength": "",
-      "descriptionPlaceholder": "",
-      "editPermissions": "",
-      "failedToCreateRole": "",
-      "roleCreated": "",
-      "roleName": "",
-      "roleNameMinLength": "",
-      "roleNamePlaceholder": "",
-      "saveRole": ""
+      "cancel": "إلغاء"
     },
     "feeStructures": {
       "monthlyFee": "الرسوم الشهرية",
@@ -121,51 +117,40 @@
       "confirmDelete": "هل أنت متأكد من حذف هيكل الرسوم؟",
       "success": "تم حفظ هيكل الرسوم بنجاح",
       "error": "حدث خطأ أثناء حفظ هيكل الرسوم",
-      "addFeeStructure": "",
-      "amountMustBePositive": "",
-      "couldNotFetchStructures": "",
-      "defineMonthlyFee": "",
-      "editFeeStructure": "",
-      "errorSavingStructure": "",
-      "errorUpdatingStructure": "",
-      "exampleAmount": "",
-      "feeStructureSaved": "",
-      "feeStructureSavedMessage": "",
-      "feeStructureUpdated": "",
-      "monthlyAmountRequired": "",
-      "monthlyFeeAmount": "",
-      "newMonthlyFeeAmount": "",
-      "noStructuresForYear": "",
-      "pleaseSelectGrade": "",
-      "saveChanges": "",
-      "saveStructure": "",
-      "selectGrade": "",
-      "structureExists": "",
-      "structureExistsMessage": ""
+      "addFeeStructure": "إضافة هيكل رسوم",
+      "amountMustBePositive": "يجب أن تكون القيمة موجبة",
+      "couldNotFetchStructures": "تعذر جلب هياكل الرسوم",
+      "defineMonthlyFee": "حدد قيمة الرسوم الشهرية لكل صف",
+      "editFeeStructure": "تعديل هيكل الرسوم",
+      "errorSavingStructure": "حدث خطأ أثناء حفظ هيكل الرسوم",
+      "errorUpdatingStructure": "حدث خطأ أثناء تحديث هيكل الرسوم",
+      "exampleAmount": "مثال: 1000",
+      "feeStructureSaved": "تم حفظ هيكل الرسوم",
+      "feeStructureSavedMessage": "تم حفظ هيكل الرسوم للصف {grade}",
+      "feeStructureUpdated": "تم تحديث هيكل الرسوم",
+      "monthlyAmountRequired": "مطلوب قيمة الرسوم الشهرية",
+      "monthlyFeeAmount": "المبلغ الشهري",
+      "newMonthlyFeeAmount": "المبلغ الشهري الجديد",
+      "noStructuresForYear": "لا توجد هياكل رسومية لهذه السنة",
+      "pleaseSelectGrade": "يرجى اختيار الصف",
+      "saveChanges": "حفظ التغييرات",
+      "saveStructure": "حفظ الهيكل",
+      "selectGrade": "اختر الصف",
+      "structureExists": "هيكل موجود",
+      "structureExistsMessage": "هيكل الرسوم للصف {grade} موجود بالفعل"
     },
     "generalSettingsTitle": "الإعدادات العامة للمؤسسة",
     "generalSettingsDescription": "قم بتعديل بيانات المؤسسة والمعلومات الأكاديمية مثل الاسم، العنوان، والسنة الدراسية.",
     "generalAcademic": "الإعدادات الأكاديمية العامة",
-    "schoolName": "اسم المؤسسة",
-    "currentAcademicYear": "السنة الدراسية الحالية",
-    "schoolAddress": "عنوان المؤسسة",
-    "saveSettings": "حفظ الإعدادات",
-    "finance": "المالية",
-    "financeTitle": "إعدادات المالية",
-    "financeDescription": "إدارة الرسوم، المصروفات، وهياكل الرسوم الدراسية.",
-    "userManagementTitle": "إعدادات المستخدمين",
-    "userManagementDescription": "إضافة وتعديل الأدوار والصلاحيات للمستخدمين.",
     "attendanceExams": {
       "title": "إعدادات الحضور والامتحانات",
       "description": "قم بتخصيص سلم التنقيط وحدود الدرجات لكل تقدير.",
       "gradingScale": "سلم التنقيط",
       "defineScoreRanges": "حدد نطاق الدرجات لكل تقدير:",
       "saveChanges": "حفظ التغييرات",
-      "gradingScaleUpdated": "",
-      "settingsSaved": ""
+      "gradingScaleUpdated": "تم تحديث سلم التنقيط",
+      "settingsSaved": "تم حفظ إعدادات الحضور والامتحانات"
     },
-    "parentPortalTitle": "إعدادات بوابة أولياء الأمور",
-    "parentPortalDescription": "إدارة أولياء الأمور، ربط الطلاب، وتوليد روابط الوصول.",
     "parentPortal": {
       "selectedStudent": "الطالب المختار",
       "linkGenerator": "توليد رابط ولي الأمر",
@@ -184,16 +169,29 @@
       "link": "ربط",
       "success": "تمت العملية بنجاح",
       "error": "حدث خطأ أثناء تنفيذ العملية",
-      "copied": "",
-      "couldNotFetchData": "",
-      "failedToGenerateLink": "",
-      "generating": "",
-      "linkCopied": "",
-      "linkGenerated": "",
-      "parentName": ""
+      "copied": "تم النسخ",
+      "couldNotFetchData": "تعذر جلب البيانات",
+      "failedToGenerateLink": "فشل في توليد الرابط",
+      "generating": "جاري التوليد...",
+      "linkCopied": "تم نسخ الرابط",
+      "linkGenerated": "تم توليد الرابط",
+      "openPortal": "افتح بوابة ولي الأمر",
+      "parentName": "اسم ولي الأمر"
     },
-    "teacherPortalTitle": "إعدادات بوابة الأساتذة",
-    "teacherPortalDescription": "إدارة إعدادات بوابة الأساتذة وبياناتهم.",
+    "reports": {
+      "reportConfiguration": "تكوين التقرير",
+      "configureParameters": "تكوين معلمات التقرير",
+      "reportName": "اسم التقرير",
+      "enterReportName": "أدخل اسم التقرير",
+      "reportDescription": "وصف التقرير",
+      "enterReportDescription": "أدخل وصف التقرير",
+      "chartType": "نوع المخطط",
+      "barChart": "مخطط عمودي",
+      "fieldsToInclude": "الحقول المضمنة",
+      "addField": "إضافة حقل",
+      "addFilter": "إضافة فلتر",
+      "filters": "الفلاتر"
+    },
     "teacherPortal": {
       "selectedTeacher": "الأستاذ المختار",
       "linkGenerator": "توليد رابط المعلم",
@@ -213,6 +211,19 @@
       "success": "تمت العملية بنجاح",
       "error": "حدث خطأ أثناء تنفيذ العملية"
     },
+    "schoolName": "اسم المؤسسة",
+    "currentAcademicYear": "السنة الدراسية الحالية",
+    "schoolAddress": "عنوان المؤسسة",
+    "saveSettings": "حفظ الإعدادات",
+    "finance": "المالية",
+    "financeTitle": "إعدادات المالية",
+    "financeDescription": "إدارة الرسوم، المصروفات، وهياكل الرسوم الدراسية.",
+    "userManagementTitle": "إعدادات المستخدمين",
+    "userManagementDescription": "إضافة وتعديل الأدوار والصلاحيات للمستخدمين.",
+    "parentPortalTitle": "إعدادات بوابة أولياء الأمور",
+    "parentPortalDescription": "إدارة أولياء الأمور، ربط الطلاب، وتوليد روابط الوصول.",
+    "teacherPortalTitle": "إعدادات بوابة الأساتذة",
+    "teacherPortalDescription": "إدارة إعدادات بوابة الأساتذة وبياناتهم.",
     "success": "تم حفظ الإعدادات بنجاح",
     "changesSaved": "تم حفظ التغييرات بنجاح",
     "failedToSaveSettings": "فشل في حفظ الإعدادات",
@@ -220,15 +231,15 @@
     "saving": "جاري الحفظ...",
     "comingSoon": "قريباً",
     "sectionUnderConstruction": "هذا القسم قيد الإنشاء",
-    "navigation": "Settings navigation",
-    "title": "Settings title",
-    "academicYearPlaceholder": "",
-    "schoolAddressPlaceholder": "",
-    "settingsSaved": ""
+    "navigation": "قائمة الإعدادات",
+    "title": "الإعدادات",
+    "academicYearPlaceholder": "أدخل السنة الدراسية (مثال: 2025-2026)",
+    "schoolAddressPlaceholder": "أدخل عنوان المؤسسة",
+    "settingsSaved": "تم حفظ الإعدادات"
   },
   "grades": {
     "title": "الدرجات والتقارير",
-    "downloadPdf": "تحميل كـ PDF",
+    "downloadPdf": "Download as PDF",
     "chartTitle": "مخطط أداء الطالب حسب المادة",
     "fetchError": "تعذر تحميل بيانات الدرجات."
   },
@@ -236,9 +247,9 @@
     "cardTitle": "الواجبات",
     "pageTitle": "الواجبات",
     "empty": "لا توجد واجبات حالياً.",
-    "courseLabel": "المادة: {{courseName}}",
-    "pointsLabel": "نقاط: {{points}}",
-    "dueLabel": "تاريخ الاستحقاق: {{date}}",
+    "courseLabel": "Course: {courseName}",
+    "pointsLabel": "Points: {points}",
+    "dueLabel": "Due: {date}",
     "noDue": "لا يوجد موعد نهائي",
     "fetchError": "تعذر جلب الواجبات."
   },
@@ -255,7 +266,7 @@
     "noForParents": "لا توجد إعلانات موجهة لأولياء الأمور في الوقت الحالي.",
     "title": "الإعلانات",
     "loading": "Announcements loading",
-    "noUrgent": ""
+    "fetchError": "Failed to load announcements."
   },
   "teachingMaterials": "المواد التدريسية",
   "myLibrary": "مكتبتي",
@@ -283,7 +294,18 @@
     "credits": "الساعات المعتمدة",
     "departmentLabel": "القسم",
     "fetchError": "تعذر جلب بيانات المادة.",
-    "notAvailable": "غير متوفر"
+    "notAvailable": "غير متوفر",
+    "noGrades": "No grades available yet.",
+    "viewResources": "View resources"
+    ,
+    "nameMinLength": "يجب أن يكون اسم المقرر 3 أحرف على الأقل.",
+    "teacherNameMinLength": "يجب أن يكون اسم الأستاذ 3 أحرف على الأقل.",
+    "selectDepartment": "يرجى اختيار القسم.",
+    "descriptionMinLength": "يجب أن يكون الوصف 10 أحرف على الأقل.",
+    "selectTeacher": "يرجى اختيار الأستاذ.",
+    "creditsRequired": "الرجاء إدخال عدد الساعات.",
+    "gradeRequired": "الرجاء اختيار الصف.",
+    "teachersRequired": "يرجى اختيار معلم واحد على الأقل."
   },
   "timetable": "الجدول الزمني",
   "examSchedule": "جدول الامتحانات",
@@ -304,7 +326,7 @@
     "notAvailableTitle": "غير متاح",
     "notAvailableDesc": "هذا الكتاب غير متاح حالياً.",
     "requestedTitle": "تم الطلب",
-    "requestedDesc": "{{title}} - تاريخ الاستحقاق {{due}}"
+    "requestedDesc": "{title} loaned - due {due}"
   },
   "inventory": "المخزون",
   "fees": "الرسوم",
@@ -362,22 +384,37 @@
     "success": "تم بنجاح",
     "allDepartments": "",
     "backToCourses": "",
-    "backToDirectory": "",
+    "backToDirectory": "العودة إلى الدليل",
     "backToPayroll": "",
     "backToProfile": "",
-    "bankTransfer": "",
-    "contactNumber": "",
+    "bankTransfer": "تحويل بنكي",
+    "contactNumber": "رقم الاتصال",
     "couldNotFetchStaff": "",
     "creditCard": "",
     "idNotFound": "",
-    "noResultsFound": "",
-    "notAvailable": "",
+    "noResultsFound": "لا توجد نتائج مطابقة",
+    "notAvailable": "غير متوفر",
     "openMenu": "",
     "payslipDetails": "",
     "saveChanges": "",
     "selectDepartment": "",
     "unexpectedError": "",
-    "viewDetails": ""
+    "viewDetails": "عرض التفاصيل",
+    "clearFilters": "مسح الفلاتر",
+    "back": "عودة",
+    "noData": "لا توجد بيانات",
+    "loadingLabel": "جارٍ التحميل...",
+    "department": "القسم",
+    "amount": "المبلغ",
+    "month": "الشهر",
+    "paymentMethod": "طريقة الدفع",
+    "fullName": "الاسم الكامل",
+    "grade": "Grade",
+    "areYouSure": "Are you absolutely sure?",
+    "continue": "Continue",
+    "cannotUndo": "This action cannot be undone.",
+    "deleting": "Deleting...",
+    "rowsSelected": "صفوف مختارة"
   },
   "header": {
     "quickActions": "الإجراءات السريعة",
@@ -471,6 +508,9 @@
     "address": "العنوان",
     "programType": "نوع البرنامج",
     "supportCourse": "مقرر الدعم",
+    "selectCourse": "اختر مقررًا",
+    "selectTeacher": "اختر معلماً",
+    "noTeachersAvailable": "لا يوجد مدرسون متاحون",
     "supportProgram": "برنامج الدعم",
     "regularProgram": "البرنامج العادي",
     "male": "ذكر",
@@ -479,29 +519,30 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "errorFetchingStudents": "لا يمكن جلب قائمة الطلاب. يرجى المحاولة مرة أخرى لاحقاً",
-    "regular": "Students regular",
-    "support": "Students support",
-    "teacher": "Students teacher",
-    "addressPlaceholder": "",
-    "altContact": "",
-    "altContactPlaceholder": "",
-    "classNamePlaceholder": "",
-    "contactPlaceholder": "",
-    "dateOfBirthPlaceholder": "",
-    "emailPlaceholder": "",
-    "enrollStudent": "",
-    "fillFormToEnroll": "",
-    "fullNamePlaceholder": "",
-    "gradePlaceholder": "",
-    "guardianInformation": "",
-    "medicalNotes": "",
-    "medicalNotesPlaceholder": "",
-    "noMedicalNotes": "",
-    "parentName": "",
-    "parentNamePlaceholder": "",
-    "studentId": "",
-    "studentProfile": "",
-    "studentType": ""
+    "support": "برنامج الدعم",
+    "teacher": "معلم",
+    "regular": "عادي",
+    "studentType": "نوع الطالب",
+    "parentName": "اسم ولي الأمر",
+    "parentNamePlaceholder": "مثال: ليلى العمراني",
+    "dateFormat": "YYYY-MM-DD",
+    "addressPlaceholder": "مثال: 123 شارع الرئيس، الدار البيضاء",
+    "altContact": "جهة اتصال بديلة (اختياري)",
+    "altContactPlaceholder": "مثال: +212 600-000001",
+    "classNamePlaceholder": "مثال: أ",
+    "contactPlaceholder": "مثال: +212 600-000000",
+    "dateOfBirthPlaceholder": "اختر تاريخ الميلاد",
+    "emailPlaceholder": "مثال: youssef.elamrani@example.com",
+    "enrollStudent": "سجل الطالب",
+    "fillFormToEnroll": "املأ النموذج أدناه لتسجيل طالب جديد.",
+    "fullNamePlaceholder": "مثال: يوسف العمراني",
+    "gradePlaceholder": "مثال: 5",
+    "guardianInformation": "معلومات ولي الأمر",
+    "medicalNotes": "ملاحظات طبية",
+    "medicalNotesPlaceholder": "مثال: حساسية، أدوية، إلخ.",
+    "noMedicalNotes": "لا توجد ملاحظات طبية",
+    "studentId": "معرّف الطالب",
+    "studentProfile": "ملف الطالب"
   },
   "finance": {
     "title": "المالية",
@@ -543,7 +584,7 @@
       "monthApplied": "الشهر المطبق عليه",
       "noPaymentsForPeriod": "لا توجد مدفوعات مسجلة لهذه الفترة.",
       "editPayment": "تعديل الدفعة",
-      "updatePaymentDetailsFor": "تحديث تفاصيل الدفعة لـ {name}.",
+      "updatePaymentDetailsFor": "Update payment details for {name}.",
       "originalDate": "التاريخ الأصلي",
       "paymentForMonth": "دفعة عن شهر",
       "errorFetchingFeeInfo": "خطأ في جلب معلومات الرسوم",
@@ -558,7 +599,7 @@
       "feeStatementTitle": "كشف الرسوم",
       "recordPayment": "تسجيل دفعة",
       "noFeeStructureFound": "لم يتم العثور على هيكل الرسوم",
-      "setupFeeStructureForGrade": "يرجى إعداد هيكل رسوم للصف {grade} للعام الأكاديمي {year}.",
+      "setupFeeStructureForGrade": "Please setup a fee structure for grade {grade} for the academic year {year}.",
       "gotoFeeStructures": "انتقل إلى هياكل الرسوم",
       "selectPeriodToViewStatement": "يرجى اختيار فترة البداية والنهاية لعرض كشف الرسوم.",
       "paymentRecordedDesc": "تمت إضافة الدفعة للطالب.",
@@ -567,7 +608,7 @@
       "paymentDeleted": "تم حذف الدفعة",
       "paymentDeletedDesc": "تم حذف سجل الدفعة بنجاح",
       "payment": {
-        "deleteConfirmation": "سيؤدي هذا إلى حذف سجل الدفعة بقيمة {amount} بشكل دائم."
+        "deleteConfirmation": "This will permanently delete the payment record of {amount}."
       },
       "financeReportsPage": {
         "title": "التقارير المالية",
@@ -616,7 +657,7 @@
         "selectMonth": "اختر شهر...",
         "selectPeriodToViewStatement": "يرجى اختيار فترة البداية والنهاية لعرض كشف الرسوم.",
         "noFeeStructureFound": "لم يتم العثور على هيكل الرسوم",
-        "setupFeeStructureForGrade": "يرجى إعداد هيكل رسوم للصف {grade} للعام الأكاديمي {year}.",
+        "setupFeeStructureForGrade": "Please setup a fee structure for grade {grade} for the academic year {year}.",
         "gotoFeeStructures": "انتقل إلى هياكل الرسوم",
         "feeStatement": "بيان الرسوم الدراسية",
         "feeSummary": "ملخص الرسوم",
@@ -637,7 +678,7 @@
         "monthApplied": "الشهر المطبق عليه",
         "noPaymentsForPeriod": "لا توجد مدفوعات مسجلة لهذه الفترة.",
         "editPayment": "تعديل الدفعة",
-        "updatePaymentDetailsFor": "تحديث تفاصيل الدفعة لـ {name}.",
+        "updatePaymentDetailsFor": "Update payment details for {name}.",
         "originalDate": "التاريخ الأصلي",
         "paymentForMonth": "دفعة عن شهر",
         "errorFetchingFeeInfo": "خطأ في جلب معلومات الرسوم",
@@ -662,8 +703,8 @@
       "paymentDeletedDesc": "تم حذف سجل الدفعة بنجاح"
     },
     "payment": {
-      "enterDetails": "أدخل تفاصيل الدفعة لـ {name}",
-      "deleteConfirmation": "سيؤدي هذا إلى حذف سجل الدفعة بقيمة {amount} بشكل دائم."
+      "enterDetails": "Enter payment details for {name}",
+      "deleteConfirmation": "This will permanently delete the payment record of {amount}."
     }
   },
   "support": {
@@ -676,8 +717,9 @@
     "requestSentTitle": "تم إرسال الطلب",
     "requestSentDesc": "تم إرسال طلب التسجيل إلى المدرسة.",
     "requestError": "فشل في إرسال الطلب.",
-    "instructor": "المدرس: {name}",
-    "courses": "Support courses"
+    "instructor": "Instructor: {name}",
+    "courses": "دروس الدعم",
+    "browseAvailable": "Browse available support programs"
   },
   "academics": {
     "title": "الإدارة الأكاديمية",
@@ -749,7 +791,8 @@
     }
   },
   "parentPortal": {
-    "title": "بوابة أولياء الأمور"
+    "title": "بوابة أولياء الأمور",
+    "description": "View student information, messages and announcements from the school."
   },
   "pp": {
     "report": {
@@ -781,7 +824,7 @@
       "title": "بوابة أولياء الأمور",
       "description": "اطلع على معلومات الطالب والرسائل والإعلانات من المدرسة"
     },
-    "gradeAndClass": "الصف {grade} — الفصل {className}"
+    "gradeAndClass": "Grade {grade} — Class {className}"
   },
   "loading": {
     "checkingLink": "جارٍ التحقق من الرابط..."
@@ -805,7 +848,7 @@
   },
   "attendance": {
     "pageTitle": "حضور الطالب",
-    "exportCsv": "تصدير CSV",
+    "exportCsv": "Export CSV",
     "recordTitle": "سجل الحضور",
     "noRecords": "لا توجد سجلات حضور لهذا الطالب.",
     "columns": {
@@ -818,12 +861,17 @@
       "absent": "غائب"
     },
     "errorFetchingStudents": "",
-    "fetchError": ""
+    "fetchError": "",
+    "title": "Recent attendance",
+    "record": "Attendance record",
+    "present": "Present",
+    "late": "Late",
+    "absent": "Absent"
   },
   "calendar": {
     "cardTitle": "التقويم والتكامل مع الجدول",
     "pageTitle": "التقويم المدرسي",
-    "eventsForDay": "فعاليات {{date}}",
+    "eventsForDay": "Events {date}",
     "noEventsToday": "لا توجد فعاليات لهذا اليوم",
     "weeklyTimetableTitle": "الجدول الأسبوعي (مختصر)",
     "timetableUnavailable": "الجدول غير متوفر هنا — يُعرض في صفحة الجدول الرئيسية.",
@@ -847,13 +895,13 @@
       "closeButton": "إغلاق"
     },
     "overviewTitle": "ملخص عام",
-    "teacher": "المدرس: {teacherName}"
+    "teacher": "Teacher: {teacherName}"
   },
   "supportPrograms": {
     "browseAvailable": "تصفح برامج الدعم المتاحة",
     "noAvailable": "لا توجد برامج دعم متاحة",
-    "courseCreated": "",
-    "studentsDirectory": ""
+    "courseCreated": "تم إنشاء المقرر",
+    "studentsDirectory": "دليل الطلاب"
   },
   "files": {
     "title": "مجلد الطالب — الملفات",
@@ -866,14 +914,14 @@
     "chooseFileTitle": "اختر ملفاً",
     "chooseFileDesc": "الرجاء اختيار ملف للرفع.",
     "uploadedTitle": "تم الرفع",
-    "uploadedDesc": "{{name}} تم رفعه بنجاح.",
+    "uploadedDesc": "{name} uploaded successfully.",
     "uploadError": "فشل في رفع الملف.",
     "deletedTitle": "تم الحذف",
     "deletedDesc": "تم حذف الملف.",
     "deleteError": "فشل في حذف الملف."
   },
   "forums": {
-    "by": "بواسطة: {author}",
+    "by": "By: {author}",
     "authorFallback": "ولي الأمر",
     "title": "المنتديات الصفية",
     "newThread": {
@@ -883,7 +931,17 @@
     "postButton": "نشر الموضوع",
     "fillFields": "يرجى ملء الحقول",
     "created": "تم إنشاء الموضوع",
-    "createdDesc": "تم إنشاء موضوع جديد."
+    "createdDesc": "تم إنشاء موضوع جديد.",
+    "replyEmpty": "Please write a reply",
+    "replyAddedTitle": "Reply added",
+    "replyAddedDesc": "Your reply has been added.",
+    "reported": "Reported",
+    "threadNotFound": "Thread not found",
+    "repliesTitle": "Replies",
+    "noReplies": "No replies yet.",
+    "replyPlaceholder": "Add your reply here...",
+    "postReplyButton": "Post reply",
+    "reportButton": "Report"
   },
   "goals": {
     "title": "أهداف الطالب وتقدمها",
@@ -916,7 +974,7 @@
     "joinButton": "اطلب الانضمام",
     "requestingLabel": "جارِ الإرسال…",
     "noAvailable": "لا توجد أنشطة متاحة حالياً.",
-    "scheduleLabel": "الجدول: {schedule}"
+    "scheduleLabel": "Schedule: {schedule}"
   },
   "payments": {
     "title": "المدفوعات والرسوم",
@@ -939,10 +997,10 @@
     "startedTitle": "بدأ الدفع",
     "startedDesc": "تم إنشاء طلب دفع. سيتم تسجيل الدفعة بعد تأكيدها.",
     "recordedTitle": "تم تسجيل الدفعة",
-    "recordedDesc": "تم تسجيل دفعة {{amount}} {{method}}",
+    "recordedDesc": "Recorded payment {amount} {method}",
     "failedTitle": "فشل الدفع",
     "failedDesc": "حدث خطأ أثناء معالجة الدفعة.",
-    "stripeUnavailable": "Stripe غير متاح حالياً. حاول لاحقاً.",
+    "stripeUnavailable": "Stripe is not available right now. Try later.",
     "succeededTitle": "تم الدفع",
     "succeededDesc": "تم تأكيد الدفع بنجاح.",
     "feeStructure": "هيكل الرسوم السنوي",
@@ -1062,19 +1120,16 @@
     }
   },
   "stripe": "Stripe",
-  " ": "",
   " - ": "",
-  "-": "",
-  "/": "",
-  "/dashboard": "",
-  "@/components/TimetableAdmin": "",
-  "@/lib/firebase-client": "",
-  "@/services/parentService": "",
-  "T": "",
-  "firebase/firestore": "",
   "الرجاء ملء الحقول المطلوبة: المادة، المدرس، اليوم، والوقت": "",
   "تم حذف الكتاب بنجاح (مثال فقط)": "",
   "تم حذف المقرر (تنفيذ الحذف الفعلي مطلوب)": "",
   "فشل تحديث الحصة — حاول مرة أخرى": "",
   "نسبة التقدم (0-100)": ""
+
+,
+"header": {
+  "viewParentPortal": "عرض بوابة أولياء الأمور"
+}
+
 }

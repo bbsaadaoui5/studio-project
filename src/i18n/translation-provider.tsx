@@ -29,7 +29,10 @@ export function TranslationProvider({ children, initialLanguage }: { children: R
     // optional test-language override stored in localStorage
     try {
       const testLang = localStorage.getItem('test-language');
-      if (testLang === 'pseudo') setLanguage('pseudo');
+      // Only allow pseudo-localization when running in development (prevents accidental pseudo in prod)
+      if (testLang === 'pseudo' && process.env.NODE_ENV === 'development') {
+        setLanguage('pseudo');
+      }
     } catch (e) {
       // ignore (SSR safety)
     }
@@ -67,7 +70,64 @@ export function TranslationProvider({ children, initialLanguage }: { children: R
       }
     }
 
-    let result = typeof value === 'string' ? value : key;
+    // If the resolved value is a string use it; if it's an object try common string subkeys
+    let result: string;
+    if (typeof value === 'string' && value.trim() !== '') {
+      // non-empty string is a valid translation
+      result = value;
+    } else if ((typeof value === 'string' && value.trim() === '') || (value && typeof value === 'object')) {
+      // empty string or object — treat as missing and try to resolve useful subkeys or fallbacks
+      if (typeof value === 'string') {
+        // treat empty string as missing
+        value = undefined;
+      }
+
+      if (value && typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      const candidates = ['title', 'label', 'name', 'description', 'text'];
+      let found: unknown = undefined;
+      for (const c of candidates) {
+        if (c in obj && typeof obj[c] === 'string') {
+          found = obj[c];
+          break;
+        }
+      }
+
+      if (typeof found === 'string') {
+        result = found as string;
+      } else {
+        // fallback to English full key if available
+        const fallback = translations.en as Record<string, unknown>;
+        let fb: unknown = fallback;
+        for (const kk of keys) {
+          if (fb && typeof fb === 'object' && kk in (fb as Record<string, unknown>)) {
+            fb = (fb as Record<string, unknown>)[kk];
+          } else {
+            fb = undefined;
+            break;
+          }
+        }
+        if (typeof fb === 'string') {
+          result = fb;
+        } else if (fb && typeof fb === 'object') {
+          // if english fallback is an object, try its common subkeys
+          const eobj = fb as Record<string, unknown>;
+          let efound: unknown = undefined;
+          for (const c of ['title', 'label', 'name', 'description', 'text']) {
+            if (c in eobj && typeof eobj[c] === 'string') {
+              efound = eobj[c];
+              break;
+            }
+          }
+          result = typeof efound === 'string' ? (efound as string) : key;
+        } else {
+          result = key;
+        }
+      }
+      } else {
+        result = key;
+      }
+    }
     if (params && typeof result === 'string') {
       for (const [k, v] of Object.entries(params)) {
         result = result.replace(new RegExp(`\\{\\s*${k}\\s*\\}`, 'g'), String(v));

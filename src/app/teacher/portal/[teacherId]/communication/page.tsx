@@ -26,19 +26,27 @@ export default function TeacherCommunicationPage() {
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <h3 className="font-bold mb-2">إرسال رسالة جديدة</h3>
         <div className="flex flex-col md:flex-row gap-2 items-center">
+          <label htmlFor="comm-recipient" className="sr-only">المستلم</label>
           <input
+            id="comm-recipient"
+            name="recipient"
             type="text"
             placeholder="المستلم (اسم الطالب أو ولي الأمر)"
             value={newMsg.recipient}
             onChange={e => setNewMsg({ ...newMsg, recipient: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="name"
           />
+          <label htmlFor="comm-content" className="sr-only">محتوى الرسالة</label>
           <input
+            id="comm-content"
+            name="content"
             type="text"
             placeholder="محتوى الرسالة"
             value={newMsg.content}
             onChange={e => setNewMsg({ ...newMsg, content: e.target.value })}
             className="border rounded px-2 py-1 w-64"
+            aria-label="محتوى الرسالة"
           />
           <button type="button" onClick={sendMessage} className="bg-blue-600 text-white rounded px-4 py-2">إرسال</button>
         </div>

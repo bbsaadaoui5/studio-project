@@ -439,7 +439,10 @@ export function CustomReportBuilder() {
                         <SelectItem value="between">بين</SelectItem>
                       </SelectContent>
                     </Select>
+                    <label htmlFor={`filter-value-${filter.id}`} className="sr-only">قيمة الفلتر</label>
                     <Input
+                      id={`filter-value-${filter.id}`}
+                      name={`filter-value-${filter.id}`}
                       value={filter.value}
                       onChange={(e) => updateFilter(filter.id, { value: e.target.value })}
                       placeholder="القيمة"

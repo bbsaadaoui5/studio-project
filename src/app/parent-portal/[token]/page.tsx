@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAnnouncements } from "@/services/announcementService";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useTranslation } from "@/i18n/translation-provider";
+import PrototypePortal from "@/components/parent-portal/PrototypePortal";
 
 type CourseWithGrade = Course & { finalGrade: number | null };
 type GeneratingState = "idle" | "fetching" | "compiling" | "writing" | "done";
@@ -66,6 +67,7 @@ export default function ParentPortalPage() {
   const [reportingPeriod, setReportingPeriod] = useState("");
   const [generatedReport, setGeneratedReport] = useState<ReportCard | null>(null);
   const [generatingState, setGeneratingState] = useState<GeneratingState>("idle");
+    const [timetableCompact, setTimetableCompact] = useState(false);
 
     const generatingMessages: Record<GeneratingState, string> = {
             idle: t('pp.report.generateAi'),
@@ -95,7 +97,8 @@ export default function ParentPortalPage() {
         const [courseIds, studentAttendance, timetableData, allSupportCourses] = await Promise.all([
             getCoursesForStudent(studentId),
             getAttendanceForStudent(studentId),
-            getTimetableForClass(studentData.grade, studentData.className),
+            // Timetable API may be external; guard against failures so the whole portal doesn't fail.
+            getTimetableForClass(studentData.grade, studentData.className).catch(() => []),
             getSupportCourses(),
         ]);
         
@@ -130,6 +133,9 @@ export default function ParentPortalPage() {
     fetchData();
   }, [token]);
 
+    // Prototype gate: enabled only when NEXT_PUBLIC_ENABLE_PROTOTYPE=true
+    const enablePrototype = process.env.NEXT_PUBLIC_ENABLE_PROTOTYPE === 'true';
+
     // Load a small set of announcements for the prominent board
     useEffect(() => {
         const loadAnnouncements = async () => {
@@ -148,6 +154,9 @@ export default function ParentPortalPage() {
                     if (a.audience && a.audience !== 'both' && a.audience !== 'parents') return false;
                     if (a.grade && student && String(a.grade) !== String(student.grade)) return false;
                     if (a.className && student && String(a.className) !== String(student.className)) return false;
+                    // Exclude announcements that contain English letters (A-Z / a-z)
+                    const combined = `${a.title || ''} ${a.content || ''}`;
+                    if (/[A-Za-z]/.test(combined)) return false;
                     return true;
                 });
                 setAnnouncements(filtered.slice(0,3));
@@ -189,9 +198,28 @@ export default function ParentPortalPage() {
     return name.split(' ').map(n => n[0]).join('');
   }
 
-  const getEntryForSlot = (day: string, timeSlot: string) => {
-    return timetable.find(entry => entry.day === day && entry.timeSlot === timeSlot);
-  }
+    // Map displayed Arabic day names to canonical keys returned by the timetable API
+    const dayKeyMap: Record<string, string> = {
+        'الاثنين': 'Monday',
+        'الثلاثاء': 'Tuesday',
+        'الأربعاء': 'Wednesday',
+        'الخميس': 'Thursday',
+        'الجمعة': 'Friday',
+    }
+
+    const normalizeSlot = (s: string) => (s || '').replace(/\s+/g, '').toLowerCase();
+
+    const getEntryForSlot = (day: string, timeSlot: string) => {
+        const key = dayKeyMap[day] || day;
+        return timetable.find(entry => {
+            const entryDay = entry?.day || '';
+            const entrySlot = entry?.timeSlot || '';
+            // Allow matching by either API key (English) or localized label, and tolerate spacing differences in timeSlot
+            const daysMatch = entryDay === key || entryDay === day;
+            const slotsMatch = normalizeSlot(entrySlot) === normalizeSlot(timeSlot);
+            return daysMatch && slotsMatch;
+        });
+    }
   
     if (isLoading) {
         return (
@@ -219,6 +247,11 @@ export default function ParentPortalPage() {
             </div>
         );
     }
+
+        // After validation, render the prototype only when the env gate is enabled.
+        if (enablePrototype && student) {
+            return <PrototypePortal student={student} announcements={announcements} attendance={attendance} timetable={timetable} enrolledCourses={enrolledCourses} supportCourses={supportCourses} />;
+        }
   
   const isGenerating = generatingState !== 'idle' && generatingState !== 'done';
 
@@ -422,43 +455,55 @@ export default function ParentPortalPage() {
                         </CardContent>
                     </Card>
                      <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Clock />
-                                {t('schedule.title')}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <div className="border rounded-lg overflow-hidden">
-                                <div className="grid grid-cols-[1fr_repeat(5,2fr)] text-xs md:text-sm">
-                                    <div className="font-semibold bg-muted p-2 border-b border-r">الوقت</div>
-                                    {daysOfWeek.map(day => (
-                                        <div key={day} className="font-semibold bg-muted p-2 text-center border-b border-r last:border-r-0">{day.substring(0,3)}</div>
-                                    ))}
-
-                                    {timeSlots.map(timeSlot => (
-                                        <div key={timeSlot} className="contents">
-                                            <div className="p-2 border-b border-r font-mono">{timeSlot.split(' - ')[0]}</div>
-                                            {daysOfWeek.map(day => {
-                                                const entry = getEntryForSlot(day, timeSlot);
-                                                return (
-                                                    <div key={`${day}-${timeSlot}`} className="p-2 border-b border-r last:border-r-0 text-center">
-                                                        {entry ? (
-                                                            <div className="bg-primary/10 text-primary p-1 rounded-md">
-                                                                <p className="font-semibold leading-tight">{entry.courseName}</p>
-                                                                <p className="text-xs opacity-80 leading-tight">{entry.teacherName}</p>
+                                                <CardHeader className="flex items-center gap-2 justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                                <Clock />
+                                                                <CardTitle>{t('schedule.title')}</CardTitle>
+                                                        </div>
+                                                        <div className="timetable-controls">
+                                                            <div className="timetable-legend">
+                                                                <div className="swatch" style={{background:'#7c3aed'}}></div>
+                                                                <div>مادة — مدرس — قاعة</div>
                                                             </div>
-                                                        ) : (
-                                                            <span className="text-muted-foreground">-</span>
-                                                        )}
+                                                            <button className="btn-compact" onClick={() => setTimetableCompact(c => !c)}>{timetableCompact ? 'الوضع العادي' : 'وضع مضغوط'}</button>
+                                                        </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className={`rounded-lg overflow-hidden border parent-timetable ${timetableCompact ? 'compact' : ''}`}>
+                                                        <div className="w-full overflow-auto">
+                                                            <div style={{display:'grid', gridTemplateColumns:'140px repeat(5, minmax(0,1fr))'}} className="text-sm">
+                                                                <div className="p-3 bg-gradient-to-r from-primary to-indigo-500 text-white font-medium">الوقت</div>
+                                                                {daysOfWeek.map(day => (
+                                                                    <div key={day} className="p-3 text-center bg-indigo-50 font-medium">{day}</div>
+                                                                ))}
+
+                                                                {timeSlots.map((timeSlot, idx) => (
+                                                                    <div key={timeSlot} className="contents">
+                                                                        <div className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} p-3 font-mono text-xs`}>{timeSlot}</div>
+                                                                        {daysOfWeek.map(day => {
+                                                                            const entry = getEntryForSlot(day, timeSlot);
+                                                                            return (
+                                                                                <div key={`${day}-${timeSlot}`} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} p-3 align-top`}>
+                                                                                    {entry ? (
+                                                                                        <div className="flex flex-col items-start gap-1 p-3 rounded-lg shadow-sm bg-white border-l-4 border-indigo-400">
+                                                                                            <div className="font-semibold text-indigo-700 text-sm truncate">{entry.courseName}</div>
+                                                                                            <div className="text-xs text-muted-foreground truncate">{entry.teacherName}</div>
+                                                                                            <div className="text-xs text-muted-foreground">
+                                                                                                {entry.location || entry.classroom || entry.venue || (entry as any).room || ''}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div className="text-center text-muted-foreground">-</div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                )
-                                            })}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
+                                                </CardContent>
                     </Card>
                     <Card>
                         <CardHeader>

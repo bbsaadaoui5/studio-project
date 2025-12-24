@@ -23,6 +23,7 @@ type TeacherDashboardProps = {
 };
 
 export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
+	const TEACHER_PORTAL_ENABLED = process.env.NEXT_PUBLIC_TEACHER_PORTAL_ENABLED === 'true';
 	const [selectedGrade, setSelectedGrade] = useState<string>('');
 	const [selectedStudent, setSelectedStudent] = useState<string>('');
 	const [showTeacherPortal, setShowTeacherPortal] = useState(false);
@@ -31,6 +32,11 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
 
 	const handleViewPortal = (studentId?: string) => {
 		const id = studentId ?? selectedStudent;
+		if (!TEACHER_PORTAL_ENABLED) {
+			// silently ignore or notify
+			alert('بوابة الأساتذة معطلة مؤقتاً.');
+			return;
+		}
 		if (!id) return;
 		window.open(`/teacher/portal/${id}`, '_blank');
 	};
@@ -116,8 +122,9 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
 							className="bg-blue-600 text-white rounded px-4 py-2 mb-4"
 							onClick={() => setShowTeacherPortal(true)}
 							aria-label="فتح أداة عرض بوابة الأستاذ"
+							disabled={!TEACHER_PORTAL_ENABLED}
 						>
-							عرض بوابة الأستاذ
+							{TEACHER_PORTAL_ENABLED ? 'عرض بوابة الأستاذ' : 'البوابة معطلة'}
 						</button>
 						{showTeacherPortal && <TeacherPortalSelector />}
 					</CardContent>

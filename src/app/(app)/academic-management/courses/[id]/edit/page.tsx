@@ -42,7 +42,7 @@ const generateCourseDescription = async (): Promise<string> => {
   return "This is a mock course description for testing purposes.";
 };
 const courseSchema = z.object({
-  name: z.string().min(3, "Course name must be at least 3 characters."),
+  name: z.string().min(3, "يجب أن يكون اسم المقرر 3 أحرف على الأقل."),
   teacher: z.string().min(3, "Teacher name must be at least 3 characters."),
   department: z.string().min(1, "Please select a department."),
   grade: z.string().min(1, "Please select a grade."),

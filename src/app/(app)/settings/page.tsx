@@ -15,7 +15,7 @@ import { UserManagementSettings } from "@/components/settings/user-management-se
 import { AttendanceExamSettings } from "@/components/settings/attendance-exam-settings";
 import { ParentPortalSettings } from "@/components/settings/parent-portal-settings";
 
-type SettingsTab = "general" | "users" | "finance" | "exams" | "communication" | "system" | "security" | "parent-portal" | "teacher-portal";
+type SettingsTab = "general" | "users" | "finance" | "exams" | "communication" | "system" | "security" | "parent-portal";
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -30,19 +30,19 @@ export default function SettingsPage() {
     const settingsMenu = [
         { id: "general", label: t("settings.generalAcademic"), icon: Building, disabled: false },
         { id: "finance", label: t("settings.finance"), icon: Landmark, disabled: false },
-        { id: "users", label: t("settings.userManagement"), icon: KeyRound, disabled: false },
-        { id: "exams", label: t("settings.attendanceExams"), icon: Calendar, disabled: false },
-        { id: "parent-portal", label: t("settings.parentPortal"), icon: KeyRound, disabled: false },
-        { id: "teacher-portal", label: "بوابة الأساتذة", icon: KeyRound, disabled: false },
+        { id: "users", label: t("settings.userManagement.title"), icon: KeyRound, disabled: false },
+        { id: "exams", label: t("settings.attendanceExams.title"), icon: Calendar, disabled: false },
+        { id: "parent-portal", label: t("settings.parentPortalTitle"), icon: KeyRound, disabled: false },
     ]
 
-    // Test pseudo-localization
-    const testPseudoLocalization = () => {
-        const currentLang = localStorage.getItem('test-language') || 'ar';
-        const newLang = currentLang === 'ar' ? 'pseudo' : 'ar';
-        localStorage.setItem('test-language', newLang);
-        window.location.reload();
-    };
+    // Ensure UI uses Arabic by default (disable pseudo-localization test mode)
+    useEffect(() => {
+        try {
+            localStorage.setItem('test-language', 'ar');
+        } catch (e) {
+            // ignore in environments without localStorage
+        }
+    }, []);
 
     const fetchInitialData = useCallback(async () => {
         setIsLoading(true);
@@ -121,9 +121,7 @@ export default function SettingsPage() {
             case "exams":
                 return <AttendanceExamSettings />;
                         case "parent-portal":
-                                return <ParentPortalSettings />;
-                    case "teacher-portal":
-                        return null;
+                                    return <ParentPortalSettings />;
             default:
                 return (
                     <Card>

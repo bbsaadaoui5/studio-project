@@ -44,14 +44,21 @@ export default function TeacherAnnouncementsPage() {
       <div className="bg-white rounded-lg shadow p-4 mb-4">
         <h3 className="font-bold mb-2">نشر إعلان جديد</h3>
         <div className="flex flex-col md:flex-row gap-2 items-center">
+          <label htmlFor="announcement-title" className="sr-only">عنوان الإعلان</label>
           <input
+            id="announcement-title"
+            name="title"
             type="text"
             placeholder="عنوان الإعلان"
             value={newAnnouncement.title}
             onChange={e => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="off"
           />
+          <label htmlFor="announcement-date" className="sr-only">تاريخ الإعلان</label>
           <input
+            id="announcement-date"
+            name="date"
             type="date"
             value={newAnnouncement.date}
             onChange={e => setNewAnnouncement({ ...newAnnouncement, date: e.target.value })}

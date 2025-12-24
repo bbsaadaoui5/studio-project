@@ -33,42 +33,48 @@ export const addStaffMember = async (staffData: Omit<NewStaff, 'id' | 'status' |
   let authUid = '';
   const staffId = await getNextStaffId();
 
-  // Case 1: Role requires a login (teacher or admin)
+  // Case 1: Role may require a login (teacher or admin). Email is optional.
+  // If an email is provided for teachers/admins, create an auth account (password required).
   if (role === 'teacher' || role === 'admin') {
-    if (!email || !password) {
-      throw new Error("Email and password are required for teachers and admins.");
-    }
-    // Check if a staff member with this email already exists in the database
-    const staffQuery = query(collection(db, "staff"), where("email", "==", email));
-    const querySnapshot = await getDocs(staffQuery);
-    if (!querySnapshot.empty) {
-      throw new Error("A staff member with this email already exists in the directory.");
-    }
-    try {
-      authUid = await createAuthUser(email, password);
-    } catch (error: unknown) {
-      const e = error as { code?: string };
-      if (e.code === 'auth/email-already-in-use') {
-        throw new Error("This email is already registered for a login account.");
+    if (email) {
+      if (!password) {
+        throw new Error("Password is required when creating a login account for teachers and admins.");
       }
-      console.error("Error creating auth user:", error);
-      throw new Error("Could not create the user's login account.");
+      // Check if a staff member with this email already exists in the database
+      const staffQuery = query(collection(db, "staff"), where("email", "==", email));
+      const querySnapshot = await getDocs(staffQuery);
+      if (!querySnapshot.empty) {
+        throw new Error("A staff member with this email already exists in the directory.");
+      }
+      try {
+        authUid = await createAuthUser(email, password);
+      } catch (error: unknown) {
+        const e = error as { code?: string };
+        if (e.code === 'auth/email-already-in-use') {
+          throw new Error("This email is already registered for a login account.");
+        }
+        console.error("Error creating auth user:", error);
+        throw new Error("Could not create the user's login account.");
+      }
     }
+    // If no email provided, continue without creating an auth account.
   }
 
   // Use the new UID as the doc ID for teachers/admins, or generate a new ID for support staff
   const newDocRef = authUid ? doc(db, "staff", authUid) : doc(collection(db, "staff"));
 
-  const newStaffData = {
+  const newStaffData: any = {
     ...restOfStaffData,
     idNumber: staffId,
-    email: email || '', // Ensure email is not undefined
     role,
     status: "active" as const,
     hireDate: serverTimestamp(),
     paymentType: staffData.paymentType,
     paymentRate: staffData.paymentRate,
   };
+  if (email) {
+    newStaffData.email = email;
+  }
 
   try {
     await setDoc(newDocRef, { ...newStaffData, id: newDocRef.id });

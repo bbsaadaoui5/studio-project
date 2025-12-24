@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -39,18 +38,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { generateCourseDescription } from "@/ai/flows/generate-course-description-flow";
 import { useTranslation } from "@/i18n/translation-provider";
 
-const courseSchema = z.object({
-  name: z.string().min(3, "Course name must be at least 3 characters."),
-  teacher: z.string().min(3, "Teacher name must be at least 3 characters."),
-  department: z.string().min(1, "Please select a department."),
-  description: z.string().min(10, "Description must be at least 10 characters."),
-});
-
-
-
-export default function EditSupportCoursePage() {
-  const params = useParams();
+export default function EditCoursePage() {
   const { t } = useTranslation();
+  const params = useParams();
   const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined;
   const { toast } = useToast();
   const router = useRouter();
@@ -58,6 +48,13 @@ export default function EditSupportCoursePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const courseSchema = z.object({
+    name: z.string().min(3, t('courses.nameMinLength') || "يجب أن يكون اسم المقرر 3 أحرف على الأقل."),
+    teacher: z.string().min(3, t('courses.teacherNameMinLength') || "يجب أن يكون اسم الأستاذ 3 أحرف على الأقل."),
+    department: z.string().min(1, t('courses.selectDepartment') || "يرجى اختيار القسم."),
+    description: z.string().min(10, t('courses.descriptionMinLength') || "يجب أن يكون الوصف 10 أحرف على الأقل."),
+  });
 
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
@@ -71,7 +68,7 @@ export default function EditSupportCoursePage() {
 
   useEffect(() => {
     if (!id) {
-  setErrorMsg('معرّف المقرر غير صالح أو مفقود.');
+      setErrorMsg('معرّف المقرر غير صالح أو مفقود.');
       setIsLoading(false);
       return;
     }
@@ -95,7 +92,7 @@ export default function EditSupportCoursePage() {
         }
       })
       .catch(() => {
-  setErrorMsg('فشل في جلب بيانات المقرر.');
+        setErrorMsg('فشل في جلب بيانات المقرر.');
       })
       .finally(() => {
         setIsLoading(false);
@@ -129,7 +126,7 @@ export default function EditSupportCoursePage() {
   const handleGenerateDescription = async () => {
     const courseName = form.getValues('name');
     if (!courseName) {
-  toast({ title: 'يرجى إدخال اسم المقرر أولاً.', variant: 'destructive' });
+      toast({ title: 'يرجى إدخال اسم المقرر أولاً.', variant: 'destructive' });
       return;
     }
     setIsGenerating(true);
@@ -138,13 +135,12 @@ export default function EditSupportCoursePage() {
       const result = { description: `This is a generated description for ${courseName}.` };
       form.setValue('description', result.description, { shouldValidate: true });
     } catch (error) {
-  toast({ title: 'خطأ في توليد الوصف', variant: 'destructive' });
+      toast({ title: 'خطأ في توليد الوصف', variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
   };
   
-
 
   if (isLoading) {
     return (

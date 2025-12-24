@@ -40,17 +40,17 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useTranslation } from "@/i18n/translation-provider";
 
 const studentSchema = z.object({
-  name: z.string().min(3, "Full name must be at least 3 characters."),
-  email: z.string().email("Please enter a valid email address.").optional().or(z.literal("")),
+  name: z.string().min(3, "يجب أن يكون الاسم الكامل 3 أحرف على الأقل."),
+  email: z.string().email("الرجاء إدخال بريد إلكتروني صالح.").optional().or(z.literal("")),
   gender: z.enum(["male", "female"]),
   studentType: z.enum(["regular", "support"]),
   grade: z.string().optional(),
   className: z.string().optional(),
-  parentName: z.string().min(3, "Parent/Guardian name is required."),
-  contact: z.string().min(10, "Please enter a valid contact number."),
+  parentName: z.string().min(3, "اسم ولي الأمر مطلوب ويجب أن يكون 3 أحرف على الأقل."),
+  contact: z.string().min(10, "الرجاء إدخال رقم هاتف صحيح."),
   altContact: z.string().optional(),
-  address: z.string().min(10, "Please enter a valid address."),
-  dateOfBirth: z.date({ required_error: "A date of birth is required." }),
+  address: z.string().min(10, "الرجاء إدخال عنوان صالح."),
+  dateOfBirth: z.date({ required_error: "الرجاء إدخال تاريخ الميلاد." }),
   medicalNotes: z.string().optional(),
   supportCourseId: z.string().optional(),
   teacher: z.string().optional(),
@@ -325,10 +325,10 @@ export default function NewStudentPage() {
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a course" />
-                            </SelectTrigger>
-                          </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('students.selectCourse')} />
+                              </SelectTrigger>
+                            </FormControl>
                           <SelectContent>
                             {courses.map((course) => (
                               <SelectItem key={course.id} value={course.id}>
@@ -363,8 +363,8 @@ export default function NewStudentPage() {
                             disabled={!hasTeachers}
                           >
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={hasTeachers ? "Select a teacher" : "No teachers available"} />
+                                <SelectTrigger>
+                                <SelectValue placeholder={hasTeachers ? t('students.selectTeacher') : t('students.noTeachersAvailable')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -410,8 +410,8 @@ export default function NewStudentPage() {
                 control={form.control}
                 name="altContact"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Alternative Contact (Optional)</FormLabel>
+                    <FormItem>
+                    <FormLabel>{t('students.altContact')}</FormLabel>
                     <FormControl>
                       <Input className="glass-input" placeholder={t("students.altContactPlaceholder") || "مثال: +212 600-000001"} {...field} />
                     </FormControl>
@@ -423,8 +423,8 @@ export default function NewStudentPage() {
                 control={form.control}
                 name="address"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormItem>
+                    <FormLabel>{t('students.address')}</FormLabel>
                     <FormControl>
                       <Input className="glass-input" placeholder={t("students.addressPlaceholder") || "مثال: 123 شارع رئيسي، الدار البيضاء"} {...field} />
                     </FormControl>
@@ -436,8 +436,8 @@ export default function NewStudentPage() {
                 control={form.control}
                 name="medicalNotes"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Medical Notes (Optional)</FormLabel>
+                    <FormItem>
+                    <FormLabel>{t('students.medicalNotes')}</FormLabel>
                     <FormControl>
                       <Textarea className="glass-input" placeholder={t("students.medicalNotesPlaceholder") || "مثال: حساسية، أدوية، إلخ."} {...field} />
                     </FormControl>
@@ -449,17 +449,19 @@ export default function NewStudentPage() {
                 control={form.control}
                 name="dateOfBirth"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date of Birth</FormLabel>
-                    <FormControl>
-                      <Input
-                          className="glass-input"
-                          type="date"
-                          value={field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().substring(0, 10) : ""}
-                          onChange={e => field.onChange(new Date(e.target.value))}
-                          placeholder={t("students.dateOfBirthPlaceholder") || "اختر تاريخ الميلاد"}
-                        />
-                    </FormControl>
+                    <FormItem>
+                        <FormLabel>{t('students.dateOfBirth')}</FormLabel>
+                        <FormControl>
+                          <Input
+                              className="glass-input"
+                              type="date"
+                              value={field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().substring(0, 10) : ""}
+                              onChange={e => field.onChange(new Date(e.target.value))}
+                              placeholder={t("students.dateOfBirthPlaceholder") || "اختر تاريخ الميلاد"}
+                              aria-label={t('students.dateOfBirth')}
+                            />
+                        </FormControl>
+                        <div className="text-xs text-muted-foreground mt-1">{t('students.dateFormat')}</div>
                     <FormMessage />
                   </FormItem>
                 )}

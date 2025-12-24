@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>بوابة ولي الأمر - نموذج</title>
+  <style>
+    :root{
+      --bg:#f5f7fb; --container:1200px; --card:#fff; --muted:#6b7280;
+      --gradient-start:#5b3dd6; --gradient-end:#6f42c1; --accent:#3b82f6;
+      --card-shadow: 0 10px 30px rgba(15,23,42,0.08);
+      --radius:18px;
+      font-family: "Inter", "Noto Naskh Arabic", system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    html,body{height:100%;background:var(--bg);margin:0;color:#0f172a}
+    .container{max-width:var(--container);margin:28px auto;padding:0 20px}
+    .header{background:linear-gradient(90deg,var(--gradient-start),var(--gradient-end));border-radius:24px;padding:36px 36px;color:white;display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+    .header:after{content:'';position:absolute;inset:0;box-shadow:inset 0 -30px 60px rgba(0,0,0,0.08);pointer-events:none;border-radius:24px}
+    .header .left{display:flex;gap:18px;align-items:flex-end}
+    .avatar{width:96px;height:96px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--gradient-end);box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+    .title{font-size:28px;font-weight:800;letter-spacing:0.3px}
+    .meta{font-size:14px;color:rgba(255,255,255,0.95)}
+    .stats{display:flex;gap:14px;align-items:center}
+    .stat{background:rgba(255,255,255,0.12);padding:14px 18px;border-radius:14px;text-align:center;width:96px;backdrop-filter:blur(4px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
+    .stat .num{font-weight:800;font-size:20px}
+    .stat .label{font-size:12px;margin-top:6px;color:rgba(255,255,255,0.9)}
+
+    .layout{display:grid;grid-template-columns:1fr 2fr 1fr;gap:24px;margin-top:28px}
+    .card{background:var(--card);border-radius:14px;box-shadow:var(--card-shadow);padding:18px}
+    .card h3{margin:0 0 10px 0;font-size:18px}
+    .ann-item{border-right:6px solid var(--accent);padding:14px;margin-bottom:14px;border-radius:10px;background:#fbfdff}
+
+    /* Timetable */
+    .timetable{overflow:hidden;border-radius:12px}
+    .timetable table{width:100%;border-collapse:collapse;background:var(--card)}
+    .timetable th, .timetable td{padding:14px;border-bottom:1px solid #eef2f7;text-align:center}
+    .timetable tbody tr:nth-child(odd){background:#fbfdff}
+    .time-col{width:84px;font-family:monospace;text-align:center;background:#fff}
+    .entry{background:linear-gradient(180deg,#f7f9ff,#eef4ff);padding:10px;border-radius:10px;font-weight:600}
+
+    /* Right column quick actions */
+    .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{background:#3b82f6;color:white;padding:12px 16px;border-radius:999px;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .btn.ghost{background:#eef2ff;color:var(--accent);box-shadow:none}
+
+    /* Print */
+    @media print{.quick-actions{display:none}.header{border-radius:0}body{background:white}}
+
+    /* Responsive */
+    @media (max-width:980px){.layout{grid-template-columns:1fr;}.header{flex-direction:column;align-items:flex-end}.stats{margin-top:12px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header" role="banner">
+      <div class="left">
+        <div class="avatar" id="student-avatar">ع</div>
+        <div>
+          <div class="title" id="student-name">عمر الباهلي</div>
+          <div class="meta" id="student-meta">الصف: الثاني ابتدائي — الفصل A&nbsp;&nbsp; رقم الطالب: 7e55TN10a3vHEWBV7</div>
+
+        <!-- Homework / Assignments -->
+        <div class="card" style="margin-top:16px" id="assignments-card">
+          <h3>الواجبات والمهام 📝</h3>
+          <ul id="assignments-list" style="list-style:none;padding:0;margin:8px 0;display:grid;gap:8px"></ul>
+        </div>
+        <!-- Grades -->
+        <div class="card" style="margin-top:16px" id="grades-card">
+          <h3>الدرجات التفصيلية 🧾</h3>
+          <div id="grades-list" style="display:grid;gap:10px;margin-top:8px"></div>
+        </div>
+          <div class="meta" id="last-login" style="margin-top:6px;font-size:13px;opacity:0.95">آخر تسجيل دخول: 2025-12-12 09:24</div>
+        </div>
+      </div>
+      <div style="text-align:left;display:flex;align-items:center;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input id="search" aria-label="بحث" placeholder="ابحث عن طالب، مادة، أو معلومة" style="padding:10px 12px;border-radius:12px;border:none;width:360px;max-width:40vw;direction:rtl;text-align:right" />
+          <button class="btn ghost" id="toggle-theme" title="تبديل الوضع">🌙</button>
+          <button class="btn ghost" id="print-report" title="طباعة التقرير">🖨️ طباعة التقرير</button>
+        </div>
+        <div class="stats" aria-hidden="false">
+          <div class="stat"><div class="num" id="stat-attendance">95%</div><div class="label">الحضور</div></div>
+          <div class="stat"><div class="num" id="stat-subjects">8</div><div class="label">المواد</div></div>
+          <div class="stat"><div class="num" id="stat-average">88%</div><div class="label">المعدل</div></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Left column: Announcements -->
+      <aside>
+        <div class="card" id="announcements-card">
+          <h3>إعلانات المدرسة 📢</h3>
+          <div id="announcements-list">
+            <div class="ann-item">
+              <strong>لقاء أولياء الأمور</strong>
+              <p style="margin:6px 0;color:var(--muted)">ندعوكم لحضور اللقاء الشهري يوم الثلاثاء الموافق 16 نوفمبر في قاعة الاحتفالات.</p>
+              <div style="font-size:12px;color:var(--muted)">نشر في: ٢٠٢٥/١١/١٠</div>
+            </div>
+            <div class="ann-item">
+              <strong>الأنشطة الرياضية</strong>
+              <p style="margin:6px 0;color:var(--muted)">تبدأ الأنشطة الرياضية الأسبوعية يوم السبت القادم. يرجى التأكد من إحضار الملابس الرياضية.</p>
+              <div style="font-size:12px;color:var(--muted)">نشر في: ٢٠٢٥/١١/١٨</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center: Timetable -->
+      <section>
+        <div class="card timetable" id="timetable-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="text-align:center;margin:0">جدول الحصص الأسبوعي 📚</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn ghost" id="toggle-calendar-view">عرض تقويم شهري</button>
+            </div>
+          </div>
+          <table id="timetable-table">
+            <thead>
+              <tr>
+                <th class="time-col">الوقت</th>
+                <th>الأحد</th>
+                <th>الاثنين</th>
+                <th>الثلاثاء</th>
+                <th>الأربعاء</th>
+                <th>الخميس</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="time-col">08:00</td>
+                <td><div class="entry"><strong>لغة عربية</strong><div style="font-size:12px;color:var(--muted)">أ. فاطمة — القاعة 1-2</div></div></td>
+                <td><div class="entry"><strong>رياضيات</strong><div style="font-size:12px;color:var(--muted)">أ. أحمد — القاعة 2-3</div></div></td>
+                <td><div class="entry"><strong>علوم</strong><div style="font-size:12px;color:var(--muted)">أ. محمد — المختبر</div></div></td>
+                <td><div class="entry"><strong>تربية إسلامية</strong><div style="font-size:12px;color:var(--muted)">أ. خالد — القاعة 1-5</div></div></td>
+                <td><div class="entry"><strong>لغة عربية</strong><div style="font-size:12px;color:var(--muted)">أ. فاطمة — القاعة 1-2</div></div></td>
+              </tr>
+              <tr>
+                <td class="time-col">09:00</td>
+                <td><div class="entry"><strong>رياضيات</strong><div style="font-size:12px;color:var(--muted)">أ. علي — القاعة 1-4</div></div></td>
+                <td><div class="entry"><strong>لغة إنجليزية</strong><div style="font-size:12px;color:var(--muted)">أ. سارة — القاعة 1-3</div></div></td>
+                <td><div class="entry"><strong>تربية فنية</strong><div style="font-size:12px;color:var(--muted)">أ. رائد — القاعة 1-6</div></div></td>
+                <td><div class="entry"><strong>رياضيات</strong><div style="font-size:12px;color:var(--muted)">أ. أحمد — القاعة 2-3</div></div></td>
+                <td><div class="entry"><strong>اجتماعيات</strong><div style="font-size:12px;color:var(--muted)">أ. نورا — القاعة 1-6</div></div></td>
+              </tr>
+              <tr>
+                <td class="time-col">10:30</td>
+                <td><div class="entry"><strong>حاسوب</strong><div style="font-size:12px;color:var(--muted)">أ. ياسر — المعمل</div></div></td>
+                <td><div class="entry"><strong>تربية بدنية</strong><div style="font-size:12px;color:var(--muted)">أ. وليد — الملعب</div></div></td>
+                <td><div class="entry"><strong>علوم</strong><div style="font-size:12px;color:var(--muted)">أ. محمد — المختبر</div></div></td>
+                <td><div class="entry"><strong>لغة عربية</strong><div style="font-size:12px;color:var(--muted)">أ. فاطمة — القاعة 1-2</div></div></td>
+                <td><div class="entry"><strong>تربية</strong><div style="font-size:12px;color:var(--muted)">أ. وليد — القاعة 1-4</div></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Right column: Student info & quick actions -->
+      <aside>
+        <div class="card" id="student-info-card">
+          <h3>معلومات الطالب 👤</h3>
+          <p style="font-weight:600">البريد الإلكتروني:</p>
+          <p class="meta" id="student-email">bbsadaoui@gmail.com</p>
+          <p style="font-weight:600;margin-top:8px">ولي الأمر:</p>
+          <p class="meta" id="student-parent">محمود علي</p>
+          <p style="font-weight:600;margin-top:8px">هاتف ولي الأمر:</p>
+          <p class="meta" id="student-contact">2126567889</p>
+          <hr style="margin:12px 0;border:none;border-top:1px solid #f1f5f9" />
+          <p style="font-weight:600">تاريخ الميلاد:</p>
+          <p class="meta" id="student-dob">2014-05-12</p>
+          <p style="font-weight:600;margin-top:8px">العنوان:</p>
+          <p class="meta" id="student-address">الرياض - حي العليا</p>
+          <p style="font-weight:600;margin-top:8px">معلومات صحية:</p>
+          <p class="meta" id="student-health">لا حساسية معروفة</p>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>سجل الحضور التفصيلي 📅</h3>
+          <div id="attendance-list" style="max-height:180px;overflow:auto;margin-top:8px"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>تقارير السلوك 📝</h3>
+          <div id="behavior-list" style="margin-top:8px"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>الفعاليات القادمة 📆</h3>
+          <div id="events-list" style="margin-top:8px"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>جهات اتصال المعلمين 👩‍🏫</h3>
+          <div id="teachers-list" style="margin-top:8px"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>الحساب والإجراءات</h3>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button class="btn" id="change-password">تغيير كلمة المرور</button>
+            <button class="btn ghost" id="logout-devices">تسجيل الخروج من جميع الأجهزة</button>
+            <button class="btn ghost" id="logout">تسجيل خروج</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+  </div>
+  <script>
+    // --- Mock API simulation ---
+    function fetchMock(path){
+      return new Promise((resolve)=>{
+        setTimeout(()=>{
+          const now=new Date();
+          if(path==='/api/student'){
+            resolve({id:'STU2024001', name:'عمر الباهلي', grade:'الثاني', className:'A', email:'bbsadaoui@gmail.com', parentName:'محمود علي', contact:'2126567889', dob:'2014-05-12', address:'الرياض - حي العليا', health:'لا حساسية معروفة', lastLogin: now.toISOString()});
+          } else if(path==='/api/timetable'){
+            resolve([
+              {day:'الأحد',time:'08:00',course:'لغة عربية',teacher:'أ. فاطمة',room:'القاعة 1-2'},
+              {day:'الاثنين',time:'08:00',course:'رياضيات',teacher:'أ. أحمد',room:'القاعة 2-3'}
+            ]);
+          } else if(path==='/api/assignments'){
+            resolve([{id:1,subject:'رياضيات',title:'تمارين أعداد',due:'2025-12-18',status:'قادم'},{id:2,subject:'لغة عربية',title:'قراءة نص',due:'2025-12-15',status:'متأخر'}]);
+          } else if(path==='/api/grades'){
+            resolve([{subject:'رياضيات',score:85,max:100},{subject:'لغة عربية',score:92,max:100},{subject:'علوم',score:78,max:100}]);
+          } else if(path==='/api/attendance'){
+            const list=[]; for(let i=0;i<14;i++){ const d=new Date(); d.setDate(d.getDate()-i); list.push({date:d.toISOString().slice(0,10),status:i%6===0?'غائب':'حاضر'});} resolve(list);
+          } else if(path==='/api/behavior'){
+            resolve([{date:'2025-12-01',note:'تأخر دخول الفصل مرتين'},{date:'2025-11-20',note:'مشاركة نشطة في النشاط العلمي'}]);
+          } else if(path==='/api/events'){
+            resolve([{date:'2025-12-20',title:'يوم الرياضة'},{date:'2025-12-05',title:'حفل نهاية الفصل'}]);
+          } else if(path==='/api/teachers'){
+            resolve([{name:'أ. فاطمة',subject:'لغة عربية',contact:'+966511111111'},{name:'أ. أحمد',subject:'رياضيات',contact:'+966522222222'}]);
+          } else if(path==='/api/messages'){
+            resolve([{from:'أ. فاطمة',subject:'ملاحظة عن الواجب',snippet:'يرجى إكمال الصفحة 3',date:'2025-12-11'}]);
+          } else { resolve(null); }
+        },200);
+      });
+    }
+
+    // --- Render helpers ---
+    async function loadStudent(){ const s=await fetchMock('/api/student'); if(!s) return; document.getElementById('student-name').textContent=s.name; document.getElementById('student-meta').textContent=`الصف: ${s.grade} — الفصل ${s.className}   رقم الطالب: ${s.id}`; document.getElementById('student-email').textContent=s.email; document.getElementById('student-parent').textContent=s.parentName; document.getElementById('student-contact').textContent=s.contact; document.getElementById('student-dob').textContent=s.dob; document.getElementById('student-address').textContent=s.address; document.getElementById('student-health').textContent=s.health; document.getElementById('last-login').textContent=`آخر تسجيل دخول: ${new Date(s.lastLogin).toLocaleString('ar-EG')}`; document.getElementById('student-avatar').textContent=s.name.split(' ').map(p=>p[0]).slice(0,2).join(''); }
+
+    async function loadMessages(){ const msgs=await fetchMock('/api/messages'); const container=document.getElementById('messages-list'); container.innerHTML=''; if(!msgs||msgs.length===0){ container.innerHTML='<p class="meta">لا توجد رسائل جديدة.</p>'; return;} msgs.forEach(m=>{ const el=document.createElement('div'); el.style.padding='8px'; el.style.borderBottom='1px dashed #eef2f7'; el.innerHTML=`<strong>${m.from}</strong> — <span style="font-size:13px">${m.subject}</span><div style="font-size:12px;color:var(--muted)">${m.snippet} · ${m.date}</div>`; container.appendChild(el); }); }
+
+    async function loadAssignments(){ const as=await fetchMock('/api/assignments'); const ul=document.getElementById('assignments-list'); ul.innerHTML=''; as.forEach(a=>{ const li=document.createElement('li'); li.className='ann-item'; li.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${a.subject}</strong> — ${a.title}<div style="font-size:12px;color:var(--muted)">موعد التسليم: ${a.due}</div></div><div style="text-align:center"><div style="font-weight:800">${a.status}</div></div></div>`; ul.appendChild(li); }); }
+
+    async function loadGrades(){ const gs=await fetchMock('/api/grades'); const box=document.getElementById('grades-list'); box.innerHTML=''; gs.forEach(g=>{ const pct=Math.round((g.score/g.max)*100); const row=document.createElement('div'); row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${g.subject}</strong></div><div style="font-weight:800">${g.score}/${g.max}</div></div><div style="height:10px;background:#f1f5f9;border-radius:6px;margin-top:6px"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#60a5fa,#3b82f6);border-radius:6px"></div></div>`; box.appendChild(row); }); }
+
+    async function loadAttendance(){ const at=await fetchMock('/api/attendance'); const container=document.getElementById('attendance-list'); container.innerHTML=''; at.slice(0,14).forEach(a=>{ const el=document.createElement('div'); el.style.padding='8px'; el.style.borderBottom='1px solid #f1f5f9'; el.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${a.date}</div><div style="font-weight:700">${a.status}</div></div>`; container.appendChild(el); }); }
+
+    async function loadBehavior(){ const b=await fetchMock('/api/behavior'); const container=document.getElementById('behavior-list'); container.innerHTML=''; b.forEach(it=>{ const el=document.createElement('div'); el.className='ann-item'; el.innerHTML=`<strong>${it.date}</strong><div style="font-size:13px;color:var(--muted)">${it.note}</div>`; container.appendChild(el); }); }
+
+    async function loadEvents(){ const e=await fetchMock('/api/events'); const container=document.getElementById('events-list'); container.innerHTML=''; e.forEach(ev=>{ const el=document.createElement('div'); el.style.padding='8px'; el.style.borderBottom='1px dashed #eef2f7'; el.innerHTML=`<strong>${ev.title}</strong><div style="font-size:13px;color:var(--muted)">${ev.date}</div>`; container.appendChild(el); }); }
+
+    async function loadTeachers(){ const t=await fetchMock('/api/teachers'); const container=document.getElementById('teachers-list'); container.innerHTML=''; t.forEach(tt=>{ const el=document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='8px'; el.innerHTML=`<div><strong>${tt.name}</strong><div style="font-size:12px;color:var(--muted)">${tt.subject}</div></div><div style="display:flex;gap:8px"><a class="btn ghost" href="tel:${tt.contact}">📞 اتصال</a><button class="btn">✉️ رسالة</button></div>`; container.appendChild(el); }); }
+
+    // Init load
+    (async function(){ await loadStudent(); await loadMessages(); await loadAssignments(); await loadGrades(); await loadAttendance(); await loadBehavior(); await loadEvents(); await loadTeachers(); })();
+
+    // Theme toggle
+    document.getElementById('toggle-theme').addEventListener('click', ()=>{ document.documentElement.classList.toggle('dark'); if(document.documentElement.classList.contains('dark')){ document.getElementById('toggle-theme').textContent='☀️'; document.documentElement.style.setProperty('--bg','#0b1220'); document.documentElement.style.setProperty('--card','#0b1220'); document.documentElement.style.setProperty('--muted','#9ca3af'); } else { document.getElementById('toggle-theme').textContent='🌙'; document.documentElement.style.setProperty('--bg','#f5f7fb'); document.documentElement.style.setProperty('--card','#fff'); document.documentElement.style.setProperty('--muted','#6b7280'); } });
+
+    // Print
+    document.getElementById('print-report').addEventListener('click', ()=> window.print());
+
+    // Search simple filter
+    document.getElementById('search').addEventListener('input', (e)=>{ const q=e.target.value.trim(); document.querySelectorAll('#assignments-list .ann-item').forEach(el=>{ el.style.display = q? (el.textContent.includes(q)?'':'none') : '' }); document.querySelectorAll('#messages-list > div').forEach(el=>{ el.style.display = q? (el.textContent.includes(q)?'':'none') : '' }); });
+
+    // Logout actions
+    document.getElementById('logout').addEventListener('click', ()=> alert('تم تسجيل الخروج'));
+    document.getElementById('logout-devices').addEventListener('click', ()=> alert('تم تسجيل الخروج من جميع الأجهزة'));
+
+    // Toggle calendar view (basic show/hide)
+    document.getElementById('toggle-calendar-view').addEventListener('click', ()=>{
+      const calendar = document.getElementById('calendar-month');
+      if(calendar){ calendar.style.display = calendar.style.display === 'none' ? '' : 'none';
+      }
+    });
+  </script>
+</body>
+</html>

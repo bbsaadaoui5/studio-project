@@ -39,6 +39,10 @@ const months = [
     "يوليوز", "غشت", "شتنبر", "أكتوبر", "نونبر", "دجنبر"
 ];
 
+// Client-side feature flag: control access to teacher portal UI elements.
+// Set NEXT_PUBLIC_TEACHER_PORTAL_ENABLED=true in your env to enable.
+const TEACHER_PORTAL_ENABLED = process.env.NEXT_PUBLIC_TEACHER_PORTAL_ENABLED === 'true';
+
 export function Header() {
     // Add state for selectedGrade (for parent portal dialog)
     const [selectedGrade, setSelectedGrade] = useState<string>("");
@@ -136,6 +140,10 @@ export function Header() {
     }
 
     const handleViewTeacherPortal = () => {
+        if (!TEACHER_PORTAL_ENABLED) {
+            toast({ title: "Disabled", description: "Teacher portal is temporarily disabled.", variant: "destructive" });
+            return;
+        }
         if (!viewSelectedTeacher) return;
         window.open(`/teacher/portal/${viewSelectedTeacher}`, '_blank');
         setIsViewTeacherDialogOpen(false);
@@ -143,8 +151,8 @@ export function Header() {
     }
 
     const handleRecordPayment = async () => {
-         if (!selectedStudent || !paymentAmount || paymentAmount <= 0 || !paymentMonth) {
-            toast({ title: "Invalid Input", description: "Please select a student, month, and enter a valid amount.", variant: "destructive" });
+            if (!selectedStudent || !paymentAmount || paymentAmount <= 0 || !paymentMonth) {
+                toast({ title: "إدخال غير صالح", description: "يرجى اختيار طالب، اختيار الشهر، وإدخال مبلغ صالح.", variant: "destructive" });
             return;
         }
 
@@ -258,17 +266,17 @@ export function Header() {
 
 
 
-               <Dialog open={isViewTeacherDialogOpen} onOpenChange={setIsViewTeacherDialogOpen}>
+                 <Dialog open={isViewTeacherDialogOpen} onOpenChange={setIsViewTeacherDialogOpen}>
                  <Tooltip>
                     <TooltipTrigger asChild>
                        <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('header.viewAsTeacher') || 'View as teacher'}>
+                            <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('header.viewAsTeacher') || 'View as teacher'} disabled={!TEACHER_PORTAL_ENABLED}>
                                 <Briefcase className="h-5 w-5" />
                                 <span className="sr-only">{t('header.viewAsTeacher') || 'View as teacher'}</span>
                             </Button>
                         </DialogTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>عرض كأستاذ</TooltipContent>
+                    <TooltipContent>{TEACHER_PORTAL_ENABLED ? 'عرض كأستاذ' : 'بوابة المعلم معطلة'}</TooltipContent>
                 </Tooltip>
                  <DialogContent>
                     <DialogHeader>
@@ -336,6 +344,7 @@ export function Header() {
                        <DialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('header.quickPayments') || 'Quick payments'}>
                                 <Receipt />
+                                    <span className="sr-only">{t('header.quickPayments') || 'Quick payments'}</span>
                             </Button>
                         </DialogTrigger>
                     </TooltipTrigger>

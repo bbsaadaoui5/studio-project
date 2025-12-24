@@ -1,0 +1,25 @@
+// Diagnostic script: list students and key fields
+// Run with: npx ts-node ./tools/list-students.ts
+
+import { getStudents } from "../src/services/studentService";
+
+async function main() {
+  const students = await getStudents();
+  if (!students || students.length === 0) {
+    console.log('No students returned by getStudents()');
+    process.exit(0);
+  }
+
+  console.log(`Found ${students.length} students:`);
+  for (const s of students) {
+    console.log('----------------------------------------');
+    console.log(`id: ${s.id}`);
+    console.log(`name: ${s.name || "" || '[no name]'}`);
+    console.log(`grade: ${s.grade || '[no grade]'}`);
+    console.log(`className: ${s.className || '[no className]'}`);
+    console.log(`status: ${s.status || '[no status]'}`);
+    console.log(`enrollmentDate: ${s.enrollmentDate || '[no enrollmentDate]'}`);
+  }
+}
+
+main().catch(err => { console.error(err); process.exit(1); });

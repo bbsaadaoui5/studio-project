@@ -47,13 +47,17 @@ export default function TeacherReportsPage() {
       </table>
       <div className="bg-white rounded-lg shadow p-4 mb-4">
         <h3 className="font-bold mb-2">إعداد تقرير جديد</h3>
-        <div className="flex flex-col md:flex-row gap-2 items-center">
+          <div className="flex flex-col md:flex-row gap-2 items-center">
+          <label htmlFor="report-student" className="sr-only">اسم الطالب</label>
           <input
+            id="report-student"
+            name="student"
             type="text"
             placeholder="اسم الطالب"
             value={newReport.student}
             onChange={e => setNewReport({ ...newReport, student: e.target.value })}
             className="border rounded px-2 py-1"
+            autoComplete="name"
           />
           <select value={newReport.type} onChange={e => setNewReport({ ...newReport, type: e.target.value })} className="border rounded px-2 py-1">
             <option value="تقرير شهري">تقرير شهري</option>
