@@ -1,0 +1,25 @@
+{
+  "name": "Almawed Parent Portal",
+  "short_name": "Parent Portal",
+  "description": "Parent access to student information and school updates",
+  "start_url": "/parent-portal",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10B981",
+  "orientation": "portrait-primary",
+  "scope": "/parent-portal/",
+  "icons": [
+    {
+      "src": "/parent-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/parent-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ]
+}

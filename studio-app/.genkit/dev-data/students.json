@@ -1,0 +1,58 @@
+
+{
+  "student_01": {
+    "id": "student_01",
+    "name": "Youssef El-Amrani",
+    "email": "youssef.elamrani@example.com",
+    "grade": "10",
+    "className": "A",
+    "parentName": "Leila El-Amrani",
+    "contact": "+212 611-111111",
+    "enrollmentDate": "2023-09-01T08:00:00.000Z",
+    "status": "active"
+  },
+  "student_02": {
+    "id": "student_02",
+    "name": "Salma Khatibi",
+    "email": "salma.khatibi@example.com",
+    "grade": "11",
+    "className": "B",
+    "parentName": "Omar Khatibi",
+    "contact": "+212 622-222222",
+    "enrollmentDate": "2023-09-01T08:00:00.000Z",
+    "status": "active"
+  },
+  "student_03": {
+    "id": "student_03",
+    "name": "Amine Bouziane",
+    "email": "amine.bouziane@example.com",
+    "grade": "9",
+    "className": "C",
+    "parentName": "Khadija Bouziane",
+    "contact": "+212 633-333333",
+    "enrollmentDate": "2024-02-15T08:00:00.000Z",
+    "status": "active"
+  },
+  "student_04": {
+    "id": "student_04",
+    "name": "Fatima Zahra Alaoui",
+    "email": "fatima.alaoui@example.com",
+    "grade": "12",
+    "className": "A",
+    "parentName": "Mohammed Alaoui",
+    "contact": "+212 644-444444",
+    "enrollmentDate": "2024-05-20T08:00:00.000Z",
+    "status": "active"
+  },
+  "student_05": {
+    "id": "student_05",
+    "name": "Mehdi Cherkaoui",
+    "email": "mehdi.cherkaoui@example.com",
+    "grade": "10",
+    "className": "B",
+    "parentName": "Nadia Cherkaoui",
+    "contact": "+212 655-555555",
+    "enrollmentDate": "2024-01-10T08:00:00.000Z",
+    "status": "active"
+  }
+}

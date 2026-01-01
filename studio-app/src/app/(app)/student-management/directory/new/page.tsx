@@ -1,0 +1,480 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { getCoursesByType, getCoursesByGrade } from "@/services/courseService";
+import type { Course } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import {
+  GlassModal,
+  GlassModalContent,
+  GlassModalDescription,
+  GlassModalHeader,
+  GlassModalTitle,
+} from "@/components/ui/glass-modal";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { addStudent } from "@/services/studentService";
+import { enrollStudentInCourses } from "@/services/enrollmentService";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "@/i18n/translation-provider";
+
+const studentSchema = z.object({
+  name: z.string().min(3, "يجب أن يكون الاسم الكامل 3 أحرف على الأقل."),
+  email: z.string().email("الرجاء إدخال بريد إلكتروني صالح.").optional().or(z.literal("")),
+  gender: z.enum(["male", "female"]),
+  studentType: z.enum(["regular", "support"]),
+  grade: z.string().optional(),
+  className: z.string().optional(),
+  parentName: z.string().min(3, "اسم ولي الأمر مطلوب ويجب أن يكون 3 أحرف على الأقل."),
+  contact: z.string().min(10, "الرجاء إدخال رقم هاتف صحيح."),
+  altContact: z.string().optional(),
+  address: z.string().min(10, "الرجاء إدخال عنوان صالح."),
+  dateOfBirth: z.date({ required_error: "الرجاء إدخال تاريخ الميلاد." }),
+  medicalNotes: z.string().optional(),
+  supportCourseId: z.string().optional(),
+  teacher: z.string().optional(),
+  teacherId: z.string().optional(),
+});
+
+export default function NewStudentPage() {
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const form = useForm<z.infer<typeof studentSchema>>({
+    resolver: zodResolver(studentSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      gender: "male",
+      studentType: "regular",
+      grade: "",
+      className: "",
+      parentName: "",
+      contact: "",
+      altContact: "",
+      address: "",
+      dateOfBirth: undefined,
+      medicalNotes: "",
+      supportCourseId: "",
+      teacher: "",
+      teacherId: "",
+    },
+  });
+
+  const studentType = form.watch("studentType");
+  const supportCourseId = form.watch("supportCourseId");
+
+  useEffect(() => {
+    getCoursesByType("support").then((data) => setCourses(data || []));
+  }, []);
+
+  // Auto-populate teacher when support course selection changes
+  useEffect(() => {
+    if (studentType !== "support" || !supportCourseId) {
+      form.setValue("teacher", "");
+      form.setValue("teacherId", "");
+      return;
+    }
+    
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
+    if (course) {
+      const firstTeacher = course.teachers?.[0];
+      if (firstTeacher) {
+        form.setValue("teacher", firstTeacher.name);
+        form.setValue("teacherId", firstTeacher.id || "");
+      } else {
+        form.setValue("teacher", "");
+        form.setValue("teacherId", "");
+      }
+    } else {
+      form.setValue("teacher", "");
+      form.setValue("teacherId", "");
+    }
+  }, [supportCourseId, studentType, courses, form]);
+  
+  // Default teacher to first option when options exist but no teacher selected
+  useEffect(() => {
+    if (studentType !== "support" || !supportCourseId) return;
+    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
+    if (!course) return;
+    const firstTeacher = course?.teachers?.[0];
+    if (firstTeacher && !form.getValues("teacher")) {
+      form.setValue("teacher", firstTeacher.name);
+      form.setValue("teacherId", firstTeacher.id || "");
+    }
+  }, [studentType, supportCourseId, courses, form]);
+
+  const onSubmit = async (values: z.infer<typeof studentSchema>) => {
+    setIsLoading(true);
+    try {
+      let newStudentData = {
+        ...values,
+        dateOfBirth: values.dateOfBirth.toISOString(),
+        grade: values.grade ?? "",
+        className: values.className ?? "",
+        supportCourseId: values.supportCourseId ?? "",
+        teacher: values.teacher ?? "",
+        teacherId: values.teacherId ?? "",
+      };
+      if (values.studentType === "regular") {
+        newStudentData = {
+          ...newStudentData,
+          supportCourseId: "",
+          teacher: "",
+          teacherId: "",
+        };
+      } else if (values.studentType === "support") {
+        newStudentData = {
+          ...newStudentData,
+          grade: "",
+          className: "",
+        };
+      }
+      const studentId = await addStudent(newStudentData);
+      if (values.studentType === "regular" && values.grade) {
+        try {
+          const coursesForGrade = await getCoursesByGrade(values.grade);
+          if (coursesForGrade.length > 0) {
+            const courseIds = coursesForGrade.map((c) => c.id);
+            await enrollStudentInCourses(studentId, courseIds);
+            toast({
+              title: "Student Enrolled & Courses Assigned",
+              description: `Successfully enrolled ${values.name} and assigned them to ${courseIds.length} course(s).`,
+            });
+          } else {
+            toast({
+              title: "Student Enrolled",
+              description: `Successfully enrolled ${values.name}. No courses found for Grade ${values.grade} to auto-enroll.`,
+            });
+          }
+        } catch (enrollmentError) {
+          toast({
+            title: "Student Enrolled, but Courses Failed",
+            description: `Successfully enrolled ${values.name}, but failed to automatically assign courses. Please do it manually.`,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Student Enrolled",
+          description: `Successfully enrolled ${values.name} in the support program.`,
+        });
+      }
+      router.push("/student-management/directory");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to enroll the student. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" asChild>
+          <Link href="/student-management/directory">
+            <ArrowLeft />
+            <span className="sr-only">{t('common.backToDirectory')}</span>
+          </Link>
+        </Button>
+        <h1 className="text-2xl font-bold">{t("students.addNew")}</h1>
+      </div>
+      <div className="glass-card p-6">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2" style={{
+            background: 'var(--primary-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>{t("students.addNewStudent")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t("students.fillFormToEnroll")}
+          </p>
+        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("students.fullName")}</FormLabel>
+                    <FormControl>
+                      <Input className="glass-input" placeholder={t("students.fullNamePlaceholder") || "مثال: يوسف العمراني"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("students.email")}</FormLabel>
+                    <FormControl>
+                      <Input className="glass-input" placeholder={t("students.emailPlaceholder") || "مثال: youssef.elamrani@example.com"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("students.gender")}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="male">{t("students.male")}</SelectItem>
+                        <SelectItem value="female">{t("students.female")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="studentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("students.studentType")}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="regular">{t("students.regular")}</SelectItem>
+                        <SelectItem value="support">{t("students.support")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Regular student fields */}
+              {studentType === "regular" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="grade"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("students.grade")}</FormLabel>
+                        <FormControl>
+                          <Input className="glass-input" placeholder={t("students.gradePlaceholder") || "مثال: 5"} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="className"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("students.className")}</FormLabel>
+                        <FormControl>
+                          <Input className="glass-input" placeholder={t("students.classNamePlaceholder") || "مثال: أ"} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              {/* Support student fields */}
+              {studentType === "support" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="supportCourseId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("students.supportCourse")}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('students.selectCourse')} />
+                              </SelectTrigger>
+                            </FormControl>
+                          <SelectContent>
+                            {courses.map((course) => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="teacher"
+                    render={({ field }) => {
+                      const selectedCourse: Course | undefined = courses.find((c) => c.id === supportCourseId);
+                      const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
+                        ? selectedCourse.teachers
+                        : [];
+                      const hasTeachers = teacherOptions.length > 0;
+                      return (
+                        <FormItem>
+                          <FormLabel>{t("students.teacher")}</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              const selectedTeacher = teacherOptions.find(t => t.name === value);
+                              field.onChange(value);
+                              form.setValue("teacherId", selectedTeacher?.id || "");
+                            }} 
+                            value={field.value || ""} 
+                            disabled={!hasTeachers}
+                          >
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder={hasTeachers ? t('students.selectTeacher') : t('students.noTeachersAvailable')} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {teacherOptions.map((t, idx) => (
+                                <SelectItem key={t.id || t.name || idx} value={t.name}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
+                  />
+                </>
+              )}
+              <FormField
+                control={form.control}
+                name="parentName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("students.parentName")}</FormLabel>
+                    <FormControl>
+                      <Input className="glass-input" placeholder={t("students.parentNamePlaceholder") || "مثال: ليلى العمراني"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="contact"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("students.contact")}</FormLabel>
+                    <FormControl>
+                      <Input className="glass-input" placeholder={t("students.contactPlaceholder") || "مثال: +212 600-000000"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="altContact"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>{t('students.altContact')}</FormLabel>
+                    <FormControl>
+                      <Input className="glass-input" placeholder={t("students.altContactPlaceholder") || "مثال: +212 600-000001"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>{t('students.address')}</FormLabel>
+                    <FormControl>
+                      <Input className="glass-input" placeholder={t("students.addressPlaceholder") || "مثال: 123 شارع رئيسي، الدار البيضاء"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="medicalNotes"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>{t('students.medicalNotes')}</FormLabel>
+                    <FormControl>
+                      <Textarea className="glass-input" placeholder={t("students.medicalNotesPlaceholder") || "مثال: حساسية، أدوية، إلخ."} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{t('students.dateOfBirth')}</FormLabel>
+                        <FormControl>
+                          <Input
+                              className="glass-input"
+                              type="date"
+                              value={field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().substring(0, 10) : ""}
+                              onChange={e => field.onChange(new Date(e.target.value))}
+                              placeholder={t("students.dateOfBirthPlaceholder") || "اختر تاريخ الميلاد"}
+                              aria-label={t('students.dateOfBirth')}
+                            />
+                        </FormControl>
+                        <div className="text-xs text-muted-foreground mt-1">{t('students.dateFormat')}</div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="md:col-span-2 flex justify-end">
+                <Button type="submit" disabled={isLoading} className="btn-gradient btn-click-effect">
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t("students.enrollStudent")}
+                </Button>
+              </div>
+          </form>
+        </Form>
+      </div>
+    </div>
+  );
+}

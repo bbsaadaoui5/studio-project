@@ -1,0 +1,162 @@
+
+"use client";
+
+import { notFound, useParams } from "next/navigation";
+import { useTranslation } from "@/i18n/translation-provider";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Edit, Users, Trash2, Loader2, GraduationCap } from "lucide-react";
+import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import { getCourse } from "@/services/courseService";
+import { Course, Student } from "@/lib/types";
+import { getEnrollmentForCourse } from "@/services/enrollmentService";
+import { getStudent } from "@/services/studentService";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CourseDetailsClient } from "./CourseDetailsClient";
+import { Badge } from "@/components/ui/badge";
+
+export default function CourseDetailsPage() {
+  const params = useParams();
+  const id = params?.id as string;
+  // Hooks must always run in the same order — declare them before early returns
+  const [course, setCourse] = useState<Course | null>(null);
+  const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
+
+    useEffect(() => {
+      if (!id) return;
+
+      const getCourseData = async () => {
+        setIsLoading(true);
+        try {
+          const courseData = await getCourse(id);
+          if (!courseData) {
+              notFound();
+              return;
+          }
+          setCourse(courseData);
+      
+          const enrollment = await getEnrollmentForCourse(id);
+          let students: Student[] = [];
+          if (enrollment && enrollment.studentIds.length > 0) {
+            const studentPromises = enrollment.studentIds.map(sid => getStudent(sid));
+            const studentResults = await Promise.all(studentPromises);
+            students = studentResults.filter(s => s !== null) as Student[];
+          }
+          setEnrolledStudents(students);
+
+        } catch (error) {
+          console.error("Could not fetch course details:", error);
+          // Handle error appropriately, maybe show a toast
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      getCourseData();
+    }, [id]);
+
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+
+    if (!course) {
+      return notFound();
+    }
+
+    const getInitials = (name: string) => {
+      return name.split(' ').map(n => n[0]).join('');
+    }
+
+    return (
+      <div className="flex flex-col gap-6">
+         <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" asChild aria-label={t('common.backToCourses')}>
+          <Link href={`/academic-management/courses/grade/${course.grade}`}>
+            <ArrowLeft />
+            <span className="sr-only">{t('common.backToCourses') || 'Back to courses'}</span>
+          </Link>
+        </Button>
+              <h1 className="text-2xl font-bold">Course Details</h1>
+          </div>
+          <CourseDetailsClient course={course} />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-6">
+              <Card>
+                  <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="text-3xl">{course.name}</CardTitle>
+                            <CardDescription className="text-lg">Taught by {course.teachers?.[0]?.name || 'TBA'}</CardDescription>
+                        </div>
+                        <Badge variant="secondary" className="text-base flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4" />
+                            {course.type === 'academic' ? `Grade ${course.grade}` : 'Support Program'}
+                        </Badge>
+                      </div>
+                  </CardHeader>
+                  <CardContent className="mt-6">
+                      <div className="space-y-6">
+                          <div>
+                              <h3 className="text-lg font-semibold">Description</h3>
+                              <Separator className="my-2" />
+                              <p className="text-muted-foreground">{course.description}</p>
+                          </div>
+                          <div>
+                              <h3 className="text-lg font-semibold">Details</h3>
+                              <Separator className="my-2" />
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <p className="text-muted-foreground">Department</p>
+                                  <p className="font-medium">{course.department}</p>
+                                  <p className="text-muted-foreground">Credits</p>
+                                  <p className="font-medium">{course.credits}</p>
+                                  <p className="text-muted-foreground">Course ID</p>
+                                  <p className="font-medium">{course.id}</p>
+                              </div>
+                          </div>
+                      </div>
+                  </CardContent>
+              </Card>
+          </div>
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                      <Users />
+                      Enrolled Students ({enrolledStudents.length})
+                  </CardTitle>
+                  <CardDescription>Students currently taking this course.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  {enrolledStudents.length > 0 ? (
+                      <div className="space-y-4">
+                          {enrolledStudents.map(student => (
+                              <div key={student.id} className="flex items-center gap-4">
+                                  <Avatar className="h-10 w-10">
+                                      <AvatarImage src={`https://picsum.photos/seed/${student.id}/100/100`} data-ai-hint="student photo" />
+                                      <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                      <p className="font-medium">{student.name}</p>
+                                      <p className="text-sm text-muted-foreground">{student.email}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  ): (
+                      <p className="text-sm text-muted-foreground text-center py-8">No students are currently enrolled in this course.</p>
+                  )}
+              </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+}

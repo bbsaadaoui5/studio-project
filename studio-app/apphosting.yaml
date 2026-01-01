@@ -1,0 +1,15 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  # Increase this value if you'd like to automatically spin up
+  # more instances in response to increased traffic.
+  maxInstances: 1
+  cpu: 1
+  # Increase the timeout for server-side rendering and API requests.
+  # This is useful for long-running AI operations.
+  timeoutSeconds: 120
+
+secretEnv:
+  - secret: GEMINI_API_KEY
+    key: GEMINI_API_KEY

@@ -1,0 +1,57 @@
+key,english_fallback,status
+parentPortal.description,View student information, messages and announcements from the school.,auto-filled
+pp.gradeAndClass,Grade {grade} — Class {className},auto-filled
+assignments.courseLabel,Course: {courseName},auto-filled
+assignments.pointsLabel,Points: {points},auto-filled
+assignments.dueLabel,Due: {date},auto-filled
+calendar.eventsForDay,Events {date},auto-filled
+common.clearFilters,Clear filters,auto-filled
+common.back,Back,auto-filled
+common.noData,No data,auto-filled
+common.loadingLabel,Loading...,auto-filled
+common.department,Department,auto-filled
+common.amount,Amount,auto-filled
+common.month,Month,auto-filled
+common.paymentMethod,Payment method,auto-filled
+common.fullName,Full name,auto-filled
+common.grade,Grade,auto-filled
+common.areYouSure,Are you absolutely sure?,auto-filled
+common.continue,Continue,auto-filled
+common.cannotUndo,This action cannot be undone.,auto-filled
+common.deleting,Deleting...,auto-filled
+attendance.title,Recent attendance,auto-filled
+attendance.record,Attendance record,auto-filled
+attendance.present,Present,auto-filled
+attendance.late,Late,auto-filled
+attendance.absent,Absent,auto-filled
+attendance.exportCsv,Export CSV,auto-filled
+announcements.fetchError,Failed to load announcements.,auto-filled
+report.teacher,Teacher: {teacherName},auto-filled
+courses.noGrades,No grades available yet.,auto-filled
+courses.viewResources,View resources,auto-filled
+support.browseAvailable,Browse available support programs,auto-filled
+support.instructor,Instructor: {name},auto-filled
+files.uploadedDesc,{name} uploaded successfully.,auto-filled
+library.requestedDesc,{title} loaned - due {due},auto-filled
+forums.by,By: {author},auto-filled
+forums.replyEmpty,Please write a reply,auto-filled
+forums.replyAddedTitle,Reply added,auto-filled
+forums.replyAddedDesc,Your reply has been added.,auto-filled
+forums.reported,Reported,auto-filled
+forums.threadNotFound,Thread not found,auto-filled
+forums.repliesTitle,Replies,auto-filled
+forums.noReplies,No replies yet.,auto-filled
+forums.replyPlaceholder,Add your reply here...,auto-filled
+forums.postReplyButton,Post reply,auto-filled
+forums.reportButton,Report,auto-filled
+clubs.scheduleLabel,Schedule: {schedule},auto-filled
+grades.downloadPdf,Download as PDF,auto-filled
+payments.recordedDesc,Recorded payment {amount} {method},auto-filled
+payments.stripeUnavailable,Stripe is not available right now. Try later.,auto-filled
+finance.feeManagement.updatePaymentDetailsFor,Update payment details for {name}.,auto-filled
+finance.feeManagement.setupFeeStructureForGrade,Please setup a fee structure for grade {grade} for the academic year {year}.,auto-filled
+finance.feeManagement.payment.deleteConfirmation,This will permanently delete the payment record of {amount}.,auto-filled
+finance.feeManagement.financeReportsPage.setupFeeStructureForGrade,Please setup a fee structure for grade {grade} for the academic year {year}.,auto-filled
+finance.feeManagement.financeReportsPage.updatePaymentDetailsFor,Update payment details for {name}.,auto-filled
+finance.payment.enterDetails,Enter payment details for {name},auto-filled
+finance.payment.deleteConfirmation,This will permanently delete the payment record of {amount}.,auto-filled

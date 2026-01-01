@@ -1,0 +1,165 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for authentication and authorization
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isStaff() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+    
+    function isTeacher() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'teacher';
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Settings - Admin only write, staff read
+    match /settings/{document} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Staff - Admin full access, staff can read own profile
+    match /staff/{staffId} {
+      allow read: if isAdmin() || isOwner(staffId);
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Students - Staff can read, Admin can write
+    match /students/{studentId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Payroll - Admin only (highly sensitive financial data)
+    match /payroll/{payrollId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() && 
+                       (!resource.data.keys().hasAny(['totalAmount', 'period']) || 
+                        request.resource.data.totalAmount == resource.data.totalAmount);
+      allow delete: if isAdmin();
+    }
+    
+    // Financial structures - Admin only
+    match /feeStructures/{structureId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Payments - Admin and authorized parents
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || 
+                     (isSignedIn() && resource.data.studentId in request.auth.token.studentIds);
+      allow create: if isAdmin() || 
+                       (isSignedIn() && request.resource.data.studentId in request.auth.token.studentIds);
+      allow update, delete: if isAdmin();
+    }
+    
+    // Expenses - Admin only
+    match /expenses/{expenseId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // Parent access tokens - Admin can write, validated reads only
+    match /parentAccessTokens/{tokenId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // Classes - Staff can read, Admin can write
+    match /classes/{classId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Courses - Staff can read, Admin can write
+    match /courses/{courseId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Announcements - Staff can read and create, Admin can do all
+    match /announcements/{announcementId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update, delete: if isAdmin();
+    }
+    
+    // Attendance - Teachers and Admin
+    match /attendance/{attendanceId} {
+      allow read: if isStaff();
+      allow write: if isTeacher() || isAdmin();
+    }
+    
+    // Exams and grades - Teachers and Admin
+    match /exams/{examId} {
+      allow read: if isStaff();
+      allow write: if isTeacher() || isAdmin();
+    }
+    
+    match /grades/{gradeId} {
+      allow read: if isStaff();
+      allow write: if isTeacher() || isAdmin();
+    }
+    
+    // Library resources - Staff can read, Admin can write
+    match /library/{resourceId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Inventory - Staff can read, Admin can write
+    match /inventory/{itemId} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+    
+    // Messages - Staff can read own messages
+    match /messages/{messageId} {
+      allow read: if isStaff() && 
+                     (request.auth.uid == resource.data.senderId || 
+                      request.auth.uid == resource.data.recipientId);
+      allow create: if isStaff();
+      allow update, delete: if isAdmin() || isOwner(resource.data.senderId);
+    }
+    
+    // Audit logs - Admin read only, system writes (via Admin SDK)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only server-side Admin SDK can write
+    }
+    
+    // Support tickets - Staff can read own, Admin can read all
+    match /supportTickets/{ticketId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,545 @@
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { notFound, useParams } from "next/navigation";
+import { Student, Course, TimetableEntry, ReportCard } from "@/lib/types";
+import { validateParentAccessToken } from "@/services/parentService";
+import { getStudent } from "@/services/studentService";
+import { getCoursesForStudent } from "@/services/enrollmentService";
+import { getCourse, getSupportCourses } from "@/services/courseService";
+import { getAttendanceForStudent } from "@/services/attendanceService";
+import { getStudentGradeForCourse } from "@/services/gradeService";
+import { getTimetableForClass } from "@/services/timetableService";
+import { generateReportCard } from "@/services/reportCardService";
+import { Loader2, User, BookOpen, CalendarCheck, ShieldX, Clock, FileText, Wand2, Star } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { GraduationCap } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { getAnnouncements } from "@/services/announcementService";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useTranslation } from "@/i18n/translation-provider";
+import PrototypePortal from "@/components/parent-portal/PrototypePortal";
+
+type CourseWithGrade = Course & { finalGrade: number | null };
+type GeneratingState = "idle" | "fetching" | "compiling" | "writing" | "done";
+
+
+const daysOfWeek = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+const timeSlots = [
+  "08:00 - 09:00",
+  "09:00 - 10:00",
+  "10:00 - 11:00",
+  "11:00 - 12:00",
+  "13:00 - 14:00",
+  "14:00 - 15:00",
+  "15:00 - 16:00",
+];
+
+export default function ParentPortalPage() {
+  const { t } = useTranslation();
+    const params = useParams();
+    const token = params?.token as string | undefined;
+  const { toast } = useToast();
+  
+  const [student, setStudent] = useState<Student | null>(null);
+  const [enrolledCourses, setEnrolledCourses] = useState<CourseWithGrade[]>([]);
+  const [supportCourses, setSupportCourses] = useState<Course[]>([]);
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(true);
+  const [attendance, setAttendance] = useState<any[]>([]);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // State for report card generation
+  const [isReportCardOpen, setIsReportCardOpen] = useState(false);
+  const [reportingPeriod, setReportingPeriod] = useState("");
+  const [generatedReport, setGeneratedReport] = useState<ReportCard | null>(null);
+  const [generatingState, setGeneratingState] = useState<GeneratingState>("idle");
+    const [timetableCompact, setTimetableCompact] = useState(false);
+
+    const generatingMessages: Record<GeneratingState, string> = {
+            idle: t('pp.report.generateAi'),
+            fetching: t('pp.report.fetching'),
+            compiling: t('pp.report.compiling'),
+            writing: t('pp.report.writing'),
+            done: t('pp.report.done'),
+    };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+                const studentId = await validateParentAccessToken(token as string);
+                if (!studentId) {
+                    setIsValidToken(false);
+                    return;
+                }
+        setIsValidToken(true);
+
+        const studentData = await getStudent(studentId);
+        setStudent(studentData);
+        if (!studentData) {
+            setIsValidToken(false);
+            return;
+        }
+
+        const [courseIds, studentAttendance, timetableData, allSupportCourses] = await Promise.all([
+            getCoursesForStudent(studentId),
+            getAttendanceForStudent(studentId),
+            // Timetable API may be external; guard against failures so the whole portal doesn't fail.
+            getTimetableForClass(studentData.grade, studentData.className).catch(() => []),
+            getSupportCourses(),
+        ]);
+        
+        setSupportCourses(allSupportCourses);
+        setTimetable(timetableData);
+        setAttendance(
+          studentAttendance
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 5) // Get last 5 attendance records
+        );
+
+        if (courseIds.length > 0) {
+            const coursePromises = courseIds.map(async (id) => {
+                const course = await getCourse(id);
+                if (!course) return null;
+                const finalGrade = await getStudentGradeForCourse(id, studentId);
+                return { ...course, finalGrade };
+            });
+
+            const courses = await Promise.all(coursePromises);
+            const validCourses = courses.filter(c => c !== null) as CourseWithGrade[];
+            setEnrolledCourses(validCourses);
+        }
+
+      } catch (error) {
+        console.error("Error fetching parent portal data:", error);
+        setIsValidToken(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [token]);
+
+    // Prototype gate: enabled only when NEXT_PUBLIC_ENABLE_PROTOTYPE=true
+    const enablePrototype = process.env.NEXT_PUBLIC_ENABLE_PROTOTYPE === 'true';
+
+    // Load a small set of announcements for the prominent board
+    useEffect(() => {
+        const loadAnnouncements = async () => {
+            if (!token) return;
+            setIsAnnouncementsLoading(true);
+            try {
+                const studentId = await validateParentAccessToken(token as string);
+                if (!studentId) {
+                    setAnnouncements([]);
+                    setIsAnnouncementsLoading(false);
+                    return;
+                }
+                const student = await getStudent(studentId);
+                const all = await getAnnouncements(5);
+                const filtered = all.filter((a: any) => {
+                    if (a.audience && a.audience !== 'both' && a.audience !== 'parents') return false;
+                    if (a.grade && student && String(a.grade) !== String(student.grade)) return false;
+                    if (a.className && student && String(a.className) !== String(student.className)) return false;
+                    // Exclude announcements that contain English letters (A-Z / a-z)
+                    const combined = `${a.title || ''} ${a.content || ''}`;
+                    if (/[A-Za-z]/.test(combined)) return false;
+                    return true;
+                });
+                setAnnouncements(filtered.slice(0,3));
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setIsAnnouncementsLoading(false);
+            }
+        };
+        void loadAnnouncements();
+    }, [token, toast]);
+
+  const handleGenerateReport = async () => {
+    if (!student || !reportingPeriod) {
+                toast({ title: "معلومات مفقودة", description: "الرجاء إدخال فترة التقرير.", variant: "destructive"});
+        return;
+    }
+    setGeneratedReport(null);
+    try {
+        setGeneratingState("fetching");
+        await new Promise(res => setTimeout(res, 500));
+        setGeneratingState("compiling");
+    setGeneratingState("writing");
+    // Use the service to create a (mock) report card object matching the ReportCard type
+    const report = await generateReportCard(student.id, reportingPeriod);
+    await new Promise(res => setTimeout(res, 500));
+    setGeneratedReport(report);
+        setGeneratingState("done");
+    } catch (error) {
+        console.error(error);
+        toast({ title: "خطأ في توليد التقرير", description: "حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.", variant: "destructive"});
+        setGeneratingState("idle");
+    } finally {
+        setTimeout(() => setGeneratingState("idle"), 2000);
+    }
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('');
+  }
+
+    // Map displayed Arabic day names to canonical keys returned by the timetable API
+    const dayKeyMap: Record<string, string> = {
+        'الاثنين': 'Monday',
+        'الثلاثاء': 'Tuesday',
+        'الأربعاء': 'Wednesday',
+        'الخميس': 'Thursday',
+        'الجمعة': 'Friday',
+    }
+
+    const normalizeSlot = (s: string) => (s || '').replace(/\s+/g, '').toLowerCase();
+
+    const getEntryForSlot = (day: string, timeSlot: string) => {
+        const key = dayKeyMap[day] || day;
+        return timetable.find(entry => {
+            const entryDay = entry?.day || '';
+            const entrySlot = entry?.timeSlot || '';
+            // Allow matching by either API key (English) or localized label, and tolerate spacing differences in timeSlot
+            const daysMatch = entryDay === key || entryDay === day;
+            const slotsMatch = normalizeSlot(entrySlot) === normalizeSlot(timeSlot);
+            return daysMatch && slotsMatch;
+        });
+    }
+  
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-muted">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <p className="mt-4 text-foreground">{t('pp.loading.checkingLink')}</p>
+            </div>
+        );
+    }
+
+    if (!isValidToken || !student) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
+                <Card className="w-full max-w-md text-center">
+                        <CardHeader>
+                                <CardTitle className="flex justify-center">
+                                        <ShieldX className="h-16 w-16 text-destructive" />
+                                </CardTitle>
+                <CardTitle className="text-2xl">{t('pp.unauthorized.title')}</CardTitle>
+                <CardDescription>
+                    {t('pp.unauthorized.description')}
+                </CardDescription>
+                        </CardHeader>
+                </Card>
+            </div>
+        );
+    }
+
+        // After validation, render the prototype only when the env gate is enabled.
+        if (enablePrototype && student) {
+            return <PrototypePortal student={student} announcements={announcements} attendance={attendance} timetable={timetable} enrolledCourses={enrolledCourses} supportCourses={supportCourses} />;
+        }
+  
+  const isGenerating = generatingState !== 'idle' && generatingState !== 'done';
+
+  return (
+    <div className="min-h-screen bg-muted/40">
+        <header className="bg-background border-b">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                 <div className="flex items-center gap-2">
+                    <div className="bg-primary rounded-md p-1.5">
+                        <GraduationCap className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <span className="text-lg font-semibold">{t('pp.parentPortal.title')}</span>
+                </div>
+                <div className="text-right text-sm">
+                    <p className="font-semibold">{student.name}</p>
+                    <p className="text-muted-foreground">الصف {student.grade} — الفصل {student.className}</p>
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                        <Link href={`./assignments`}>
+                            <Button size="sm">{t('nav.assignments')}</Button>
+                        </Link>
+                        <Link href={`./calendar`}>
+                            <Button size="sm" variant="outline">{t('nav.calendar')}</Button>
+                        </Link>
+                            <Link href={`./announcements`}>
+                                <Button size="sm" variant="ghost">{t('nav.announcements')}</Button>
+                            </Link>
+                            <Link href={`/communication/messages?withStudentId=${student.id}&parentName=${encodeURIComponent(student.parentName)}`}>
+                                <Button size="sm" variant="ghost">{t('nav.messages')}</Button>
+                            </Link>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main className="container mx-auto p-4 md:p-6 lg:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 flex flex-col gap-6">
+                     <Card>
+                        <CardHeader className="items-center text-center">
+                            <Avatar className="h-24 w-24 mb-4">
+                                <AvatarImage src={`https://picsum.photos/seed/${student.id}/200/200`} data-ai-hint="student photo" />
+                                <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
+                            </Avatar>
+                            <CardTitle className="text-2xl">{student.name}</CardTitle>
+                            <CardDescription>الصف {student.grade} — الفصل {student.className}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Separator className="my-4" />
+                                              <div className="space-y-2 text-sm">
+                                                  <p><span className="font-semibold">{t('student.idLabel')}:</span> {student.id}</p>
+                                                  <p><span className="font-semibold">{t('student.emailLabel')}:</span> {student.email}</p>
+                                                  <p><span className="font-semibold">{t('student.guardianLabel')}:</span> {student.parentName}</p>
+                                                  <p><span className="font-semibold">{t('student.contactLabel')}:</span> {student.contact}</p>
+                                              </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <CalendarCheck />
+                                {t('attendance.title')}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                           {attendance.length > 0 ? (
+                                <div className="space-y-3">
+                                    {attendance.map((att, index) => (
+                                        <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                            <div>
+                                                 <p className="font-medium">{t('attendance.record')}</p>
+                                                 <p className="text-sm text-muted-foreground">{format(new Date(att.date), "PPP")}</p>
+                                            </div>
+                                            <Badge variant={att.status === 'present' ? 'secondary' : (att.status === 'late' ? 'default' : 'destructive')} className="capitalize">
+                                                {att.status === 'present' ? t('attendance.present') : (att.status === 'late' ? t('attendance.late') : t('attendance.absent'))}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                           ) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">لا توجد سجلات حضور.</p>
+                           )}
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                            <CardHeader className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-2">{t('announcements.title')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isAnnouncementsLoading ? (
+                                <p>{t('announcements.loading')}</p>
+                            ) : announcements.length === 0 ? (
+                                <p className="text-muted-foreground">{t('announcements.noUrgent')}</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {announcements.map(a => (
+                                        <article key={a.id} className="p-3 border rounded-md">
+                                            <h3 className="font-semibold">{a.title}</h3>
+                                            <p className="text-sm text-muted-foreground mt-2">{a.content}</p>
+                                            <div className="text-xs text-muted-foreground mt-2">{a.createdAt}</div>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-2">
+                                <BookOpen />
+                                {t('academic.progressTitle')}
+                            </CardTitle>
+                            <Dialog open={isReportCardOpen} onOpenChange={setIsReportCardOpen}>
+                                    <DialogTrigger asChild>
+                                    <Button variant="outline"><FileText /> {t('report.dialog.viewButton')}</Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-3xl">
+                                    <DialogHeader>
+                                        <DialogTitle>{t('report.dialog.title')}</DialogTitle>
+                                        <DialogDescription>
+                                            {t('report.dialog.description')}
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="py-4">
+                                        {!generatedReport && (
+                                            <div className="flex items-end gap-2">
+                                                <div className="flex-1 space-y-2">
+                                                    <Label htmlFor="reporting-period">{t('report.dialog.reportingPeriodLabel')}</Label>
+                                                    <Input 
+                                                        id="reporting-period" 
+                                                        placeholder={t('report.dialog.placeholder')}
+                                                        value={reportingPeriod}
+                                                        onChange={e => setReportingPeriod(e.target.value)}
+                                                    />
+                                                </div>
+                                                <Button onClick={handleGenerateReport} disabled={isGenerating || !reportingPeriod}>
+                                                    {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
+                                                    {generatingMessages[generatingState]}
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {isGenerating && (
+                                            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                                <p className="text-muted-foreground">{generatingMessages[generatingState]}</p>
+                                            </div>
+                                        )}
+                                        {generatedReport && (
+                                           <div className="border rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="text-xl font-bold">{generatedReport.studentName}</h3>
+                                                    <p>{generatedReport.class}</p>
+                                                    <p className="text-muted-foreground">{generatedReport.reportingPeriod}</p>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <h4 className="font-semibold">{t('report.overviewTitle')}</h4>
+                                                        <p className="text-sm text-muted-foreground italic">"{generatedReport.overallSummary}"</p>
+                                                    </div>
+                                                    <Separator />
+                                                    <div className="space-y-3">
+                                                        {generatedReport.courses.map((course, i) => (
+                                                            <div key={i}>
+                                                                <div className="flex justify-between font-semibold">
+                                                                    <p>{course.courseName}</p>
+                                                                    <p>{course.finalGrade}</p>
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground">المدرس: {course.teacherName}</p>
+                                                                <p className="text-sm mt-1">{course.comments}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="secondary" onClick={() => { setIsReportCardOpen(false); setGeneratedReport(null); setReportingPeriod("")}}>{t('report.dialog.closeButton')}</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </CardHeader>
+                        <CardContent>
+                            {enrolledCourses.length > 0 ? (
+                                <div className="space-y-6">
+                                    {enrolledCourses.map(course => (
+                                        <div key={course.id}>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <Link href={`./courses/${course.id}`} className="font-medium text-primary underline">{course.name}</Link>
+                                                    <span className={`font-semibold ${course.finalGrade === null ? 'text-muted-foreground' : course.finalGrade < 50 ? 'text-destructive' : 'text-primary'}`}>
+                                                    {course.finalGrade !== null ? `${course.finalGrade.toFixed(1)}%` : 'غير متوفر'}
+                                                </span>
+                                            </div>
+                                            <Progress value={course.finalGrade} className="h-2" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ): (
+                                <p className="text-sm text-muted-foreground text-center py-8">{t('courses.noGrades')}</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                     <Card>
+                                                <CardHeader className="flex items-center gap-2 justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                                <Clock />
+                                                                <CardTitle>{t('schedule.title')}</CardTitle>
+                                                        </div>
+                                                        <div className="timetable-controls">
+                                                            <div className="timetable-legend">
+                                                                <div className="swatch" style={{background:'#7c3aed'}}></div>
+                                                                <div>مادة — مدرس — قاعة</div>
+                                                            </div>
+                                                            <button className="btn-compact" onClick={() => setTimetableCompact(c => !c)}>{timetableCompact ? 'الوضع العادي' : 'وضع مضغوط'}</button>
+                                                        </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className={`rounded-lg overflow-hidden border parent-timetable ${timetableCompact ? 'compact' : ''}`}>
+                                                        <div className="w-full overflow-auto">
+                                                            <div style={{display:'grid', gridTemplateColumns:'140px repeat(5, minmax(0,1fr))'}} className="text-sm">
+                                                                <div className="p-3 bg-gradient-to-r from-primary to-indigo-500 text-white font-medium">الوقت</div>
+                                                                {daysOfWeek.map(day => (
+                                                                    <div key={day} className="p-3 text-center bg-indigo-50 font-medium">{day}</div>
+                                                                ))}
+
+                                                                {timeSlots.map((timeSlot, idx) => (
+                                                                    <div key={timeSlot} className="contents">
+                                                                        <div className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} p-3 font-mono text-xs`}>{timeSlot}</div>
+                                                                        {daysOfWeek.map(day => {
+                                                                            const entry = getEntryForSlot(day, timeSlot);
+                                                                            return (
+                                                                                <div key={`${day}-${timeSlot}`} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} p-3 align-top`}>
+                                                                                    {entry ? (
+                                                                                        <div className="flex flex-col items-start gap-1 p-3 rounded-lg shadow-sm bg-white border-l-4 border-indigo-400">
+                                                                                            <div className="font-semibold text-indigo-700 text-sm truncate">{entry.courseName}</div>
+                                                                                            <div className="text-xs text-muted-foreground truncate">{entry.teacherName}</div>
+                                                                                            <div className="text-xs text-muted-foreground">
+                                                                                                {entry.location || entry.classroom || entry.venue || (entry as any).room || ''}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div className="text-center text-muted-foreground">-</div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Star />
+                                {t('supportPrograms')}
+                            </CardTitle>
+                            <CardDescription>
+                                {t('supportPrograms.browseAvailable')}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           {supportCourses.length > 0 ? (
+                               <Accordion type="single" collapsible className="w-full">
+                                   {supportCourses.map(course => (
+                                        <AccordionItem value={course.id} key={course.id}>
+                                            <AccordionTrigger>
+                                                <div className="flex flex-col items-start text-left">
+                                                    <p className="font-semibold">{course.name}</p>
+                                                    <p className="text-sm text-muted-foreground">Instructor: {course.teachers?.[0]?.name || 'TBA'}</p>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <p className="text-sm text-muted-foreground">{course.description}</p>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                   ))}
+                               </Accordion>
+                           ): (
+                                <p className="text-sm text-muted-foreground text-center py-8">{t('supportPrograms.noAvailable')}</p>
+                           )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </main>
+    </div>
+  );
+}

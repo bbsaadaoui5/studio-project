@@ -1,0 +1,10 @@
+[33ma0359ee8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m "Find where this invalid regex is being created:
+[33m1bc3f961[m Here are the concrete solutions for the errors you're seeing in your Fir
+[33mbd72dfc4[m // Incorrect code: {     value=3, // This is the problem line     label:
+[33me619b834[m The app isn't starting. Please investigate what could be wrong based on
+[33md74a3655[m The app isn't starting. Please investigate what could be wrong based on
+[33me94e448a[m Try fixing this error: `Console Error: A tree hydrated but some attribut
+[33m510f3267[m did you fix Grade N/A in Classes Overview
+[33md15282a6[m did you fix this : (Grade N/A) in (Manage Courses by Grade)
+[33m50fa0bd3[m not yet
+[33m6c1f3f85[m why you can't fix it ?
