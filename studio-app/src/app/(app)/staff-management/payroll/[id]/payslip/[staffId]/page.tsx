@@ -593,8 +593,8 @@ export default function PayslipPage() {
                             <table className="breakdown-table">
                                 <thead>
                                     <tr>
-                                        <th width="60%">البند</th>
-                                        <th width="40%">المبلغ (درهم)</th>
+                                        <th style={{ width: "60%" }}>البند</th>
+                                        <th style={{ width: "40%" }}>المبلغ (درهم)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -618,8 +618,8 @@ export default function PayslipPage() {
                             <table className="breakdown-table">
                                 <thead>
                                     <tr>
-                                        <th width="60%">البند</th>
-                                        <th width="40%">المبلغ (درهم)</th>
+                                        <th style={{ width: "60%" }}>البند</th>
+                                        <th style={{ width: "40%" }}>المبلغ (درهم)</th>
                                     </tr>
                                 </thead>
                                 <tbody>

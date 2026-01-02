@@ -511,11 +511,11 @@ export default function PayrollSummaryPage() {
                 <table className="details-table">
                     <thead>
                         <tr>
-                            <th width="25%">اسم الموظف | Name</th>
-                            <th width="20%">الراتب الأساسي | Gross</th>
-                            <th width="20%">الاستقطاعات | Deductions</th>
-                            <th width="20%">الصافي | Net</th>
-                            <th width="15%">الإجراءات | Actions</th>
+                            <th style={{ width: "25%" }}>اسم الموظف | Name</th>
+                            <th style={{ width: "20%" }}>الراتب الأساسي | Gross</th>
+                            <th style={{ width: "20%" }}>الاستقطاعات | Deductions</th>
+                            <th style={{ width: "20%" }}>الصافي | Net</th>
+                            <th style={{ width: "15%" }}>الإجراءات | Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -544,9 +544,9 @@ export default function PayrollSummaryPage() {
                 <table className="details-table">
                     <thead>
                         <tr>
-                            <th width="40%">البند | Item</th>
-                            <th width="30%">الوصف | Description</th>
-                            <th width="30%">المبلغ | Amount (DH)</th>
+                            <th style={{ width: "40%" }}>البند | Item</th>
+                            <th style={{ width: "30%" }}>الوصف | Description</th>
+                            <th style={{ width: "30%" }}>المبلغ | Amount (DH)</th>
                         </tr>
                     </thead>
                     <tbody>
