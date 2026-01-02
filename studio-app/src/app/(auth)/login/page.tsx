@@ -280,6 +280,20 @@ export default function LoginPage() {
                 ? (isLoading ? t("auth.sendingReset") : t("auth.sendReset"))
                 : (isLoading ? t("auth.verifyingCode") : t("auth.verifyAndLogin"))}
           </Button>
+          
+          {/* Sign Up Link */}
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">
+              {t('auth.noAccount') || 'Don\'t have an account?'}{' '}
+            </span>
+            <button
+              type="button"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+              onClick={() => router.push('/setup')}
+            >
+              {t('auth.signup') || 'Sign up here'}
+            </button>
+          </div>
         </form>
       </CardContent>
     </Card>

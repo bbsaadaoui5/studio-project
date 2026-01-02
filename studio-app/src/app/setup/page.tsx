@@ -162,6 +162,18 @@ export default function SetupPage() {
                 {isLoading ? "Creating Account..." : "Create Admin Account"}
             </Button>
             </form>
+            
+            {/* Link to Login Page */}
+            <div className="text-center text-sm mt-4">
+              <span className="text-muted-foreground">Already have an account?{' '}</span>
+              <button
+                type="button"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+                onClick={() => router.push('/(auth)/login')}
+              >
+                Log in here
+              </button>
+            </div>
         </CardContent>
         </Card>
     </main>

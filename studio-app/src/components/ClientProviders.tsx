@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { TranslationProvider } from '@/i18n/translation-provider';
+import { AuthProvider } from '@/hooks/use-auth';
 import { InstallAppButton } from '@/components/install-app-button';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -32,10 +33,12 @@ export default function ClientProviders({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <TranslationProvider initialLanguage="ar">
-      {children}
-      <InstallAppButton />
-      <Toaster />
-    </TranslationProvider>
+    <AuthProvider>
+      <TranslationProvider initialLanguage="ar">
+        {children}
+        <InstallAppButton />
+        <Toaster />
+      </TranslationProvider>
+    </AuthProvider>
   );
 }
