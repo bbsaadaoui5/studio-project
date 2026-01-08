@@ -15,7 +15,7 @@ export default function RootPage() {
         router.push('/dashboard');
       } else {
         // If not authenticated, redirect to login
-        router.push('/(auth)/login');
+        router.push('/login');
       }
     }
   }, [user, loading, router]);
