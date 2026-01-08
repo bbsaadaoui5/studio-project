@@ -34,12 +34,12 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-    <body className={`${inter.variable} ${cairo.variable} font-body antialiased overflow-x-hidden`}>
+    <body className={`${inter.variable} ${cairo.variable} font-body antialiased`}>
   <FirebaseInitializer />
   <FirebaseNotConfiguredBanner />
       {/* Skip link for keyboard users */}
       <a href="#main-content" className="skip-link sr-only-focusable">تخطي إلى المحتوى</a>
-      <main id="main-content" role="main" aria-label="المحتوى الرئيسي" className="w-full">
+      <main id="main-content" role="main" aria-label="المحتوى الرئيسي">
             {/* Server-rendered H1: use an inline off-screen style so it's present
                 in the server HTML even if Tailwind utilities or client CSS
                 haven't loaded yet. This guarantees axe finds a level-one
