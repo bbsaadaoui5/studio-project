@@ -153,14 +153,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <>
       <Card className="w-full max-w-md shadow-xl border border-slate-200/70 bg-white/95 backdrop-blur-sm">
         <h1 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h1>
         <h2 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h2>
-        <CardHeader className="text-center space-y-4">
+        <CardHeader className="text-center space-y-3 sm:space-y-4">
           <div className="mx-auto flex flex-col items-center justify-center">
-            <div className="flex flex-col items-center justify-center h-28 w-28 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 transition-all duration-300 animate-pulse">
-              <Image src="/icon-192.png" alt="" aria-hidden className="h-16 w-16 drop-shadow-lg" width={64} height={64} />
+            <div className="flex flex-col items-center justify-center h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 transition-all duration-300 animate-pulse">
+              <Image src="/icon-192.png" alt="" aria-hidden className="h-12 sm:h-16 w-12 sm:w-16 drop-shadow-lg" width={64} height={64} />
               <p className="text-white font-black text-sm mt-2 leading-none px-1" style={{ 
                 fontFamily: "'Arabic Typesetting', 'Simplified Arabic', 'Traditional Arabic', serif",
                 fontWeight: 900,
@@ -175,15 +175,15 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900">
             تسجيل الدخول
           </CardTitle>
-          <CardDescription className="text-slate-600 text-sm">
+          <CardDescription className="text-slate-600 text-xs sm:text-sm">
             أدخل بياناتك للوصول إلى لوحة التحكم
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5 text-right">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 text-right">
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>
               <Input
@@ -244,6 +244,6 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }
