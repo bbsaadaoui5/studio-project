@@ -48,7 +48,7 @@ const supportStudentSchema = z.object({
   address: z.string().min(10, "Please enter a valid address."),
   dateOfBirth: z.string().min(10, "A date of birth is required."),
   medicalNotes: z.string().optional(),
-  supportCourseId: z.string().min(1, "Please select a support course."),
+  supportCourseIds: z.array(z.string()).min(1, "Please select at least one support course."), // Changed to array
   teacher: z.string().min(1, "Teacher is required."),
 });
 
@@ -71,7 +71,7 @@ export default function NewSupportStudentPage() {
       altContact: "",
       address: "",
       medicalNotes: "",
-      supportCourseId: "",
+      supportCourseIds: [], // Changed to array
       teacher: "",
       dateOfBirth: "",
     },
@@ -83,8 +83,9 @@ export default function NewSupportStudentPage() {
 
   // Auto-fill teacher when course changes
   useEffect(() => {
-    const courseId = form.watch("supportCourseId");
-    const course = courses.find((c) => c.id === courseId);
+    const courseIds = form.watch("supportCourseIds");
+    const courseId = courseIds && courseIds.length > 0 ? courseIds[0] : null;
+    const course = courseId ? courses.find((c) => c.id === courseId) : null;
     if (course) {
       const firstTeacher = course.teachers?.[0]?.name || '';
       form.setValue("teacher", firstTeacher);
@@ -94,19 +95,32 @@ export default function NewSupportStudentPage() {
       setSelectedTeacher("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.watch("supportCourseId"), courses]);
+  }, [form.watch("supportCourseIds"), courses]);
 
   const onSubmit = async (values: z.infer<typeof supportStudentSchema>) => {
     setIsLoading(true);
     try {
+      const teachers = (values.supportCourseIds || []).map((courseId) => {
+        const course = courses.find((c) => c.id === courseId);
+        const firstTeacher = course?.teachers?.[0];
+        return {
+          courseId,
+          teacherId: firstTeacher?.id || "",
+          teacherName: firstTeacher?.name || "",
+        };
+      });
+
       const newStudentData = {
         ...values,
         // narrow to the literal union expected by NewStudent
         studentType: "support" as const,
         dateOfBirth: values.dateOfBirth,
         // Support students may not have a formal grade/class; provide safe defaults
-        grade: values.supportCourseId ? (values.supportCourseId as string) : "",
+        grade: values.supportCourseIds && values.supportCourseIds.length > 0 ? (values.supportCourseIds[0] as string) : "",
         className: '',
+        teachers,
+        teacher: teachers[0]?.teacherName || values.teacher || "",
+        teacherId: teachers[0]?.teacherId || values.teacherId || "",
       } as Parameters<typeof addStudent>[0];
       await addStudent(newStudentData);
       toast({
@@ -196,24 +210,32 @@ export default function NewSupportStudentPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="supportCourseId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Support Course</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select a course" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {courses.map((course) => (
-                          <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem className="md:col-span-2">
+                <FormLabel>Support Courses (Select one or more)</FormLabel>
+                <div className="space-y-2 mt-2">
+                  {courses.map((course) => (
+                    <div key={course.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`course-${course.id}`}
+                        checked={(form.watch("supportCourseIds") || []).includes(course.id)}
+                        onChange={(e) => {
+                          const currentIds = form.watch("supportCourseIds") || [];
+                          if (e.target.checked) {
+                            form.setValue("supportCourseIds", [...currentIds, course.id]);
+                          } else {
+                            form.setValue("supportCourseIds", currentIds.filter(id => id !== course.id));
+                          }
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor={`course-${course.id}`} className="text-sm cursor-pointer">
+                        {course.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </FormItem>
               <FormField
                 control={form.control}
                 name="teacher"

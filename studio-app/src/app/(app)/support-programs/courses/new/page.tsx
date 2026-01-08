@@ -36,6 +36,7 @@ export default function NewSupportCoursePage() {
     name: z.string().min(3, t('courses.nameMinLength')),
     teacher: z.string().min(1, t('courses.selectTeacher')),
     department: z.string().min(1, t('courses.selectDepartment')),
+    category: z.enum(["academic", "skills"], { required_error: "يجب اختيار تصنيف البرنامج" }),
     description: z.string(),
   });
   const form = useForm<z.infer<typeof courseSchema>>({
@@ -44,6 +45,7 @@ export default function NewSupportCoursePage() {
       name: "",
       teacher: "",
       department: "",
+      category: "academic",
       description: "",
     },
   });
@@ -62,6 +64,7 @@ export default function NewSupportCoursePage() {
         ...values,
         teachers: [{ id: '', name: values.teacher }],
         type: "support",
+        category: values.category,
         grade: "N/A", // Not applicable for support courses
         credits: 0, // Not applicable for support courses
       });
@@ -144,6 +147,28 @@ export default function NewSupportCoursePage() {
                   {teachers.length === 0 && (
                     <div className="text-xs text-red-500 mt-1">لا يوجد أساتذة برامج الدعم حالياً، يرجى إضافة أستاذ أولاً.</div>
                   )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* تصنيف البرنامج */}
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>تصنيف البرنامج</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر التصنيف" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="academic">📚 دعم أكاديمي</SelectItem>
+                        <SelectItem value="skills">🎨 مهارات حياتية</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

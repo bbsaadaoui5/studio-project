@@ -230,7 +230,7 @@ export function Header() {
                                                         <SelectValue placeholder={t('header.selectGrade') + '...'} />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {[...new Set(students.map(s => s.grade))].sort().map(grade => (
+                                                        {[...new Set(students.map(s => s.grade))].filter(grade => grade && grade.trim() !== "").sort().map(grade => (
                                                             <SelectItem key={grade} value={grade}>{grade}</SelectItem>
                                                         ))}
                                                     </SelectContent>

@@ -137,34 +137,36 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="md:col-span-1">
-                 <Card>
-                    <CardContent className="p-2">
-                        <nav aria-label={t('settings.navigation') || 'إعدادات'} className="flex flex-col gap-1">
-                             {settingsMenu.map((item) => (
-                                <Button 
-                                    key={item.id} 
-                                    variant={activeTab === item.id ? "secondary" : "ghost"}
-                                    className="justify-start text-right"
-                                    onClick={() => setActiveTab(item.id as SettingsTab)}
-                                    disabled={item.disabled}
-                                >
-                                    <item.icon className="ml-2 h-4 w-4" />
-                                    {item.label}
-                                </Button>
-                             ))}
-                        </nav>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="md:col-span-3">
-                {/* Page-level heading to preserve heading order for accessibility
-                    (h1 exists at root; add an h2 so subsequent h3 CardTitle does
-                    not skip levels). Use an sr-only heading so visual layout
-                    remains unchanged. */}
-                <h2 className="sr-only">{t('settings.title') || 'الإعدادات'}</h2>
-                {renderContent()}
+        <div className="min-h-screen bg-slate-50 p-4 md:p-6 overflow-x-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-[260px,1fr] gap-4 md:gap-6 max-w-6xl mx-auto items-start">
+                <div className="w-full md:sticky md:top-6 md:self-start">
+                     <Card className="w-full">
+                        <CardContent className="p-2">
+                            <nav aria-label={t('settings.navigation') || 'إعدادات'} className="flex flex-col gap-2">
+                                 {settingsMenu.map((item) => (
+                                    <Button 
+                                        key={item.id} 
+                                        variant={activeTab === item.id ? "secondary" : "ghost"}
+                                        className="w-full justify-between text-right whitespace-normal break-words"
+                                        onClick={() => setActiveTab(item.id as SettingsTab)}
+                                        disabled={item.disabled}
+                                    >
+                                        <span className="flex-1 text-right">{item.label}</span>
+                                        <item.icon className="ml-2 h-4 w-4 shrink-0" />
+                                    </Button>
+                                 ))}
+                            </nav>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="min-w-0">
+                    {/* Page-level heading to preserve heading order for accessibility
+                        (h1 exists at root; add an h2 so subsequent h3 CardTitle does
+                        not skip levels). Use an sr-only heading so visual layout
+                        remains unchanged. */}
+                    <h2 className="sr-only">{t('settings.title') || 'الإعدادات'}</h2>
+                    {renderContent()}
+                </div>
             </div>
         </div>
     )

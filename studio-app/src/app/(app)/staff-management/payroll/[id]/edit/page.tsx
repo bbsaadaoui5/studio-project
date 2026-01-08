@@ -48,7 +48,7 @@ export default function EditPayrollPage() {
             }
         };
         fetchPayroll();
-    }, [id, toast]);
+    }, [id, toast, t]);
 
     if (!id) { return <div>{t('common.idNotFound')}</div>; }
 

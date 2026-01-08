@@ -15,12 +15,12 @@ const getNextStudentId = async (): Promise<string> => {
 
   return runTransaction(db, async (transaction) => {
     const counterDoc = await transaction.get(counterRef);
-        let nextId = 2024001;
+        let nextId = 1;
         if (counterDoc.exists()) {
             nextId = counterDoc.data().currentId + 1;
         }
         transaction.set(counterRef, { currentId: nextId }, { merge: true });
-        return `STU${nextId}`;
+        return `STU${String(nextId).padStart(3, '0')}`;
     });
 };
 
@@ -34,6 +34,9 @@ export const addStudent = async (studentData: Omit<NewStudent, 'id' | 'status' |
   
   const newStudentData = {
     ...studentData,
+    // Ensure arrays exist to avoid undefined in Firestore
+    supportCourseIds: studentData.supportCourseIds || [],
+    teachers: studentData.teachers || [],
     idNumber: studentId,
     id: studentId,
     status: "active" as const,

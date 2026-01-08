@@ -53,6 +53,7 @@ export default function EditCoursePage() {
     name: z.string().min(3, t('courses.nameMinLength') || "يجب أن يكون اسم المقرر 3 أحرف على الأقل."),
     teacher: z.string().min(3, t('courses.teacherNameMinLength') || "يجب أن يكون اسم الأستاذ 3 أحرف على الأقل."),
     department: z.string().min(1, t('courses.selectDepartment') || "يرجى اختيار القسم."),
+    category: z.enum(["academic", "skills"], { required_error: "يجب اختيار تصنيف البرنامج" }),
     description: z.string().min(10, t('courses.descriptionMinLength') || "يجب أن يكون الوصف 10 أحرف على الأقل."),
   });
 
@@ -62,6 +63,7 @@ export default function EditCoursePage() {
       name: '',
       teacher: '',
       department: '',
+      category: 'academic',
       description: '',
     },
   });
@@ -84,6 +86,7 @@ export default function EditCoursePage() {
             // Derive a single teacher name from the teachers array if present
             teacher: fetchedCourse.teachers?.[0]?.name || '',
             department: fetchedCourse.department ?? '',
+            category: fetchedCourse.category ?? 'academic',
             description: fetchedCourse.description ?? '',
           };
           form.reset(safeCourse);
@@ -206,6 +209,28 @@ export default function EditCoursePage() {
                     <FormControl>
                       <Input placeholder="مثال: فاطمة الفهري" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* تصنيف البرنامج */}
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>تصنيف البرنامج</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر التصنيف" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="academic">📚 دعم أكاديمي</SelectItem>
+                        <SelectItem value="skills">🎨 مهارات حياتية</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

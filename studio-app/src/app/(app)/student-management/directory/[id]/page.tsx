@@ -37,13 +37,14 @@ export default function StudentProfilePage() {
                 return;
             }
             setStudent(studentData);
-            // If support program, fetch course
-      if (studentData.studentType === 'support' && studentData.supportCourseId) {
-        const course = await getCourse(studentData.supportCourseId);
-        // compute teacher display from teachers array if available
-        if (course) {
+            // If support program, fetch courses
+      if (studentData.studentType === 'support' && studentData.supportCourseIds && studentData.supportCourseIds.length > 0) {
+        const coursePromises = studentData.supportCourseIds.map(courseId => getCourse(courseId));
+        const coursesData = await Promise.all(coursePromises);
+        // Store the first course for backward compatibility
+        if (coursesData.length > 0 && coursesData[0]) {
+          const course = coursesData[0];
           const teacherName = course.teachers?.[0]?.name || '';
-          // do not mutate fetched course object; store a small derived view
           setSupportCourse({ ...course, teacher: teacherName });
         } else {
           setSupportCourse(null);

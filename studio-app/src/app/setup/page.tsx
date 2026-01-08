@@ -169,7 +169,7 @@ export default function SetupPage() {
               <button
                 type="button"
                 className="font-medium text-primary underline-offset-4 hover:underline"
-                onClick={() => router.push('/(auth)/login')}
+                onClick={() => router.push('/login')}
               >
                 Log in here
               </button>

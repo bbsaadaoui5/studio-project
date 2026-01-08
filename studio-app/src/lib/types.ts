@@ -7,7 +7,9 @@ export type Student = {
   email?: string; // Made optional
   gender: "male" | "female";
   studentType: "regular" | "support";
-  supportCourseId?: string;
+  supportCourseIds?: string[]; // Changed to array for multiple support programs
+  // Optional mapping of teacher per support course (courseId -> teacher)
+  teachers?: { courseId: string; teacherId?: string; teacherName?: string }[];
   teacher?: string;
   teacherId?: string;
   grade: string;
@@ -40,6 +42,7 @@ export type Course = {
   department: string;
   grade: string;
   type: "academic" | "support";
+  category?: "academic" | "skills"; // For support programs: academic (دعم أكاديمي) or skills (مهارات)
   createdAt: string;
 };
 

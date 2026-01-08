@@ -46,7 +46,7 @@ export default function PayrollPage() {
         } finally {
             setIsLoadingHistory(false);
         }
-    }, [toast]);
+    }, [toast, t]);
 
     useEffect(() => {
         void fetchHistory();

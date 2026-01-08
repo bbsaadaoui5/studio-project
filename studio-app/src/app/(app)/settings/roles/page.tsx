@@ -186,7 +186,7 @@ export default function RolesManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 overflow-x-hidden">
       <div className="mx-auto max-w-5xl">
         {/* Back Button */}
         <Link href="/settings">

@@ -9,6 +9,8 @@ import {
   query,
   orderBy,
   updateDoc,
+  deleteDoc,
+  getDoc,
 } from "firebase/firestore";
 import type { Exam } from "@/lib/types";
 
@@ -53,5 +55,53 @@ export const getExams = async (): Promise<Exam[]> => {
   } catch (error) {
     console.error("Error getting exams:", error);
     throw new Error("Failed to get exams.");
+  }
+};
+
+/**
+ * Gets a single exam by ID.
+ * @param examId - The ID of the exam.
+ * @returns The exam, or null if not found.
+ */
+export const getExam = async (examId: string): Promise<Exam | null> => {
+  try {
+    if (!db) return null;
+    const docRef = doc(db, EXAMS_COLLECTION, examId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? (docSnap.data() as Exam) : null;
+  } catch (error) {
+    console.error("Error getting exam:", error);
+    return null;
+  }
+};
+
+/**
+ * Updates an existing exam.
+ * @param examId - The ID of the exam.
+ * @param updates - Partial exam data to update.
+ */
+export const updateExam = async (examId: string, updates: Partial<NewExam>): Promise<void> => {
+  try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot update exam.');
+    const docRef = doc(db, EXAMS_COLLECTION, examId);
+    await updateDoc(docRef, updates);
+  } catch (error) {
+    console.error("Error updating exam:", error);
+    throw new Error("Failed to update exam.");
+  }
+};
+
+/**
+ * Deletes an exam.
+ * @param examId - The ID of the exam.
+ */
+export const deleteExam = async (examId: string): Promise<void> => {
+  try {
+    if (!db) throw new Error('Firestore is not initialized. Cannot delete exam.');
+    const docRef = doc(db, EXAMS_COLLECTION, examId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting exam:", error);
+    throw new Error("Failed to delete exam.");
   }
 };

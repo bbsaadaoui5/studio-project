@@ -94,8 +94,8 @@ export default function EditStaffPage() {
         }
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to fetch staff data.",
+          title: "خطأ",
+          description: "فشل في تحميل بيانات الموظف.",
           variant: "destructive",
         });
       } finally {
@@ -113,14 +113,14 @@ export default function EditStaffPage() {
         dateOfBirth: values.dateOfBirth.toISOString(),
       });
       toast({
-        title: "Staff Member Updated",
-        description: `Successfully updated ${values.name}'s record.`,
+        title: "تم تحديث الموظف",
+        description: `تم تحديث بيانات ${values.name} بنجاح.`,
       });
       router.push(`/staff-management/directory/${id}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update the staff member. Please try again.",
+        title: "خطأ",
+        description: "فشل في تحديث بيانات الموظف. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {

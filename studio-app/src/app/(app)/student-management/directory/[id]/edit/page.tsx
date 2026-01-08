@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, notFound, useParams } from "next/navigation";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
@@ -47,7 +47,7 @@ const studentSchema = z.object({
   studentType: z.enum(["regular", "support"]),
   grade: z.string(),
   className: z.string(),
-  supportCourseId: z.string().optional(),
+  supportCourseIds: z.array(z.string()).optional(), // Changed to array
   teacher: z.string().optional(),
   teacherId: z.string().optional(),
   parentName: z.string().min(3, "Parent/Guardian name is required."),
@@ -61,9 +61,9 @@ const studentSchema = z.object({
 }).refine(data => data.studentType === 'support' || (data.grade && data.className), {
     message: "Grade and Class are required for regular students.",
     path: ["grade"],
-}).refine(data => data.studentType === 'regular' || (!!data.supportCourseId && !!data.teacher), {
-    message: "Support course and teacher are required for support students.",
-    path: ["supportCourseId"],
+}).refine(data => data.studentType === 'regular' || ((data.supportCourseIds || []).length > 0 && !!data.teacher), {
+    message: "Support courses and teacher are required for support students.",
+    path: ["supportCourseIds"],
 });
 
 const years = Array.from({ length: 70 }, (_, i) => new Date().getFullYear() - 3 - i);
@@ -99,7 +99,10 @@ export default function EditStudentPage() {
   });
 
   const studentType = form.watch("studentType");
-  const supportCourseId = form.watch("supportCourseId");
+  const supportCourseIds = useMemo(
+    () => form.watch("supportCourseIds") || [],
+    [form]
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -115,7 +118,7 @@ export default function EditStudentPage() {
             medicalNotes: fetchedStudent.medicalNotes || '',
             altContact: fetchedStudent.altContact || '',
             email: fetchedStudent.email || '',
-            supportCourseId: fetchedStudent.supportCourseId || '',
+            supportCourseIds: fetchedStudent.supportCourseIds || [], // Changed to array
             teacher: fetchedStudent.teacher || '',
             teacherId: fetchedStudent.teacherId || '',
           });
@@ -142,12 +145,13 @@ export default function EditStudentPage() {
 
   // Auto-populate teacher when support course changes
   useEffect(() => {
-    if (studentType !== 'support' || !supportCourseId) {
+    if (studentType !== 'support' || supportCourseIds.length === 0) {
       form.setValue('teacher', '');
       form.setValue('teacherId', '');
       return;
     }
-    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
+    const firstCourseId = supportCourseIds[0];
+    const course: Course | undefined = courses.find((c) => c.id === firstCourseId);
     if (course) {
       const firstTeacher = course.teachers?.[0];
       if (firstTeacher) {
@@ -161,30 +165,45 @@ export default function EditStudentPage() {
       form.setValue('teacher', '');
       form.setValue('teacherId', '');
     }
-  }, [studentType, supportCourseId, courses, form]);
+  }, [studentType, supportCourseIds, courses, form]);
 
   // Default teacher to first option when options exist but no teacher selected
   useEffect(() => {
-    if (studentType !== 'support' || !supportCourseId) return;
-    const course: Course | undefined = courses.find((c) => c.id === supportCourseId);
+    if (studentType !== 'support' || supportCourseIds.length === 0) return;
+    const firstCourseId = supportCourseIds[0];
+    const course: Course | undefined = courses.find((c) => c.id === firstCourseId);
     if (!course) return;
     const firstTeacher = course?.teachers?.[0];
     if (firstTeacher && !form.getValues('teacher')) {
       form.setValue('teacher', firstTeacher.name);
       form.setValue('teacherId', firstTeacher.id || '');
     }
-  }, [studentType, supportCourseId, courses, form]);
+  }, [studentType, supportCourseIds, courses, form]);
 
   async function onSubmit(values: z.infer<typeof studentSchema>) {
     setIsSaving(true);
     try {
+      const teachers = (values.supportCourseIds || []).map((courseId) => {
+        const course = courses.find((c) => c.id === courseId);
+        const firstTeacher = course?.teachers?.[0];
+        return {
+          courseId,
+          teacherId: firstTeacher?.id || "",
+          teacherName: firstTeacher?.name || "",
+        };
+      });
+
       const dataToUpdate = {
         ...values,
         grade: values.studentType === 'regular' ? values.grade : 'N/A',
         className: values.studentType === 'regular' ? values.className : 'N/A',
-        supportCourseId: values.studentType === 'support' ? (values.supportCourseId || '') : '',
-        teacher: values.studentType === 'support' ? (values.teacher || '') : '',
-        teacherId: values.studentType === 'support' ? (values.teacherId || '') : '',
+        // Always persist selected support programs for any student type
+        supportCourseIds: values.supportCourseIds || [],
+        // Auto-map teachers from selected courses
+        teachers,
+        // Legacy single teacher fields (derive from first selected)
+        teacher: teachers[0]?.teacherName || values.teacher || '',
+        teacherId: teachers[0]?.teacherId || values.teacherId || '',
         dateOfBirth: values.dateOfBirth.toISOString(),
         medicalNotes: values.medicalNotes || '',
         altContact: values.altContact || '',
@@ -434,68 +453,76 @@ export default function EditStudentPage() {
                   />
                 </>
               )}
+              {/* دعم: اختيار المقررات */}
+              <FormItem className="md:col-span-2">
+                <FormLabel>مقررات الدعم</FormLabel>
+                <div className="space-y-2 mt-2">
+                  {courses.map((course) => (
+                    <div key={course.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`course-${course.id}`}
+                        checked={(supportCourseIds || []).includes(course.id)}
+                        onChange={(e) => {
+                          const currentIds = supportCourseIds || [];
+                          if (e.target.checked) {
+                            form.setValue("supportCourseIds", [...currentIds, course.id]);
+                          } else {
+                            form.setValue("supportCourseIds", currentIds.filter(id => id !== course.id));
+                          }
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor={`course-${course.id}`} className="text-sm cursor-pointer">
+                        {course.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </FormItem>
+
+              {/* اختيار المعلم: يظهر فقط لطلاب الدعم */}
               {studentType === 'support' && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="supportCourseId"
-                    render={({ field }) => (
+                <FormField
+                  control={form.control}
+                  name="teacher"
+                  render={({ field }) => {
+                    const firstCourseId = (supportCourseIds && supportCourseIds.length > 0) ? supportCourseIds[0] : null;
+                    const selectedCourse: Course | undefined = firstCourseId 
+                      ? courses.find((c) => c.id === firstCourseId)
+                      : undefined;
+                    const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
+                      ? selectedCourse.teachers
+                      : [];
+                    const hasTeachers = teacherOptions.length > 0;
+                    return (
                       <FormItem>
-                        <FormLabel>مقرر الدعم</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value || ''}>
+                        <FormLabel>المعلم</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            const selectedTeacher = teacherOptions.find(t => t.name === value);
+                            field.onChange(value);
+                            form.setValue("teacherId", selectedTeacher?.id || "");
+                          }} 
+                          value={field.value || ""} 
+                          disabled={!hasTeachers}
+                        >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="اختر المقرر" />
+                              <SelectValue placeholder={hasTeachers ? "اختر المعلم" : "لا يوجد معلمين متاحين"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {courses.map((course) => (
-                              <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
+                            {teacherOptions.map((t, idx) => (
+                              <SelectItem key={t.id || t.name || idx} value={t.name}>{t.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="teacher"
-                    render={({ field }) => {
-                      const selectedCourse: Course | undefined = courses.find((c) => c.id === supportCourseId);
-                      const teacherOptions: { id?: string; name: string }[] = selectedCourse?.teachers?.length
-                        ? selectedCourse.teachers
-                        : [];
-                      const hasTeachers = teacherOptions.length > 0;
-                      return (
-                        <FormItem>
-                          <FormLabel>المعلم</FormLabel>
-                          <Select 
-                            onValueChange={(value) => {
-                              const selectedTeacher = teacherOptions.find(t => t.name === value);
-                              field.onChange(value);
-                              form.setValue("teacherId", selectedTeacher?.id || "");
-                            }} 
-                            value={field.value || ""} 
-                            disabled={!hasTeachers}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={hasTeachers ? "اختر المعلم" : "لا يوجد معلمين متاحين"} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {teacherOptions.map((t, idx) => (
-                                <SelectItem key={t.id || t.name || idx} value={t.name}>{t.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )
-                    }}
-                  />
-                </>
+                    )
+                  }}
+                />
               )}
 
               <FormField 

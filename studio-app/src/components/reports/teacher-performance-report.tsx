@@ -18,6 +18,8 @@ import { getStaffMembers } from "@/services/staffService";
 import { getCourses } from "@/services/courseService";
 import { getStudentGradeForCourse } from "@/services/gradeService";
 import { getAttendance } from "@/services/attendanceService";
+import { getEnrollmentForCourse } from "@/services/enrollmentService";
+import { getStudent } from "@/services/studentService";
 import { useToast } from "@/hooks/use-toast";
 
 // Types
@@ -110,13 +112,19 @@ export function TeacherPerformanceReport() {
   });
 
   const getStudentsForCourse = useCallback(async (courseId: string): Promise<Student[]> => {
-    // This would typically come from enrollment service
-    // Returning mock data for demonstration
-    return [
-      { id: '1', name: 'طالب ١', grade: '10', className: 'أ' },
-      { id: '2', name: 'طالب ٢', grade: '10', className: 'أ' },
-      { id: '3', name: 'طالب ٣', grade: '10', className: 'ب' },
-    ];
+    try {
+      const enrollment = await getEnrollmentForCourse(courseId);
+      if (!enrollment || !enrollment.studentIds || enrollment.studentIds.length === 0) {
+        return [];
+      }
+      
+      const studentPromises = enrollment.studentIds.map(id => getStudent(id));
+      const students = await Promise.all(studentPromises);
+      return students.filter(s => s !== null) as Student[];
+    } catch (error) {
+      console.error(`Error getting students for course ${courseId}:`, error);
+      return [];
+    }
   }, []);
 
   const fetchTeacherData = useCallback(async () => {
@@ -134,7 +142,7 @@ export function TeacherPerformanceReport() {
 
       const performancePromises = filteredTeachers.map(async (teacher) => {
         const teacherCourses = (courses as Course[]).filter(c => 
-          c.teachers.some(t => t.id === teacher.id)
+          c.teachers && Array.isArray(c.teachers) && c.teachers.some(t => t.id === teacher.id)
         );
 
         let totalStudents = 0;
@@ -215,7 +223,7 @@ export function TeacherPerformanceReport() {
       // Calculate course workload
       const workloadData: CourseWorkload[] = [];
       for (const course of courses as Course[]) {
-        if (course.teachers.length > 0) {
+        if (course.teachers && Array.isArray(course.teachers) && course.teachers.length > 0) {
           const courseStudents = await getStudentsForCourse(course.id);
           let totalGrades = 0;
           let gradeCount = 0;
@@ -242,7 +250,7 @@ export function TeacherPerformanceReport() {
           workloadData.push({
             courseId: course.id,
             courseName: course.name,
-            teacherName: course.teachers[0].name,
+            teacherName: course.teachers[0]?.name || 'Unknown',
             studentCount: courseStudents.length,
             averageGrade: Math.round(averageGrade * 100) / 100,
             passRate: Math.round(passRate * 100) / 100
@@ -272,9 +280,10 @@ export function TeacherPerformanceReport() {
     } catch (error) {
       toast({
         title: "خطأ",
-        description: "فشل في تحميل بيانات الأساتذة.",
+        description: "فشل في تحميل بيانات الأساتذة. تأكد من وجود بيانات في النظام.",
         variant: "destructive"
       });
+      console.error("Error fetching teacher data:", error);
     } finally {
       setIsLoading(false);
     }

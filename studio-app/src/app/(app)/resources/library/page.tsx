@@ -59,6 +59,7 @@ export default function LibraryPage() {
   const [isCheckOutDialogOpen, setIsCheckOutDialogOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
   const [newBookTitle, setNewBookTitle] = useState("");
   const [newBookAuthor, setNewBookAuthor] = useState("");
@@ -180,6 +181,7 @@ export default function LibraryPage() {
 
   const openCheckOutDialog = (book: Book) => {
     setSelectedBook(book);
+    setStudentSearchQuery("");
     setIsCheckOutDialogOpen(true);
   }
 
@@ -187,6 +189,16 @@ export default function LibraryPage() {
     () => debounce(setSearchQuery, 300),
     []
   );
+
+  const filteredStudents = useMemo(() => {
+    if (!studentSearchQuery.trim()) return students;
+    
+    const query = studentSearchQuery.toLowerCase().trim();
+    return students.filter(student => 
+      student.name.toLowerCase().includes(query) ||
+      student.idNumber.toLowerCase().includes(query)
+    );
+  }, [students, studentSearchQuery]);
 
   const filteredBooks = books.filter(book => 
     book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -346,23 +358,44 @@ export default function LibraryPage() {
                  <DialogHeader>
                     <DialogTitle>إعارة كتاب: {selectedBook?.title ?? ""}</DialogTitle>
                     <DialogDescription>
-                    اختر الطالب لإعارة الكتاب إليه.
+                    ابحث عن الطالب بالاسم أو الرقم التعريفي لإعارة الكتاب إليه.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <Label htmlFor="student-select">الطالب</Label>
-                    <Select onValueChange={setSelectedStudent} value={selectedStudent}>
-                        <SelectTrigger id="student-select">
-                            <SelectValue placeholder="اختر الطالب..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {students.map(student => (
-                                <SelectItem key={student.id} value={student.id}>
-                                    {student.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div className="py-4 space-y-4">
+                    <div>
+                        <Label htmlFor="student-search">بحث عن الطالب</Label>
+                        <div className="relative mt-2">
+                            <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id="student-search"
+                                placeholder="ابحث بالاسم أو الرقم التعريفي..."
+                                value={studentSearchQuery}
+                                onChange={(e) => setStudentSearchQuery(e.target.value)}
+                                className="pr-8"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="student-select">الطالب</Label>
+                        <Select onValueChange={setSelectedStudent} value={selectedStudent}>
+                            <SelectTrigger id="student-select">
+                                <SelectValue placeholder="اختر الطالب..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {filteredStudents.length > 0 ? (
+                                    filteredStudents.map(student => (
+                                        <SelectItem key={student.id} value={student.id}>
+                                            {student.name} ({student.idNumber})
+                                        </SelectItem>
+                                    ))
+                                ) : (
+                                    <div className="p-2 text-center text-sm text-muted-foreground">
+                                        لا توجد نتائج
+                                    </div>
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                 <DialogFooter>
           <Button onClick={handleCheckOut} disabled={!selectedStudent}>

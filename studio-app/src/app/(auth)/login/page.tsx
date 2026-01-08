@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,9 +17,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/i18n/translation-provider";
 import { Loader2, GraduationCap } from "lucide-react";
-import { sendPasswordResetEmail, signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
 import { getStaffMember } from "@/services/staffService";
+import { getStaffByEmail } from "@/services/authService";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,9 +28,7 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [mode, setMode] = useState<"login" | "reset" | "otp">("login");
+  const [mode, setMode] = useState<"login" | "reset">("login");
   const [isLoading, setIsLoading] = useState(false);
 
   const resetInputs = (nextMode: typeof mode) => {
@@ -36,50 +36,6 @@ export default function LoginPage() {
     setIsLoading(false);
     if (nextMode !== "login") {
       setPassword("");
-    }
-    if (nextMode !== "otp") {
-      setOtpCode("");
-      setOtpSent(false);
-    }
-  };
-
-  const handleSendOtp = async () => {
-    if (!email) {
-      toast({
-        title: t("auth.invalidEmail") || "Invalid email",
-        description: t("auth.email") || "Email is required",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t("auth.otpSendFailed") || "Failed to send code.");
-      }
-
-      setOtpSent(true);
-      toast({
-        title: t("auth.otpSentTitle") || "Code sent",
-        description: t("auth.otpSentDesc") || "Check your inbox for the 6-digit code.",
-      });
-    } catch (error: unknown) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : t("auth.otpSendFailed") || "Failed to send code.";
-      toast({
-        title: t("auth.otpSendFailedTitle") || t('auth.loginFailed'),
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -100,63 +56,65 @@ export default function LoginPage() {
         await sendPasswordResetEmail(auth, email);
 
         toast({
-          title: t("auth.resetEmailSentTitle") || "Reset link sent",
-          description: t("auth.resetEmailSentDesc") || "Check your inbox for the reset link.",
+          title: t("auth.resetEmailSentTitle") || "تم إرسال رابط الاستعادة",
+          description: t("auth.resetEmailSentDesc") || "يرجى التحقق من بريدك للحصول على الرابط.",
         });
-      } else if (mode === "otp") {
-        if (!otpCode) {
-          throw new Error(t("auth.otpRequired") || "Enter the 6-digit code.");
-        }
-
-        const res = await fetch("/api/auth/verify-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code: otpCode }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || t("auth.otpInvalid") || "Invalid code.");
-        }
-
-        const { token } = await res.json();
-        const userCredential = await signInWithCustomToken(auth, token);
-        const user = userCredential.user;
-
-        const staffMember = await getStaffMember(user.uid);
-        if (!staffMember) {
-          throw new Error("No staff profile found for this user.");
-        }
-
-        toast({
-          title: t("auth.loginSuccessful"),
-          description: t("auth.otpLoginSuccess") || "Signed in with code.",
-        });
-
-        if (staffMember.role === 'teacher') {
-          router.push("/teacher/dashboard");
-        } else {
-          router.push("/dashboard");
-        }
       } else {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
         
-        const staffMember = await getStaffMember(user.uid);
+          // Try to get staff by UID first, then fallback to email
+          let staffMember = await getStaffMember(user.uid);
+        
+          if (!staffMember) {
+            // Fallback: try to get staff by email
+            staffMember = await getStaffByEmail(email);
+          }
 
-        if (!staffMember) {
-          throw new Error("No staff profile found for this user.");
-        }
+          if (!staffMember) {
+            throw new Error(t("auth.staffProfileNotFound") || "لم يتم العثور على ملف تعريف الموظف. يرجى الاتصال بالمسؤول.");
+          }
 
-        toast({
-          title: t('auth.loginSuccessful'),
-          description: "Welcome back!",
-        });
+          toast({
+            title: 'تم تسجيل الدخول بنجاح',
+            description: 'مرحباً بعودتك!',
+          });
 
-        if (staffMember.role === 'teacher') {
-          router.push("/teacher/dashboard");
-        } else {
-          router.push("/dashboard");
+          if (staffMember.role === 'teacher') {
+            router.push("/teacher/dashboard");
+          } else {
+            router.push("/dashboard");
+          }
+        } catch (loginError: unknown) {
+          const err = loginError as any;
+          
+          // Handle login errors gracefully with Arabic messages
+          if (err?.code === 'auth/invalid-login-credentials') {
+            toast({
+              title: "⚠️ تحذير",
+              description: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+              variant: "destructive",
+            });
+          } else if (err?.code === 'auth/user-not-found') {
+            toast({
+              title: "⚠️ تحذير",
+              description: "المستخدم غير موجود.",
+              variant: "destructive",
+            });
+          } else if (err instanceof Error) {
+            toast({
+              title: "⚠️ تحذير",
+              description: err.message,
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "⚠️ تحذير",
+              description: "بيانات الدخول غير صحيحة",
+              variant: "destructive",
+            });
+          }
         }
       }
       
@@ -164,33 +122,28 @@ export default function LoginPage() {
       console.error(error);
       const err = error as any;
       
-      // Handle specific Firebase auth errors
-      let errorMessage = mode === "reset"
-        ? t("auth.resetFailed") || t('auth.invalidCredentials')
-        : mode === "otp"
-          ? t("auth.otpInvalid") || t('auth.invalidCredentials')
-          : t('auth.invalidCredentials');
+      // Handle specific Firebase auth errors with Arabic messages
+      let errorMessage = "بيانات الدخول غير صحيحة";
+      let errorTitle = "فشل تسجيل الدخول";
       
       if (err?.code === 'auth/configuration-not-found') {
-        errorMessage = 'Firebase Authentication is not configured. Please enable it in your Firebase Console.';
+        errorMessage = 'مصادقة Firebase غير مهيأة. يرجى تفعيلها في وحدة التحكم.';
+      } else if (err?.code === 'auth/invalid-login-credentials') {
+        errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
       } else if (err?.code === 'auth/user-not-found') {
-        errorMessage = mode === "reset" ? (t("auth.userNotFound") || 'User not found.') : (t('auth.userNotFound') || 'User not found.');
+        errorMessage = 'المستخدم غير موجود.';
       } else if (err?.code === 'auth/wrong-password') {
-        errorMessage = t('auth.wrongPassword') || 'Incorrect password.';
+        errorMessage = 'كلمة المرور غير صحيحة.';
       } else if (err?.code === 'auth/invalid-email') {
-        errorMessage = t('auth.invalidEmail') || 'Invalid email format.';
+        errorMessage = 'بريد إلكتروني غير صالح.';
       } else if (err?.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many login attempts. Please try again later.';
+        errorMessage = 'محاولات كثيرة. يرجى المحاولة لاحقاً.';
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
       
       toast({
-        title: mode === "reset"
-          ? (t("auth.resetFailedTitle") || t('auth.loginFailed'))
-          : mode === "otp"
-            ? (t("auth.otpSendFailedTitle") || t('auth.loginFailed'))
-            : t('auth.loginFailed'),
+        title: mode === "reset" ? "تعذر إرسال الرابط" : "⚠️ تحذير",
         description: errorMessage,
         variant: "destructive",
       });
@@ -200,102 +153,97 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm">
-  <h1 className="sr-only">{t('auth.title')}</h1>
-  <h2 className="sr-only">{t('auth.title')}</h2>
-      <CardHeader className="text-center">
-        <div className="mb-4 flex justify-center">
-            <div className="bg-primary rounded-md p-3">
-                <GraduationCap className="h-8 w-8 text-primary-foreground" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border border-slate-200/70 bg-white/95 backdrop-blur-sm">
+        <h1 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h1>
+        <h2 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h2>
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center h-28 w-28 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 transition-all duration-300 animate-pulse">
+              <Image src="/icon-192.png" alt="" aria-hidden className="h-16 w-16 drop-shadow-lg" width={64} height={64} />
+              <p className="text-white font-black text-sm mt-2 leading-none px-1" style={{ 
+                fontFamily: "'Arabic Typesetting', 'Simplified Arabic', 'Traditional Arabic', serif",
+                fontWeight: 900,
+                letterSpacing: '0.06em',
+                textShadow: '0 3px 6px rgba(0,0,0,0.5), 0 0 12px rgba(255,255,255,0.25)',
+                WebkitTextStroke: '0.7px rgba(255,255,255,0.4)',
+                transform: 'scaleY(1.3) scaleX(0.85)',
+                fontStyle: 'italic',
+                whiteSpace: 'nowrap'
+              }}>
+                مؤسسة الموعد
+              </p>
             </div>
-        </div>
-        <CardTitle className="text-2xl">{t('auth.title')}</CardTitle>
-        <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">{t('auth.email')}</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
           </div>
-          {mode === "login" && (
+          <CardTitle className="text-2xl font-bold text-slate-900">
+            تسجيل الدخول
+          </CardTitle>
+          <CardDescription className="text-slate-600 text-sm">
+            أدخل بياناتك للوصول إلى لوحة التحكم
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5 text-right">
             <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@domain.com"
+                dir="rtl"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="text-right"
               />
             </div>
-          )}
-          {mode === "otp" && (
-            <div className="space-y-2">
-              <Label htmlFor="otp">{t("auth.otpCodeLabel")}</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="otp"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="123456"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+            {mode === "login" && (
+              <div className="space-y-2">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••"
+                    dir="rtl"
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="text-right"
                 />
-                <Button type="button" variant="secondary" disabled={isLoading} onClick={handleSendOtp}>
-                  {isLoading ? t("auth.sendingCode") : otpSent ? t("auth.resendCode") : t("auth.sendCode")}
-                </Button>
               </div>
+            )}
+            <div className="flex items-center justify-between text-sm">
+              <button
+                type="button"
+                className="text-primary underline-offset-4 hover:underline"
+                onClick={() => resetInputs(mode === "reset" ? "login" : "reset")}
+              >
+                {mode === "reset" ? 'العودة لتسجيل الدخول' : 'نسيت كلمة المرور؟'}
+              </button>
             </div>
-          )}
-          <div className="flex items-center justify-between text-sm">
-            <button
-              type="button"
-              className="text-primary underline-offset-4 hover:underline"
-              onClick={() => resetInputs(mode === "reset" ? "login" : "reset")}
-            >
-              {mode === "reset" ? t("auth.backToLogin") : t("auth.forgotPassword")}
-            </button>
-            <button
-              type="button"
-              className="text-primary underline-offset-4 hover:underline"
-              onClick={() => resetInputs(mode === "otp" ? "login" : "otp")}
-            >
-              {mode === "otp" ? t("auth.backToLogin") : t("auth.useOtp")}
-            </button>
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="animate-spin" />}
-            {mode === "login"
-              ? (isLoading ? t('auth.loggingIn') : t('auth.login'))
-              : mode === "reset"
-                ? (isLoading ? t("auth.sendingReset") : t("auth.sendReset"))
-                : (isLoading ? t("auth.verifyingCode") : t("auth.verifyAndLogin"))}
-          </Button>
-          
-          {/* Sign Up Link */}
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">
-              {t('auth.noAccount') || 'Don\'t have an account?'}{' '}
-            </span>
-            <button
-              type="button"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-              onClick={() => router.push('/setup')}
-            >
-              {t('auth.signup') || 'Sign up here'}
-            </button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="animate-spin" />}
+              {mode === "login"
+                ? (isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول')
+                : (isLoading ? 'جاري إرسال الرابط...' : 'إرسال رابط الاستعادة')}
+            </Button>
+            
+            {/* Sign Up Link */}
+            <div className="text-center text-sm text-slate-700">
+              <span className="text-muted-foreground">
+                ليس لديك حساب؟{' '}
+              </span>
+              <button
+                type="button"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+                onClick={() => router.push('/staff-signup')}
+              >
+                سجّل هنا
+              </button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
