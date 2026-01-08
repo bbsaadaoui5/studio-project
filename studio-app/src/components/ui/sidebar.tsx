@@ -478,7 +478,14 @@ export const AppSidebar: React.FC = () => {
         <Link href="/" className="flex items-center gap-2 font-semibold">
             {/* Logo is decorative when followed by visible text; set empty alt and aria-hidden
                 to avoid duplicate accessible name reports from axe. */}
-            <Image src="/icon-192.png" alt="" aria-hidden className="h-8 w-8" width={32} height={32} />
+            <Image
+              src="/icon-192.png"
+              alt=""
+              aria-hidden
+              className="h-12 w-12 md:h-14 md:w-14 flex-shrink-0"
+              width={56}
+              height={56}
+            />
           {isOpen && <span className="truncate">{t('app.name')}</span>}
         </Link>
       </div>
