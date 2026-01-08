@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,7 +28,6 @@ import { getStudent, getStudents } from "@/services/studentService";
 import { saveExamScores, getExamScores } from "@/services/gradeService";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from "@/i18n/translation-provider";
 
 export default function ExamResultsPage() {
   const { toast } = useToast();
@@ -111,7 +111,7 @@ export default function ExamResultsPage() {
         setScores(scoreData?.studentScores || {});
 
       } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch students or scores.", variant: "destructive" });
+        toast({ title: t('common.error'), description: t('common.failedToFetch'), variant: "destructive" });
         setEnrolledStudents([]);
         setScores({});
       } finally {
@@ -120,7 +120,7 @@ export default function ExamResultsPage() {
     };
 
     fetchStudentsAndScores();
-  }, [selectedExam, selectedClass, exams, toast]);
+  }, [selectedExam, selectedClass, exams, toast, t]);
   
   const handleScoreChange = (studentId: string, score: string) => {
     const newScore = score === "" ? null : Number(score);

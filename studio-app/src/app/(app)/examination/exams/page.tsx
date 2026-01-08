@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/i18n/translation-provider";
 import { addExam, getExams, updateExam, deleteExam } from "@/services/examService";
 import type { Exam, Course, ClassInfo } from "@/lib/types";
 import { Loader2, PlusCircle, Edit2, Trash2 } from "lucide-react";
@@ -137,7 +137,7 @@ export default function ExamsPage() {
     try {
         const selectedCourse = courses.find(c => c.id === values.courseId);
         if (!selectedCourse) {
-            toast({ title: "Error", description: "Invalid course selected.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('common.invalidInput'), variant: "destructive" });
             setIsSubmitting(false);
             return;
         }

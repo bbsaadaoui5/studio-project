@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, notFound, useParams } from "next/navigation";
+import { useTranslation } from "@/i18n/translation-provider";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +33,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/i18n/translation-provider";
 import { getCourse, updateCourse } from "@/services/courseService";
 import { ArrowLeft, Loader2, Wand2 } from "lucide-react";
 import { Course } from "@/lib/types";
@@ -116,7 +116,7 @@ export default function EditCoursePage() {
   const handleGenerateDescription = async () => {
     const courseName = form.getValues("name");
     if (!courseName) {
-      toast({ title: "Please enter a course name first.", variant: "destructive" });
+      toast({ title: t('common.invalidInput'), variant: "destructive" });
       return;
     }
     setIsGenerating(true);
@@ -124,7 +124,7 @@ export default function EditCoursePage() {
       const result = { description: "Mock course description" };
       form.setValue("description", result.description, { shouldValidate: true });
     } catch (error) {
-      toast({ title: "Error generating description", variant: "destructive" });
+      toast({ title: t('common.error'), variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }

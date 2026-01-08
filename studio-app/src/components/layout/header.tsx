@@ -93,7 +93,7 @@ export function Header() {
                 setStaff(fetchedStaff);
                 setAcademicYear(settings.academicYear);
             } catch (error) {
-                 toast({ title: "Error", description: "Could not pre-load necessary data.", variant: "destructive" });
+                 toast({ title: t('common.error'), description: t('common.couldNotPreloadData'), variant: "destructive" });
             } finally {
                 setIsLoadingData(false);
             }
@@ -120,20 +120,34 @@ export function Header() {
         if (!viewSelectedStudent) return;
         setIsSubmitting(true);
         try {
-            const link = await getParentAccessLink(viewSelectedStudent);
+            let link = await getParentAccessLink(viewSelectedStudent);
+            // If no link exists, generate one automatically
+            if (!link) {
+                await generateParentAccessToken(viewSelectedStudent);
+                link = await getParentAccessLink(viewSelectedStudent);
+            }
+            
             if (link) {
                 window.open(link, '_blank');
                 setIsViewParentDialogOpen(false);
                 setViewSelectedStudent("");
+                toast({
+                    title: t('common.success') || 'نجح',
+                    description: t('parent.portalOpened') || 'تم فتح بوابة ولي الأمر',
+                });
             } else {
                 toast({
-                    title: "No Access Link",
-                    description: "A parent portal access link has not been generated for this student yet.",
+                    title: t('common.error') || 'خطأ',
+                    description: t('parent.couldNotGenerateLink') || 'فشل في إنشاء رابط الوصول',
                     variant: "destructive",
                 });
             }
         } catch(error) {
-             toast({ title: "Error", description: "Could not generate parent access link.", variant: "destructive" });
+             toast({ 
+                 title: t('common.error') || 'خطأ', 
+                 description: t('parent.couldNotGenerateLink') || 'فشل في إنشاء رابط الوصول', 
+                 variant: "destructive" 
+             });
         } finally {
             setIsSubmitting(false);
         }
@@ -141,7 +155,7 @@ export function Header() {
 
     const handleViewTeacherPortal = () => {
         if (!TEACHER_PORTAL_ENABLED) {
-            toast({ title: "Disabled", description: "Teacher portal is temporarily disabled.", variant: "destructive" });
+            toast({ title: t('common.error'), description: "Teacher portal is temporarily disabled.", variant: "destructive" });
             return;
         }
         if (!viewSelectedTeacher) return;
@@ -152,7 +166,7 @@ export function Header() {
 
     const handleRecordPayment = async () => {
             if (!selectedStudent || !paymentAmount || paymentAmount <= 0 || !paymentMonth) {
-                toast({ title: "إدخال غير صالح", description: "يرجى اختيار طالب، اختيار الشهر، وإدخال مبلغ صالح.", variant: "destructive" });
+                toast({ title: t('common.invalidInput'), description: t('header.selectStudentMonthAmount') || "يرجى اختيار طالب، اختيار الشهر، وإدخال مبلغ صالح.", variant: "destructive" });
             return;
         }
 
@@ -174,7 +188,7 @@ export function Header() {
             setPaymentMonth("");
 
         } catch (error) {
-            toast({ title: "Error", description: "Failed to record payment.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('common.failedToRecord'), variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }

@@ -72,6 +72,7 @@
     "noAccessLink": "No access link",
     "parentPortalLinkNotGenerated": "A parent portal access link has not been generated for this student yet",
     "couldNotGenerateParentLink": "Could not generate parent access link",
+    "portalOpened": "Portal opened successfully",
     "newAnnouncement": "New announcement",
     "parentTeacherMeetingSchedule": "\"Parent-teacher meeting schedule\" published",
     "courseEnrollment": "Course enrollment",
@@ -242,7 +243,18 @@
     "backToDirectory": "Back to directory",
     "backToProfile": "Back to profile",
     "viewDetails": "View details",
-    "enrolling": "Enrolling..."
+    "enrolling": "Enrolling...",
+    "couldNotFetchData": "Could not fetch data",
+    "failedToFetch": "Failed to fetch data",
+    "failedToSave": "Failed to save",
+    "failedToUpdate": "Failed to update",
+    "failedToDelete": "Failed to delete",
+    "failedToSubmit": "Failed to submit",
+    "failedToRecord": "Failed to record",
+    "invalidInput": "Invalid input",
+    "invalidId": "Invalid id",
+    "couldNotPreloadData": "Could not pre-load necessary data",
+    "unexpectedError": "Unexpected error"
   },
   "months": {
     "january": "January",
@@ -812,5 +824,16 @@
   "examination": { "title": "Examination System" },
   "events": { "title": "Events" },
   "communication": { "title": "Communication" },
-  "resources": { "title": "Resources" }
+  "resources": { "title": "Resources" },
+  "timetable": {
+    "failedToFetchInitialData": "Failed to fetch initial data.",
+    "failedToFetchTimetable": "Failed to fetch timetable.",
+    "entryAdded": "Entry Added",
+    "timetableUpdated": "The timetable has been updated.",
+    "failedToAddEntry": "Failed to add timetable entry.",
+    "entryUpdated": "Entry updated",
+    "failedToUpdateEntry": "Failed to update entry.",
+    "entryRemoved": "Entry removed",
+    "failedToDeleteEntry": "Failed to delete entry."
+  }
 }

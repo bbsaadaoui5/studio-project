@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function ClubSignupRequestsPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -34,14 +36,14 @@ export default function ClubSignupRequestsPage() {
         if (mounted) setRequests(enriched);
       } catch (e) {
         console.error(e);
-        toast({ title: "Error", description: "Could not fetch club signup requests.", variant: "destructive" });
+        toast({ title: t('common.error'), description: t('common.couldNotFetchData'), variant: "destructive" });
       } finally {
         if (mounted) setLoading(false);
       }
     };
     void fetch();
     return () => { mounted = false };
-  }, [toast]);
+  }, [toast, t]);
 
   const handleStatusUpdate = async (id: string, newStatus: 'approved' | 'rejected') => {
     setIsUpdating(true);
@@ -52,7 +54,7 @@ export default function ClubSignupRequestsPage() {
       toast({ title: newStatus === 'approved' ? 'Request approved' : 'Request rejected', description: '' });
     } catch (e) {
       console.error(e);
-      toast({ title: 'Error', description: 'Failed to update request status.', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('common.failedToUpdate'), variant: 'destructive' });
       setRequests(original);
     } finally {
       setIsUpdating(false);

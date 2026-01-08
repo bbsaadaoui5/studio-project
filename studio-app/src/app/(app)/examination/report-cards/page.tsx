@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,6 +32,7 @@ type GeneratingState = "idle" | "fetching" | "compiling" | "writing" | "done";
 
 export default function ReportCardsPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [reportingPeriod, setReportingPeriod] = useState<string>("");
@@ -60,13 +62,13 @@ export default function ReportCardsPage() {
         const fetchedStudents = await getStudents();
         setStudents(fetchedStudents.filter(s => s.status === 'active'));
       } catch (error) {
-        toast({ title: "Error", description: "Could not fetch students.", variant: "destructive" });
+        toast({ title: t('common.error'), description: t('common.couldNotFetchData'), variant: "destructive" });
       } finally {
         setIsLoadingStudents(false);
       }
     };
     fetchStudents();
-  }, [toast]);
+  }, [toast, t]);
   
   const handleGenerateReport = async () => {
     if (!selectedStudent || !reportingPeriod) {
@@ -93,7 +95,7 @@ export default function ReportCardsPage() {
         setGeneratingState("done");
     } catch (error) {
         console.error(error);
-        toast({ title: "Error Generating Report", description: "An unexpected error occurred. Please check the data and try again.", variant: "destructive"});
+        toast({ title: t('common.error'), description: "An unexpected error occurred. Please check the data and try again.", variant: "destructive"});
         setGeneratingState("idle");
     } finally {
         setTimeout(() => setGeneratingState("idle"), 2000);

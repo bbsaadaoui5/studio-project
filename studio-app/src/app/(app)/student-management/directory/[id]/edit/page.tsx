@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, notFound, useParams } from "next/navigation";
+import { useTranslation } from "@/i18n/translation-provider";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,7 +38,6 @@ import { getCoursesByType } from "@/services/courseService";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Student, Course } from "@/lib/types";
 import { getYear, getMonth, getDate } from "date-fns";
-import { useTranslation } from "@/i18n/translation-provider";
 
 const studentSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters."),
@@ -210,12 +210,12 @@ export default function EditStudentPage() {
         email: values.email || '',
       };
       if (!id) {
-        toast({ title: "Error", description: "Invalid student id.", variant: "destructive" });
+        toast({ title: t('common.error'), description: t('common.invalidId'), variant: "destructive" });
         return;
       }
       await updateStudent(id as string, dataToUpdate);
       toast({
-        title: "Student Updated",
+        title: t('common.success'),
         description: `Successfully updated ${values.name}'s record.`,
       });
       router.push(`/student-management/directory/${id}`);

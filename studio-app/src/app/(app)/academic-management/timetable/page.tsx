@@ -110,7 +110,7 @@ export default function TimetablePage() {
 
                 if (classList.length > 0) setSelectedClassId(classList[0].id)
             } catch (error) {
-                toast({ title: 'Error', description: 'Failed to fetch initial data.', variant: 'destructive' })
+                toast({ title: t('common.error'), description: t('timetable.failedToFetchInitialData'), variant: 'destructive' })
             }
         }
         fetchInitialData()
@@ -125,7 +125,7 @@ export default function TimetablePage() {
                 const fetched = await getTimetableForClass(grade, className)
                 setTimetable(fetched)
             } catch (err) {
-                toast({ title: 'Error', description: 'Failed to fetch timetable.', variant: 'destructive' })
+                toast({ title: t('common.error'), description: t('timetable.failedToFetchTimetable'), variant: 'destructive' })
             } finally {
                 setIsLoading(false)
             }
@@ -165,13 +165,13 @@ export default function TimetablePage() {
 
             const result = await addTimetableEntry(newEntry)
             console.debug('Entry added successfully (service):', result)
-            toast({ title: 'Entry Added', description: 'The timetable has been updated.' })
+            toast({ title: t('timetable.entryAdded'), description: t('timetable.timetableUpdated') })
             fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className)
             form.reset()
             setIsDialogOpen(false)
         } catch (error: any) {
-            const errorMessage = error instanceof Error ? error.message : 'Failed to add timetable entry.'
-            toast({ title: 'Error', description: errorMessage, variant: 'destructive' })
+            const errorMessage = error instanceof Error ? error.message : t('timetable.failedToAddEntry')
+            toast({ title: t('common.error'), description: errorMessage, variant: 'destructive' })
         } finally {
             setIsSubmitting(false)
         }
@@ -212,13 +212,13 @@ export default function TimetablePage() {
                 timeSlot: editingInPlaceValues?.timeSlot || entry.timeSlot,
             }
             await updateTimetableEntry(entry.id!, patch)
-            toast({ title: 'Updated', description: 'Entry updated.' })
+            toast({ title: t('timetable.entryUpdated'), description: t('timetable.timetableUpdated') })
             setEditingInPlaceId(null)
             setEditingInPlaceValues(null)
             setLiveMessage('Entry updated')
             if (selectedClassInfo) fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className)
         } catch (err) {
-            toast({ title: 'Error', description: 'Failed to update entry.', variant: 'destructive' })
+            toast({ title: t('common.error'), description: t('timetable.failedToUpdateEntry'), variant: 'destructive' })
         }
     }, [editingInPlaceId, editingInPlaceValues, timetable, selectedClassInfo, fetchTimetable, toast])
 
@@ -260,12 +260,12 @@ export default function TimetablePage() {
         if (!entry.id) return
         try {
             await deleteTimetableEntry(entry.id)
-            toast({ title: 'Deleted', description: 'Entry removed.' })
+            toast({ title: t('timetable.entryRemoved'), description: t('timetable.timetableUpdated') })
             // announce and refresh
             setLiveMessage('Entry deleted')
             if (selectedClassInfo) fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className)
         } catch (err) {
-            toast({ title: 'Error', description: 'Failed to delete entry.', variant: 'destructive' })
+            toast({ title: t('common.error'), description: t('timetable.failedToDeleteEntry'), variant: 'destructive' })
         }
     }
 
@@ -284,11 +284,11 @@ export default function TimetablePage() {
                 notes: values.notes,
             }
             await updateTimetableEntry(selectedEntry.id!, patch)
-            toast({ title: 'Updated', description: 'Entry updated.' })
+            toast({ title: t('timetable.entryUpdated'), description: t('timetable.timetableUpdated') })
             setSelectedEntry(null)
             if (selectedClassInfo) fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className)
         } catch (err) {
-            toast({ title: 'Error', description: 'Failed to update entry.', variant: 'destructive' })
+            toast({ title: t('common.error'), description: t('timetable.failedToUpdateEntry'), variant: 'destructive' })
         }
     }
 

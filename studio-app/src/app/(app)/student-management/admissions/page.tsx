@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "@/i18n/translation-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,6 +47,7 @@ const applicationSchema = z.object({
 
 export default function AdmissionsPage() {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [applications, setApplications] = useState<AdmissionApplication[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,11 +72,11 @@ export default function AdmissionsPage() {
             const fetchedApplications = await getAdmissionApplications();
             setApplications(fetchedApplications);
         } catch (error) {
-            toast({ title: "Error", description: "Could not fetch admission applications.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('common.couldNotFetchData'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, t]);
 
     useEffect(() => {
         void fetchApplications();
@@ -84,12 +86,12 @@ export default function AdmissionsPage() {
         setIsSubmitting(true);
         try {
             await addAdmissionApplication(values);
-            toast({ title: "Application Submitted", description: "The new application has been recorded." });
+            toast({ title: t('common.success'), description: "The new application has been recorded." });
             fetchApplications();
             form.reset();
             setIsDialogOpen(false);
         } catch (error) {
-             toast({ title: "Error", description: "Failed to submit application.", variant: "destructive" });
+             toast({ title: t('common.error'), description: t('common.failedToSubmit'), variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -129,7 +131,7 @@ export default function AdmissionsPage() {
             }
         } catch (error) {
             console.error("Error updating application status:", error);
-            toast({ title: "Error", description: "Failed to update application status.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('common.failedToUpdate'), variant: "destructive" });
             setApplications(originalApplications); // Revert UI on failure
         } finally {
             setIsUpdating(false);

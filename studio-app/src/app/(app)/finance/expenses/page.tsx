@@ -94,11 +94,11 @@ export default function ExpensesPage() {
             setExpenses(fetchedExpenses);
             setSchoolName(settings.schoolName);
         } catch (error) {
-            toast({ title: "Error", description: "Could not fetch expenses.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('common.couldNotFetchData'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    }, [dateRange, toast]);
+    }, [dateRange, toast, t]);
 
     useEffect(() => {
         fetchExpenses();
@@ -116,7 +116,7 @@ export default function ExpensesPage() {
             form.reset();
             setIsDialogOpen(false);
         } catch (error) {
-             toast({ title: "Error", description: "Failed to add expense.", variant: "destructive" });
+             toast({ title: t('common.error'), description: t('common.failedToSave'), variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }

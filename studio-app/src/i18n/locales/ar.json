@@ -229,7 +229,6 @@
     "currentAcademicYear": "السنة الدراسية الحالية",
     "schoolAddress": "عنوان المؤسسة",
     "saveSettings": "حفظ الإعدادات",
-    "finance": "المالية",
     "financeTitle": "إعدادات المالية",
     "financeDescription": "إدارة الرسوم، المصروفات، وهياكل الرسوم الدراسية.",
     "userManagementTitle": "إعدادات المستخدمين",
@@ -321,7 +320,6 @@
     "gradeRequired": "الرجاء اختيار الصف.",
     "teachersRequired": "يرجى اختيار معلم واحد على الأقل."
   },
-  "timetable": "الجدول الزمني",
   "examSchedule": "جدول الامتحانات",
   "examResults": "نتائج الامتحانات",
   "library": {
@@ -389,7 +387,6 @@
     "of": "من",
     "phone": "الهاتف",
     "previous": "السابق",
-    "rowsSelected": "صف محدد.",
     "print": "طباعة",
     "export": "تصدير",
     "saving": "جاري الحفظ...",
@@ -419,7 +416,6 @@
     "period": "الفترة",
     "saveChanges": "حفظ التغييرات",
     "selectDepartment": "اختر القسم",
-    "unexpectedError": "خطأ غير متوقع",
     "viewDetails": "عرض التفاصيل",
     "clearFilters": "مسح الفلاتر",
     "back": "عودة",
@@ -435,7 +431,18 @@
     "continue": "متابعة",
     "cannotUndo": "لا يمكن التراجع عن هذا الإجراء.",
     "deleting": "جاري الحذف...",
-    "rowsSelected": "صفوف مختارة"
+    "rowsSelected": "صفوف مختارة",
+    "couldNotFetchData": "تعذر جلب البيانات",
+    "failedToFetch": "فشل في جلب البيانات",
+    "failedToSave": "فشل في الحفظ",
+    "failedToUpdate": "فشل في التحديث",
+    "failedToDelete": "فشل في الحذف",
+    "failedToSubmit": "فشل في الإرسال",
+    "failedToRecord": "فشل في التسجيل",
+    "invalidInput": "مدخل غير صحيح",
+    "invalidId": "معرف غير صحيح",
+    "couldNotPreloadData": "لا يمكن تحميل البيانات الضرورية مسبقاً",
+    "unexpectedError": "خطأ غير متوقع"
   },
   "header": {
     "quickActions": "الإجراءات السريعة",
@@ -468,6 +475,7 @@
     "noAccessLink": "لا يوجد رابط وصول",
     "parentPortalLinkNotGenerated": "لم يتم إنشاء رابط وصول بوابة ولي الأمر لهذا الطالب بعد",
     "couldNotGenerateParentLink": "لا يمكن إنشاء رابط وصول ولي الأمر",
+    "portalOpened": "تم فتح البوابة بنجاح",
     "newAnnouncement": "إعلان جديد",
     "parentTeacherMeetingSchedule": "تم نشر \"جدول اجتماع أولياء الأمور والمعلمين\"",
     "courseEnrollment": "تسجيل في مقرر",
@@ -569,7 +577,6 @@
     "title": "المالية",
     "fees": "الرسوم",
     "expenses": "المصروفات",
-    "reports": "التقارير",
     "feeManagement": {
       "title": "إدارة الرسوم الدراسية",
       "description": "إدارة الرسوم الدراسية، الفواتير، وجدولة الأقساط للطلاب.",
@@ -1261,8 +1268,6 @@
     "presentDays": "أيام الحضور",
     "totalDays": "إجمالي الأيام",
     "teacherName": "اسم المعلم",
-    "coursesTaught": "المقررات المُدرّسة",
-    "averageRating": "متوسط التقييم",
     "progressScore": "نقاط التقدم",
     "improvement": "التحسن",
     "customReportData": "بيانات التقرير المخصص",
@@ -1367,5 +1372,16 @@
   " - ": "",
   "الرجاء ملء الحقول المطلوبة: المادة، المدرس، اليوم، والوقت": "",
   "تم حذف الكتاب بنجاح (مثال فقط)": "",
-  "تم حذف المقرر (تنفيذ الحذف الفعلي مطلوب)": ""
+  "تم حذف المقرر (تنفيذ الحذف الفعلي مطلوب)": "",
+  "timetable": {
+    "failedToFetchInitialData": "فشل في تحميل البيانات الأولية.",
+    "failedToFetchTimetable": "فشل في جلب الجدول الزمني.",
+    "entryAdded": "تم إضافة الحصة",
+    "timetableUpdated": "تم تحديث الجدول الزمني.",
+    "failedToAddEntry": "فشل في إضافة الحصة.",
+    "entryUpdated": "تم تحديث الحصة",
+    "failedToUpdateEntry": "فشل في تحديث الحصة.",
+    "entryRemoved": "تم حذف الحصة",
+    "failedToDeleteEntry": "فشل في حذف الحصة."
+  }
 }

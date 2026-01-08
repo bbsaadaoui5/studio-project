@@ -30,8 +30,9 @@ export const generateParentAccessToken = async (studentId: string, opts?: { pare
       throw new Error('Firestore not initialized. Cannot generate parent access token.');
     }
 
-    // Production path: Generate a secure random token and persist it
-    const token = crypto.randomUUID();
+    // Production path: Generate a short, secure random token (8 characters)
+    // Using base36 (0-9, a-z) for easy typing/reading
+    const token = Math.random().toString(36).substring(2, 10).toUpperCase();
 
     // Build the access record and only include defined fields (Firestore rejects `undefined` values)
     const accessRecord: Partial<Omit<ParentAccess, 'createdAt'>> = {

@@ -130,7 +130,7 @@ export default function MessagesPage() {
                 ];
                 setContacts(allContacts);
             } catch (error) {
-                toast({ title: "Error", description: "Could not load contacts.", variant: "destructive" });
+                toast({ title: t('common.error'), description: t('common.couldNotFetchData'), variant: "destructive" });
             } finally {
                 setIsLoadingContacts(false);
             }
@@ -144,7 +144,7 @@ export default function MessagesPage() {
             setSelectedConversation(newConversation);
             setIsNewMessageOpen(false);
         } catch (error) {
-            toast({ title: "Error", description: "Could not start new conversation.", variant: "destructive" });
+            toast({ title: t('common.error'), description: t('common.failedToSubmit'), variant: "destructive" });
         }
     }
 
