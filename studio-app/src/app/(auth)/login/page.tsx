@@ -154,22 +154,21 @@ export default function LoginPage() {
 
   return (
     <>
-      <Card className="w-full max-w-md shadow-xl border border-slate-200/70 bg-white/95 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-xl border border-slate-200/70 bg-white/95 backdrop-blur-sm overflow-hidden">
         <h1 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h1>
         <h2 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h2>
         <CardHeader className="text-center space-y-3 sm:space-y-4">
           <div className="mx-auto flex flex-col items-center justify-center">
             <div className="flex flex-col items-center justify-center h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60 transition-all duration-300 animate-pulse">
               <Image src="/icon-192.png" alt="" aria-hidden className="h-12 sm:h-16 w-12 sm:w-16 drop-shadow-lg" width={64} height={64} />
-              <p className="text-white font-black text-sm mt-2 leading-none px-1" style={{ 
+              <p className="text-white font-black text-sm mt-2 leading-none px-1 w-full text-center" style={{ 
                 fontFamily: "'Arabic Typesetting', 'Simplified Arabic', 'Traditional Arabic', serif",
                 fontWeight: 900,
                 letterSpacing: '0.06em',
                 textShadow: '0 3px 6px rgba(0,0,0,0.5), 0 0 12px rgba(255,255,255,0.25)',
                 WebkitTextStroke: '0.7px rgba(255,255,255,0.4)',
                 transform: 'scaleY(1.3) scaleX(0.85)',
-                fontStyle: 'italic',
-                whiteSpace: 'nowrap'
+                fontStyle: 'italic'
               }}>
                 مؤسسة الموعد
               </p>

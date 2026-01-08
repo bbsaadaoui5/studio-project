@@ -34,7 +34,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-    <body className={`${inter.variable} ${cairo.variable} font-body antialiased`}> 
+    <body className={`${inter.variable} ${cairo.variable} font-body antialiased min-h-screen w-screen overflow-x-hidden`}> 
   <FirebaseInitializer />
   <FirebaseNotConfiguredBanner />
       {/* Skip link for keyboard users */}
