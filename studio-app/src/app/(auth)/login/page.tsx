@@ -153,7 +153,7 @@ export default function LoginPage() {
   };
 
   return (
-    <>
+    <div className="flex items-center justify-center min-h-screen w-full px-4 sm:px-6 py-4 sm:py-0 bg-gradient-to-br from-slate-50 to-slate-100">
       <Card className="w-full max-w-md shadow-xl border border-slate-200/70 bg-white/95 backdrop-blur-sm overflow-hidden">
         <h1 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h1>
         <h2 className="sr-only">{t('auth.title') || 'تسجيل الدخول'}</h2>
@@ -243,6 +243,6 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

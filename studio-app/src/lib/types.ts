@@ -28,8 +28,16 @@ export type Announcement = {
   id: string;
   title: string;
   content: string;
-  audience?: 'teachers' | 'parents' | 'both';
+  audience?: 'teachers' | 'parents' | 'both' | 'all';
+  eventDate?: string; // Optional explicit event/meeting date
+  publishDate: string; // ISO Date String
+  expiryDate: string; // ISO Date String - automatically set to publishDate + duration
+  durationDays: number; // Default: 2 days
+  status: 'active' | 'archived' | 'scheduled';
+  priority?: 'urgent' | 'important' | 'normal'; // Default: normal
   createdAt: string;
+  createdBy: string;
+  viewCount?: number; // Track how many times viewed
 };
 
 export type Course = {
@@ -315,6 +323,9 @@ export type Exam = {
     title: string;
     examDate: string; // ISO Date String
     duration: number; // in minutes
+    classes?: string[]; // Array of class IDs (e.g., ["9-A", "9-B"])
+    room?: string;
+    instructions?: string;
 }
 
 export type SchoolEvent = {

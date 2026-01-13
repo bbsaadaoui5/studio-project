@@ -15,15 +15,22 @@ import { Student, Course } from "@/lib/types";
 import { getCourse } from "@/services/courseService";
 import { useTranslation } from "@/i18n/translation-provider";
 import { format } from "date-fns";
+import { generateParentAccessToken, getParentAccessLink } from "@/services/parentService";
+import { useToast } from "@/hooks/use-toast";
+import { Copy, Link as LinkIcon } from "lucide-react";
 
 export default function StudentProfilePage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string | undefined;
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [student, setStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [supportCourse, setSupportCourse] = useState<(Course & { teacher?: string }) | null>(null);
+  const [parentLink, setParentLink] = useState<string | null>(null);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  
   // Effects/hooks first
     useEffect(() => {
       if (!id) return;
@@ -61,6 +68,41 @@ export default function StudentProfilePage() {
 
       getStudentData();
     }, [id]);
+    
+    useEffect(() => {
+      if (!id || !student) return;
+      const loadLink = async () => {
+        try {
+          const existingLink = await getParentAccessLink(id);
+          setParentLink(existingLink);
+        } catch (err) {
+          console.error('Failed to load parent link:', err);
+        }
+      };
+      loadLink();
+    }, [id, student]);
+    
+    const handleGenerateParentLink = async () => {
+      if (!id || !student) return;
+      setIsGeneratingLink(true);
+      try {
+        const token = await generateParentAccessToken(id, { parentName: student.parentName });
+        const link = `${window.location.origin}/parent-portal/${token}`;
+        setParentLink(link);
+        toast({ title: "✅ تم إنشاء الرابط", description: "تم إنشاء رابط بوابة ولي الأمر بنجاح" });
+      } catch (err) {
+        console.error('Failed to generate parent link:', err);
+        toast({ title: "خطأ", description: "فشل في إنشاء الرابط", variant: "destructive" });
+      } finally {
+        setIsGeneratingLink(false);
+      }
+    };
+    
+    const handleCopyLink = () => {
+      if (!parentLink) return;
+      navigator.clipboard.writeText(parentLink);
+      toast({ title: "✅ تم النسخ", description: "تم نسخ الرابط إلى الحافظة" });
+    };
 
     if (!id) { return <div>ID not found</div>; }
 
@@ -131,7 +173,14 @@ export default function StudentProfilePage() {
                       <Separator />
             <div className="grid grid-cols-2 gap-2 text-sm">
               <p className="text-muted-foreground">{t("students.studentId")}</p>
-              <p className="font-medium">{student.id}</p>
+              <p className="font-medium font-mono">
+                {(() => {
+                  const id = student.id;
+                  const numericId = id.replace(/\D/g, '');
+                  const shortId = numericId.slice(-3).padStart(3, '0');
+                  return `ST${shortId}`;
+                })()}
+              </p>
               <p className="text-muted-foreground">{t("students.dateOfBirth")}</p>
               <p className="font-medium">{student.dateOfBirth ? format(new Date(student.dateOfBirth), "PPP") : t("common.notAvailable")}</p>
               <p className="text-muted-foreground">{t("students.enrollmentDate")}</p>
@@ -156,6 +205,46 @@ export default function StudentProfilePage() {
            <h3 className="text-lg font-semibold">{t("students.medicalNotes")}</h3>
            <Separator />
            <p className="text-sm text-muted-foreground">{student.medicalNotes || t("students.noMedicalNotes")}</p>
+          </div>
+          
+          <div className="md:col-span-2 space-y-4">
+            <h3 className="text-lg font-semibold">رابط بوابة ولي الأمر</h3>
+            <Separator />
+            <div className="flex items-center gap-2">
+              {parentLink ? (
+                <>
+                  <div className="flex-1 p-3 bg-muted rounded-md font-mono text-sm overflow-x-auto">
+                    {parentLink}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyLink}
+                    aria-label="نسخ الرابط"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleGenerateParentLink}
+                  disabled={isGeneratingLink}
+                  aria-label="إنشاء رابط بوابة ولي الأمر"
+                >
+                  {isGeneratingLink ? (
+                    <>
+                      <LinkIcon className="mr-2 h-4 w-4 animate-spin" />
+                      جارٍ الإنشاء...
+                    </>
+                  ) : (
+                    <>
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      إنشاء رابط بوابة ولي الأمر
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
               </div>
           </CardContent>

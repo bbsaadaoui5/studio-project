@@ -32,19 +32,37 @@ export default function ParentAnnouncementsPage() {
         }
 
         const student = await getStudent(studentId);
+        console.log('👤 PARENT ANNOUNCEMENTS - Student:', {
+          id: studentId,
+          grade: student?.grade,
+          className: student?.className,
+        });
+
         const all = await getAnnouncements(50);
+        console.log('📢 PARENT ANNOUNCEMENTS - All announcements fetched:', all.length, all);
 
         const filtered = all.filter((a: any) => {
           // audience filtering: if audience provided, show only parents/both
-          if (a.audience && a.audience !== 'both' && a.audience !== 'parents') return false;
+          if (a.audience && a.audience !== 'both' && a.audience !== 'parents') {
+            console.log(`  ❌ Announcement "${a.title}" filtered: audience is "${a.audience}"`);
+            return false;
+          }
 
           // optional grade/class filters if announcement documents include them
-          if (a.grade && student && String(a.grade) !== String(student.grade)) return false;
-          if (a.className && student && String(a.className) !== String(student.className)) return false;
+          if (a.grade && student && String(a.grade) !== String(student.grade)) {
+            console.log(`  ❌ Announcement "${a.title}" filtered: grade mismatch (announcement: ${a.grade}, student: ${student.grade})`);
+            return false;
+          }
+          if (a.className && student && String(a.className) !== String(student.className)) {
+            console.log(`  ❌ Announcement "${a.title}" filtered: className mismatch (announcement: ${a.className}, student: ${student.className})`);
+            return false;
+          }
 
+          console.log(`  ✅ Announcement "${a.title}" passed filter`);
           return true;
         });
 
+        console.log('✨ PARENT ANNOUNCEMENTS - Final filtered count:', filtered.length);
         setAnnouncements(filtered);
       } catch (err) {
         console.error(err);

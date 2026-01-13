@@ -26,7 +26,8 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <title>مؤسسة الموعد - نظام الإدارة</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
+        <meta name="theme-color" content="#ffffff" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

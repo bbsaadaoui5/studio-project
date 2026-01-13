@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first CSS reset for viewport optimization */
+@layer base {
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    box-sizing: border-box;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  /* Mobile viewport height fixes */
+  #__next, [data-reactroot] {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  /* Prevent zoom on input focus in iOS */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  /* Mobile menu fix */
+  [role="main"] {
+    width: 100%;
+  }
+}
+
 @layer base {
   :root {
     --background: 207 100% 95%;

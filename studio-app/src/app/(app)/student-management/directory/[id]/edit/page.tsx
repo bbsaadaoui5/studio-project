@@ -216,13 +216,13 @@ export default function EditStudentPage() {
       await updateStudent(id as string, dataToUpdate);
       toast({
         title: t('common.success'),
-        description: `Successfully updated ${values.name}'s record.`,
+        description: `تم تحديث سجل ${values.name} بنجاح.`,
       });
       router.push(`/student-management/directory/${id}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update the student. Please try again.",
+        title: "خطأ",
+        description: "فشل تحديث الطالب. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {

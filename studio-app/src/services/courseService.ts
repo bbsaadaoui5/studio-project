@@ -135,7 +135,8 @@ export const getCourse = async (id: string): Promise<Course | null> => {
             }
             return { id: docSnap.id, ...data } as Course;
         } else {
-            console.log("No such course document!");
+            console.warn("⚠️ Course not found in Firestore. ID:", id);
+            console.warn("💡 This course may have been deleted. Consider cleaning up enrollments.");
             return null;
         }
     } catch (error) {

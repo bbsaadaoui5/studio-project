@@ -33,6 +33,7 @@ export const generateParentAccessToken = async (studentId: string, opts?: { pare
     // Production path: Generate a short, secure random token (8 characters)
     // Using base36 (0-9, a-z) for easy typing/reading
     const token = Math.random().toString(36).substring(2, 10).toUpperCase();
+    console.log(`Generating token "${token}" for student "${studentId}"`);
 
     // Build the access record and only include defined fields (Firestore rejects `undefined` values)
     const accessRecord: Partial<Omit<ParentAccess, 'createdAt'>> = {
@@ -41,17 +42,20 @@ export const generateParentAccessToken = async (studentId: string, opts?: { pare
     };
     if (opts?.parentId) accessRecord.parentId = opts.parentId;
     if (opts?.parentName) accessRecord.parentName = opts.parentName;
+    
     const tokenRef = doc(db, PARENT_ACCESS_COLLECTION, token);
     await setDoc(tokenRef, { ...accessRecord, createdAt: serverTimestamp() });
+    console.log(`Token document created at parentAccess/${token}`);
 
     // Also save the token reference on the student's access doc for easy lookup
     const studentAccessRef = doc(db, `${PARENT_ACCESS_COLLECTION}-by-student`, studentId);
     await setDoc(studentAccessRef, { token });
+    console.log(`Student reference created at parentAccess-by-student/${studentId}`);
 
     return token;
   } catch (error) {
     console.error("Error generating parent access token:", error);
-    throw new Error("Failed to generate parent access token.");
+    throw error; // Re-throw so the caller knows what happened
   }
 };
 

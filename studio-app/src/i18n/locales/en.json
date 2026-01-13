@@ -19,6 +19,7 @@
     "staffDirectory": "Staff Directory",
     "payroll": "Payroll",
     "attendance": "Attendance",
+    "conduct": "Conduct",
     "reviews": "Reviews",
     "supportPrograms": "Support Programs",
     "courses": "Courses",
@@ -121,6 +122,8 @@
   "nav": {
     "assignments": "Assignments",
     "calendar": "Calendar",
+    "attendance": "Attendance",
+    "behavior": "Behavior",
     "announcements": "Announcements",
     "messages": "Messages"
   },
@@ -288,6 +291,17 @@
     "noRecords": "No attendance records for this student.",
     "columns": { "date": "Date", "status": "Status" },
     "status": { "present": "Present", "late": "Late", "absent": "Absent" }
+  },
+  "conduct": {
+    "pageTitle": "Behavior and Conduct",
+    "recordTitle": "Conduct record",
+    "noRecords": "No conduct notes yet.",
+    "overallRating": "Overall rating",
+    "positive": "Positive",
+    "negative": "Negative",
+    "neutral": "Neutral",
+    "total": "Total notes",
+    "by": "By"
   },
   "announcements": {
     "loading": "Loading announcements...",
@@ -820,7 +834,7 @@
     "studentDistribution": "Student Distribution",
     "distributionSubtitle": "Distribution by category"
   },
-  "academics": { "title": "Academic Management" },
+  "academics": { "title": "Academic Management", "conduct": "Conduct" },
   "examination": { "title": "Examination System" },
   "events": { "title": "Events" },
   "communication": { "title": "Communication" },

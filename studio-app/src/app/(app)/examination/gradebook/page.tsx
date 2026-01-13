@@ -17,14 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, PlusCircle, Save, BarChart3, Download } from "lucide-react";
+import { Loader2, PlusCircle, Save, BarChart3, Download, Search, ArrowUpDown } from "lucide-react";
 import { Course, Student, Assignment } from "@/lib/types";
 import { getCourses } from "@/services/courseService";
 import { useToast } from "@/hooks/use-toast";
 import { getEnrollmentForCourse, enrollStudentsInCourse } from "@/services/enrollmentService";
 import { getStudent, getStudents } from "@/services/studentService";
 import { getAssignmentsForCourse, addAssignment, saveGrades, getGrades } from "@/services/gradeService";
+import { getStaffMember } from "@/services/staffService";
 import { Input } from "@/components/ui/input";
+import { auth } from "@/lib/firebase-client";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   Dialog,
   DialogContent,
@@ -42,13 +45,23 @@ export default function GradebookPage() {
   const [enrolledStudents, setEnrolledStudents] = useState<Student[]>([]);
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [classOptions, setClassOptions] = useState<string[]>([]);
+  const [gradeOptions, setGradeOptions] = useState<string[]>([]);
+  const [selectedGrade, setSelectedGrade] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [grades, setGrades] = useState<Record<string, { score: number | null }>>({});
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"name" | "score">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  
+  // Role-based states
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [isLoadingRole, setIsLoadingRole] = useState(true);
 
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [selectedAssignment, setSelectedAssignment] = useState<string>("");
 
   const [newAssignmentName, setNewAssignmentName] = useState("");
+  const [newAssignmentType, setNewAssignmentType] = useState<string>("homework");
   const [newAssignmentPoints, setNewAssignmentPoints] = useState(100);
   const [newAssignmentDueDate, setNewAssignmentDueDate] = useState<string | null>(null);
 
@@ -59,12 +72,32 @@ export default function GradebookPage() {
   const [isCreatingAssignment, setIsCreatingAssignment] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Check current user role
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const staffMember = await getStaffMember(user.uid);
+          setCurrentUserRole(staffMember?.role || null);
+        } catch (error) {
+          console.error("فشل في جلب دور المستخدم:", error);
+        }
+      }
+      setIsLoadingRole(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     const fetchCourses = async () => {
       setIsLoadingCourses(true);
       try {
         const fetchedCourses = await getCourses();
         setCourses(fetchedCourses);
+
+        // اجمع جميع المستويات لإتاحة الاختيار للإدارة
+        const uniqueGrades = Array.from(new Set(fetchedCourses.map(c => String(c.grade)))).sort();
+        setGradeOptions(uniqueGrades);
       } catch (error) {
         toast({
           title: "خطأ",
@@ -75,6 +108,7 @@ export default function GradebookPage() {
         setIsLoadingCourses(false);
       }
     };
+
     fetchCourses();
   }, [toast]);
 
@@ -113,7 +147,7 @@ export default function GradebookPage() {
 
     const course = courses.find(c => c.id === selectedCourse);
     if (course) {
-      const opts = Array.from(new Set(allStudents.filter(s => s.grade === course.grade).map(s => s.className))).sort();
+      const opts = Array.from(new Set(allStudents.filter(s => s.grade === course.grade).map(s => `${s.grade}-${s.className}`))).sort();
       setClassOptions(opts);
       setSelectedClass("all");
     }
@@ -138,17 +172,28 @@ export default function GradebookPage() {
         } else {
           const course = courses.find(c => c.id === selectedCourse);
           if (course) {
-            students = allStudents.filter(s => s.grade === course.grade && (selectedClass === "all" || s.className === selectedClass));
+            students = allStudents.filter(s => {
+              const studentClassId = `${s.grade}-${s.className}`;
+              return s.grade === course.grade && (selectedClass === "all" || studentClassId === selectedClass);
+            });
           }
         }
 
         const filteredStudents = selectedClass === "all" 
           ? students 
-          : students.filter((s: any) => s.className === selectedClass);
+          : students.filter((s: any) => {
+              const studentClassId = `${s.grade}-${s.className}`;
+              return studentClassId === selectedClass;
+            });
 
         setEnrolledStudents(filteredStudents);
 
         const gradeData = await getGrades(selectedAssignment);
+        console.log('🔍 GRADEBOOK LOADING ASSIGNMENT GRADES:');
+        console.log('📝 Assignment ID:', selectedAssignment);
+        console.log('👥 Enrolled students:', enrolledStudents.map(s => ({ name: s.name, id: s.id, studentId: s.studentId })));
+        console.log('📊 Grade data loaded from DB:', gradeData?.studentGrades);
+        console.log('🎯 Keys in gradeData:', Object.keys(gradeData?.studentGrades || {}));
         setGrades(gradeData?.studentGrades || {});
 
       } catch (error) {
@@ -178,7 +223,7 @@ export default function GradebookPage() {
 
   const handleCreateAssignment = async () => {
       if (!selectedCourse || !newAssignmentName) {
-          toast({title: "خطأ", description: "المقرر واسم التكليف مطلوبان.", variant: "destructive"});
+          toast({title: "خطأ", description: "المقرر واسم الواجب مطلوبان.", variant: "destructive"});
           return;
       }
       setIsCreatingAssignment(true);
@@ -198,7 +243,7 @@ export default function GradebookPage() {
       setNewAssignmentDueDate(null);
       setIsDialogOpen(false);
       } catch (error) {
-          toast({ title: "خطأ", description: "فشل إنشاء التكليف.", variant: "destructive" });
+          toast({ title: "خطأ", description: "فشل إنشاء الواجب.", variant: "destructive" });
       } finally {
           setIsCreatingAssignment(false);
       }
@@ -219,6 +264,11 @@ export default function GradebookPage() {
     if(!selectedAssignment) return;
     setIsSaving(true);
     try {
+        console.log('💾 SAVING ASSIGNMENT GRADES:');
+        console.log('📝 Assignment ID:', selectedAssignment);
+        console.log('👥 Students being saved:', enrolledStudents.map(s => ({ name: s.name, id: s.id, studentId: s.studentId })));
+        console.log('📊 Grades object keys:', Object.keys(grades));
+        console.log('📊 Full grades object:', grades);
         await saveGrades(selectedAssignment, grades);
         toast({title: "تم الحفظ", description: "تم حفظ الدرجات بنجاح."});
     } catch (error) {
@@ -241,28 +291,107 @@ export default function GradebookPage() {
   const highest = hasGrades ? Math.max(...studentGradesArray) : 0;
   const lowest = hasGrades ? Math.min(...studentGradesArray) : 0;
 
+  // Get filtered courses based on role
+  const filteredCourses = currentUserRole === 'admin' && selectedGrade
+    ? courses.filter(c => String(c.grade) === selectedGrade)
+    : currentUserRole === 'teacher'
+    ? courses.filter(c => c.teachers?.some(t => t.name)) // المعلم يرى مقررات تدرسها
+    : courses;
+  const filteredStudents = enrolledStudents.filter(student =>
+    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.studentId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    if (sortBy === "name") {
+      return sortOrder === "asc" 
+        ? a.name.localeCompare(b.name, 'ar')
+        : b.name.localeCompare(a.name, 'ar');
+    } else {
+      const scoreA = grades[a.id]?.score ?? -1;
+      const scoreB = grades[b.id]?.score ?? -1;
+      return sortOrder === "asc" ? scoreA - scoreB : scoreB - scoreA;
+    }
+  });
+
+  // Calculate individual student average
+  const getStudentAverage = (studentId: string) => {
+    const studentGrades = assignments
+      .map(a => grades[`${studentId}_${a.id}`]?.score || (grades[studentId]?.score ?? null))
+      .filter((score): score is number => score !== null && score !== undefined);
+    
+    if (studentGrades.length === 0) return null;
+    return (studentGrades.reduce((a, b) => a + b, 0) / studentGrades.length).toFixed(1);
+  };
+
+  // Export to CSV
+  const handleExportGrades = () => {
+    if (!selectedAssignment || !assignment) return;
+    
+    let csv = "اسم الطالب,معرّف الطالب,الدرجة,النسبة المئوية\n";
+    
+    sortedStudents.forEach(student => {
+      const score = grades[student.id]?.score ?? "-";
+      const pct = score !== "-" ? ((Number(score) / maxPoints) * 100).toFixed(1) : "-";
+      csv += `"${student.name}","${student.studentId}","${score}","${pct}%"\n`;
+    });
+    
+    const element = document.createElement("a");
+    const file = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    element.href = URL.createObjectURL(file);
+    element.download = `${assignment.name}_${new Date().toISOString().split('T')[0]}.csv`;
+    element.click();
+    
+    toast({ title: "تم التصدير", description: "تم تصدير الدرجات بنجاح" });
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle>دفتر الدرجات</CardTitle>
           <CardDescription>
-            إدارة شاملة للدرجات والتكاليف لكل مقرر
+            {currentUserRole === 'admin' 
+              ? 'إدارة شاملة للدرجات حسب المستوى الدراسي'
+              : 'إدارة درجات مقررك'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-3 gap-4">
+            {/* Grade Selection for Admin */}
+            {currentUserRole === 'admin' && gradeOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label>المستوى الدراسي</Label>
+                <Select onValueChange={(value) => {
+                  setSelectedGrade(value);
+                  setSelectedCourse("");
+                  setSelectedClass("all");
+                }} value={selectedGrade}>
+                  <SelectTrigger className="glass-input">
+                    <SelectValue placeholder="اختر المستوى الدراسي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gradeOptions.map((grade) => (
+                      <SelectItem key={grade} value={grade}>
+                        الصف {grade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>المقرر</Label>
               <Select onValueChange={(value) => {
                 setSelectedCourse(value);
                 setSelectedClass("all");
-              }} value={selectedCourse} disabled={isLoadingCourses}>
+              }} value={selectedCourse} disabled={isLoadingCourses || (currentUserRole === 'admin' && !selectedGrade)}>
                 <SelectTrigger className="glass-input">
                   <SelectValue placeholder="اختر المقرر" />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map((course) => (
+                  {filteredCourses.map((course) => (
                     <SelectItem key={course.id} value={course.id}>
                       {course.name}
                     </SelectItem>
@@ -289,11 +418,11 @@ export default function GradebookPage() {
             )}
 
             <div className="space-y-2">
-              <Label>التكليف</Label>
+              <Label>الواجب</Label>
               <div className="flex gap-2">
                 <Select onValueChange={setSelectedAssignment} value={selectedAssignment} disabled={!selectedCourse || isLoadingAssignments}>
                   <SelectTrigger className="glass-input">
-                    <SelectValue placeholder="اختر التكليف" />
+                    <SelectValue placeholder="اختر الواجب" />
                   </SelectTrigger>
                   <SelectContent>
                     {assignments.map((assignment) => (
@@ -305,20 +434,32 @@ export default function GradebookPage() {
                 </Select>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="icon" disabled={!selectedCourse} title="إضافة تكليف جديد">
+                    <Button variant="outline" size="icon" disabled={!selectedCourse} title="إضافة واجب جديد">
                       <PlusCircle className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>إنشاء تكليف جديد</DialogTitle>
+                      <DialogTitle>إنشاء واجب جديد</DialogTitle>
                       <DialogDescription>
-                        أدخل تفاصيل التكليف للمقرر: {courses.find(c => c.id === selectedCourse)?.name}
+                        أدخل تفاصيل الواجب للمقرر: {filteredCourses.find(c => c.id === selectedCourse)?.name}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="space-y-2">
-                        <Label>اسم التكليف</Label>
+                        <Label>نوع الواجب</Label>
+                        <Select value={newAssignmentType} onValueChange={setNewAssignmentType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر نوع الواجب" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="homework">الواجب المنزلي</SelectItem>
+                            <SelectItem value="classwork">الواجب الدراسي</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>اسم الواجب</Label>
                         <Input value={newAssignmentName} onChange={e => setNewAssignmentName(e.target.value)} placeholder="مثال: الواجب الأول" />
                       </div>
                       <div className="space-y-2">
@@ -391,51 +532,99 @@ export default function GradebookPage() {
       {!isLoadingStudents && selectedCourse && selectedAssignment && enrolledStudents.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>{assignment?.name} - إدخال الدرجات</CardTitle>
-            <CardDescription>
-              {enrolledStudents.length} طالب {selectedClass !== "all" && `في فصل ${selectedClass}`}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{assignment?.name} - إدخال الدرجات</CardTitle>
+                <CardDescription>
+                  {enrolledStudents.length} طالب {selectedClass !== "all" && `في فصل ${selectedClass}`}
+                </CardDescription>
+              </div>
+              <Button onClick={handleExportGrades} variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                تصدير CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {enrolledStudents.map((student, idx) => {
-                const studentScore = grades[student.id]?.score;
-                const percentage = studentScore !== null && studentScore !== undefined 
-                  ? ((studentScore / maxPoints) * 100).toFixed(0)
-                  : null;
+            <div className="space-y-4">
+              {/* Search and Sort Section */}
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="ابحث عن الطالب باسمه أو معرّفه..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background text-sm"
+                  />
+                </div>
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-full md:w-40">
+                    <SelectValue placeholder="الفرز حسب" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">الاسم</SelectItem>
+                    <SelectItem value="score">الدرجة</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  title={sortOrder === "asc" ? "تصاعدي" : "تنازلي"}
+                >
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </div>
 
-                return (
-                  <div key={student.id} className="flex items-center justify-between rounded-md border p-4 hover:bg-muted/50 transition">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{idx + 1}. {student.name}</p>
-                      <p className="text-xs text-muted-foreground">{student.studentId}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Input 
-                        type="number"
-                        min="0"
-                        max={maxPoints}
-                        className="w-20 text-center"
-                        placeholder="0"
-                        value={grades[student.id]?.score ?? ""}
-                        onChange={(e) => handleGradeChange(student.id, e.target.value)}
-                      />
-                      <div className="w-12 text-right">
-                        {studentScore !== null && studentScore !== undefined && (
-                          <div>
-                            <p className="text-sm font-semibold">{studentScore}</p>
-                            <p className="text-xs text-muted-foreground">{percentage}%</p>
-                          </div>
-                        )}
+              {/* Students List */}
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {sortedStudents.map((student, idx) => {
+                  const studentScore = grades[student.id]?.score;
+                  const scorePercentage = studentScore !== null && studentScore !== undefined 
+                    ? ((studentScore / maxPoints) * 100).toFixed(0)
+                    : null;
+
+                  return (
+                    <div key={student.id} className="flex items-center justify-between rounded-md border p-4 hover:bg-muted/50 transition">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{idx + 1}. {student.name}</p>
+                        <p className="text-xs text-muted-foreground">{student.studentId}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Input 
+                          type="number"
+                          min="0"
+                          max={maxPoints}
+                          className="w-20 text-center"
+                          placeholder="0"
+                          value={grades[student.id]?.score ?? ""}
+                          onChange={(e) => handleGradeChange(student.id, e.target.value)}
+                        />
+                        <div className="w-16 text-right">
+                          {studentScore !== null && studentScore !== undefined && (
+                            <div>
+                              <p className="text-sm font-semibold">{studentScore}</p>
+                              <p className="text-xs text-muted-foreground">{scorePercentage}%</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {filteredStudents.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">لم يتم العثور على طلاب مطابقين للبحث</p>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" disabled>
+              <Button variant="outline" onClick={handleExportGrades}>
                 <Download className="h-4 w-4" />
                 تصدير
               </Button>
@@ -454,7 +643,7 @@ export default function GradebookPage() {
           <CardContent className="py-8">
             <h3 className="text-lg font-medium mb-3">لا يوجد طلاب مسجلين</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              حسب النظام المغربي: اختر الفصل لتحميل لائحة القسم وتسجيل الطلاب في المقرر.
+              اختر الفصل لتحميل قائمة الطلاب وتسجيلهم في المقرر.
             </p>
             {classOptions.length > 0 && (
               <div className="flex flex-wrap items-end gap-3">

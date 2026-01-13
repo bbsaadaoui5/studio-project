@@ -34,20 +34,21 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { getCourse, updateCourse } from "@/services/courseService";
+import { getStaffMembers } from "@/services/staffService";
 import { ArrowLeft, Loader2, Wand2 } from "lucide-react";
 import { Course } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
-// Temporary mock function - replace AI call
+// دالة وهمية مؤقتة - استبدل بنداء الذكاء الاصطناعي
 const generateCourseDescription = async (): Promise<string> => {
-  return "This is a mock course description for testing purposes.";
+  return "هذا وصف مقرر وهمي لأغراض الاختبار.";
 };
 const courseSchema = z.object({
   name: z.string().min(3, "يجب أن يكون اسم المقرر 3 أحرف على الأقل."),
-  teacher: z.string().min(3, "Teacher name must be at least 3 characters."),
-  department: z.string().min(1, "Please select a department."),
-  grade: z.string().min(1, "Please select a grade."),
-  credits: z.coerce.number().min(1, "Credits must be at least 1.").max(5, "Credits cannot be more than 5."),
-  description: z.string().min(10, "Description must be at least 10 characters."),
+  teacher: z.string().min(3, "يجب أن يكون اسم المعلم 3 أحرف على الأقل."),
+  department: z.string().min(1, "يرجى اختيار قسماً."),
+  grade: z.string().min(1, "يرجى اختيار مستوى دراسياً."),
+  credits: z.coerce.number().min(1, "يجب أن تكون الساعات المعتمدة 1 على الأقل.").max(5, "لا يمكن أن تتجاوز الساعات المعتمدة 5."),
+  description: z.string().min(10, "يجب أن يكون الوصف 10 أحرف على الأقل."),
 });
 
 export default function EditCoursePage() {
@@ -60,12 +61,28 @@ export default function EditCoursePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
+  const [teachers, setTeachers] = useState<Array<{id: string, name: string}>>([]);
 
   // declare form (hook) before any early return
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
   });
   // Effects/hooks first
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const staff = await getStaffMembers();
+        const teachersList = staff
+          .filter(s => s.role === 'teacher')
+          .map(s => ({ id: s.id, name: s.name }));
+        setTeachers(teachersList);
+      } catch (error) {
+        console.error('فشل في جلب المعلمين:', error);
+      }
+    };
+    fetchTeachers();
+  }, []);
+
   useEffect(() => {
     if (!id) return;
     const fetchCourse = async () => {
@@ -80,8 +97,8 @@ export default function EditCoursePage() {
         }
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to fetch course data.",
+          title: "خطأ",
+          description: "فشل في جلب بيانات المقرر.",
           variant: "destructive",
         });
       } finally {
@@ -91,21 +108,21 @@ export default function EditCoursePage() {
     fetchCourse();
   }, [id, form, toast]);
 
-  if (!id) { return <div>ID not found</div>; }
+  if (!id) { return <div>لم يتم العثور على معرّف.</div>; }
 
   async function onSubmit(values: z.infer<typeof courseSchema>) {
     setIsSaving(true);
     try {
       await updateCourse(id, values);
       toast({
-        title: "Course Updated",
-        description: `Successfully updated ${values.name}.`,
+        title: "تم التحديث",
+        description: `تم تحديث المقرر "${values.name}" بنجاح.`,
       });
       router.push(`/academic-management/courses/${id}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update the course. Please try again.",
+        title: "خطأ",
+        description: "فشل تحديث المقرر. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {
@@ -121,7 +138,7 @@ export default function EditCoursePage() {
     }
     setIsGenerating(true);
     try {
-      const result = { description: "Mock course description" };
+      const result = { description: "وصف المقرر الوهمي" };
       form.setValue("description", result.description, { shouldValidate: true });
     } catch (error) {
       toast({ title: t('common.error'), variant: "destructive" });
@@ -144,16 +161,16 @@ export default function EditCoursePage() {
         <Button variant="outline" size="icon" asChild>
             <Link href={`/academic-management/courses/${id}`}>
             <ArrowLeft />
-            <span className="sr-only">{t('common.back') || 'Back'}</span>
+            <span className="sr-only">{t('common.back') || 'رجوع'}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Edit Course Information</h1>
+        <h1 className="text-2xl font-bold">تحرير معلومات المقرر</h1>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Editing: {course.name}</CardTitle>
+          <CardTitle>تحرير: {course.name}</CardTitle>
           <CardDescription>
-            Update the course's information below.
+            حدّث معلومات المقرر أدناه.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -167,9 +184,9 @@ export default function EditCoursePage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Course Name</FormLabel>
+                    <FormLabel>اسم المقرر</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Mathématiques avancées" {...field} />
+                      <Input placeholder="مثال: الرياضيات المتقدمة" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -180,10 +197,21 @@ export default function EditCoursePage() {
                 name="teacher"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teacher Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Fatima Al-Fihri" {...field} />
-                    </FormControl>
+                    <FormLabel>اسم المعلم</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر معلماً" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {teachers.map((teacher) => (
+                          <SelectItem key={teacher.id} value={teacher.name}>
+                            {teacher.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -193,19 +221,19 @@ export default function EditCoursePage() {
                 name="department"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Department</FormLabel>
+                    <FormLabel>القسم</FormLabel>
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a department" />
+                          <SelectValue placeholder="اختر قسماً" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Mathematics">Mathematics</SelectItem>
-                        <SelectItem value="English">English</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="History">History</SelectItem>
-                        <SelectItem value="Arts">Arts</SelectItem>
+                        <SelectItem value="Mathematics">الرياضيات</SelectItem>
+                        <SelectItem value="English">الإنجليزية</SelectItem>
+                        <SelectItem value="Science">العلوم</SelectItem>
+                        <SelectItem value="History">التاريخ</SelectItem>
+                        <SelectItem value="Arts">الفنون</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -217,34 +245,11 @@ export default function EditCoursePage() {
                 name="grade"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Grade</FormLabel>
-                     <Select onValueChange={field.onChange} value={field.value} disabled>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a grade" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[...Array(12)].map((_, i) => (
-                          <SelectItem key={i + 1} value={`${i + 1}`}>
-                            Grade {i + 1}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="credits"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Credits</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="1" max="5" placeholder="e.g., 3" {...field} />
-                    </FormControl>
+                    <FormLabel>المستوى الدراسي</FormLabel>
+                    <div className="px-3 py-2 border rounded-md bg-gray-50 text-gray-600 font-medium">
+                      الصف {field.value}
+                    </div>
+                    <p className="text-xs text-muted-foreground">المستوى الدراسي محدد مسبقاً ولا يمكن تغييره</p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -255,7 +260,7 @@ export default function EditCoursePage() {
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                      <div className="flex justify-between items-center">
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>الوصف</FormLabel>
                         <Button
                             type="button"
                             variant="outline"
@@ -264,11 +269,11 @@ export default function EditCoursePage() {
                             disabled={isGenerating}
                         >
                             {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                            {isGenerating ? "Generating..." : "Generate with AI"}
+                            {isGenerating ? "...يتم التوليد" : "توليد باستخدام الذكاء الاصطناعي"}
                         </Button>
                     </div>
                     <FormControl>
-                      <Textarea rows={5} placeholder="Provide a brief summary of the course..." {...field} />
+                      <Textarea rows={5} placeholder="قدّم ملخصاً موجزاً للمقرر..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -277,7 +282,7 @@ export default function EditCoursePage() {
               <div className="md:col-span-2 flex justify-end">
                 <Button type="submit" disabled={isSaving || isGenerating}>
                   {isSaving && <Loader2 className="animate-spin" />}
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving ? "...يتم الحفظ" : "حفظ التغييرات"}
                 </Button>
               </div>
             </form>

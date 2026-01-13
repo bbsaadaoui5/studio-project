@@ -40,8 +40,8 @@ export default function CoursesByGradePage() {
         setCourses(fetchedCourses);
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Could not fetch courses for this grade. Please try again later.",
+          title: "خطأ",
+          description: "تعذر جلب المقررات لهذا المستوى. يرجى المحاولة لاحقاً.",
           variant: "destructive",
         });
       } finally {
@@ -97,7 +97,7 @@ export default function CoursesByGradePage() {
                     <div className="flex items-start justify-between">
                     <div>
                         <CardTitle className="text-xl">{course.name}</CardTitle>
-                        <CardDescription>{course.teachers?.[0]?.name || 'TBA'}</CardDescription>
+                        <CardDescription>{course.teachers?.[0]?.name || 'لم يُحدد'}</CardDescription>
                     </div>
                     <Badge variant="secondary" className="capitalize">
                         {course.department}
@@ -110,7 +110,7 @@ export default function CoursesByGradePage() {
                     </p>
                      <div className="flex justify-end items-center text-sm">
                         <span className="font-medium text-muted-foreground">
-                        Credits:{" "}
+                        الساعات المعتمدة:{" "}
                         <span className="font-semibold text-foreground">
                             {course.credits}
                         </span>
@@ -119,7 +119,7 @@ export default function CoursesByGradePage() {
                 </CardContent>
                 <CardFooter className="flex justify-end p-4 pt-0">
                     <Button variant="outline" asChild>
-                    <Link href={`/academic-management/courses/${course.id}`}>View Details</Link>
+                    <Link href={`/academic-management/courses/${course.id}`}>عرض التفاصيل</Link>
                     </Button>
                 </CardFooter>
                 </Card>

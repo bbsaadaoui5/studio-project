@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Loader2, PlusCircle, CalendarDays, Printer, Edit, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from '@/i18n/translation-provider'
 import { getTimetableForClass, addTimetableEntry, updateTimetableEntry, deleteTimetableEntry } from '@/services/timetableService'
 import { getCourses } from '@/services/courseService'
 import { getStudents } from '@/services/studentService'
 import { getSettings } from '@/services/settingsService'
-import { Course, TimetableEntry, ClassInfo } from '@/lib/types'
+import { getExams } from '@/services/examService'
+import { Course, TimetableEntry, ClassInfo, Exam } from '@/lib/types'
 import {
     Dialog,
     DialogContent,
@@ -23,6 +25,17 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -58,8 +71,10 @@ const timetableSchema = z.object({
 
 export default function TimetablePage() {
     const { toast } = useToast()
+    const { t } = useTranslation()
     const [allClasses, setAllClasses] = useState<ClassInfo[]>([])
     const [courses, setCourses] = useState<Course[]>([])
+    const [exams, setExams] = useState<Exam[]>([])
     const [selectedClassId, setSelectedClassId] = useState<string>('')
     const [timetable, setTimetable] = useState<TimetableEntry[]>([])
     const [schoolName, setSchoolName] = useState('')
@@ -68,12 +83,15 @@ export default function TimetablePage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(null)
+    const [currentWeekOffset, setCurrentWeekOffset] = useState(0) // 0 = current week, 1 = next week, -1 = previous week
     const [editingInPlaceId, setEditingInPlaceId] = useState<string | null>(null)
     const [editingInPlaceValues, setEditingInPlaceValues] = useState<Partial<TimetableEntry> | null>(null)
     const editFirstInputRef = useRef<HTMLInputElement | null>(null)
     const [liveMessage, setLiveMessage] = useState<string>('')
     const editingContainerRef = useRef<HTMLDivElement | null>(null)
     const [dayFilter, setDayFilter] = useState<string>('All')
+    const [entryToDelete, setEntryToDelete] = useState<TimetableEntry | null>(null)
+    const [isDeleteConfirming, setIsDeleteConfirming] = useState(false)
 
     const form = useForm<z.infer<typeof timetableSchema>>({
         resolver: zodResolver(timetableSchema),
@@ -83,10 +101,11 @@ export default function TimetablePage() {
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const [students, fetchedCourses, settings] = await Promise.all([
+                const [students, fetchedCourses, settings, fetchedExams] = await Promise.all([
                     getStudents(),
                     getCourses(),
                     getSettings(),
+                    getExams(),
                 ])
 
                 const classesMap = new Map<string, number>()
@@ -106,9 +125,11 @@ export default function TimetablePage() {
 
                 setAllClasses(classList)
                 setCourses(fetchedCourses)
+                setExams(fetchedExams)
                 setSchoolName(settings.schoolName)
 
-                if (classList.length > 0) setSelectedClassId(classList[0].id)
+                if (classList.length > 0) setAllClasses(classList)
+                // لا نختار أي صف افتراضياً - يجب أن يختار المستخدم الصف بنفسه
             } catch (error) {
                 toast({ title: t('common.error'), description: t('timetable.failedToFetchInitialData'), variant: 'destructive' })
             }
@@ -140,10 +161,118 @@ export default function TimetablePage() {
 
     const getEntryForSlot = (day: string, timeSlot: string) => timetable.find((e) => e.day === day && e.timeSlot === timeSlot)
 
+    // دالة لحساب نطاق تواريخ الأسبوع (من الاثنين إلى الجمعة)
+    const weekRange = useMemo(() => {
+        const today = new Date()
+        const currentDay = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+        const diff = currentDay === 0 ? -6 : 1 - currentDay // Calculate days to Monday
+        
+        const monday = new Date(today)
+        monday.setDate(today.getDate() + diff + (currentWeekOffset * 7))
+        monday.setHours(0, 0, 0, 0)
+        
+        const friday = new Date(monday)
+        friday.setDate(monday.getDate() + 4)
+        friday.setHours(23, 59, 59, 999)
+        
+        return { monday, friday }
+    }, [currentWeekOffset])
+
+    const weekRangeText = useMemo(() => {
+        const monthName = weekRange.monday.toLocaleDateString('ar-SA', { month: 'long' })
+        const year = weekRange.monday.getFullYear()
+        return `${weekRange.monday.getDate()} - ${weekRange.friday.getDate()} ${monthName} ${year}`
+    }, [weekRange])
+
+    // دالة لحساب تاريخ كل يوم في الأسبوع
+    const getDayDate = useCallback((dayKey: string): string => {
+        const dayIndex = daysOfWeek.findIndex(d => d.key === dayKey)
+        if (dayIndex === -1) return ''
+        
+        const dayDate = new Date(weekRange.monday)
+        dayDate.setDate(weekRange.monday.getDate() + dayIndex)
+        
+        return `${dayDate.getMonth() + 1}/${dayDate.getDate()}`
+    }, [weekRange])
+
+    // دالة لاستخراج اليوم من تاريخ الامتحان
+    const getExamDay = (examDate: string): string | null => {
+        try {
+            const date = new Date(examDate)
+            // تحويل إلى تاريخ محلي لتجنب مشاكل المنطقة الزمنية
+            const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
+            const dayOfWeek = localDate.toLocaleDateString('ar-SA', { weekday: 'long' })
+            
+            // تحويل اسم اليوم من العربية إلى المفتاح الإنجليزي
+            const dayMap: { [key: string]: string } = {
+                'الاثنين': 'Monday',
+                'الثلاثاء': 'Tuesday',
+                'الأربعاء': 'Wednesday',
+                'الخميس': 'Thursday',
+                'الجمعة': 'Friday',
+            }
+            
+            return dayMap[dayOfWeek] || null
+        } catch {
+            return null
+        }
+    }
+
+    // استخراج الامتحانات الخاصة بالفصل المحدد في الأسبوع الحالي
+    const classExams = useMemo(() => {
+        if (!selectedClassInfo) return []
+        
+        return exams.filter((exam) => {
+            if (!exam.classes || exam.classes.length === 0) return false
+            const hasClass = exam.classes.some(classId => classId === selectedClassInfo.id)
+            if (!hasClass) return false
+            
+            // تحقق من أن تاريخ الامتحان يقع في نطاق الأسبوع المحدد
+            const examDate = new Date(exam.examDate)
+            examDate.setHours(0, 0, 0, 0)
+            return examDate >= weekRange.monday && examDate <= weekRange.friday
+        })
+    }, [exams, selectedClassInfo, weekRange])
+
     const filteredDays = useMemo(() => {
         if (dayFilter === 'All') return daysOfWeek
         return daysOfWeek.filter(d => d.key === dayFilter)
     }, [dayFilter])
+
+    // تصفية المواد لعرض فقط المواد المخصصة للشعبة المحددة
+    const classSpecificCourses = useMemo(() => {
+        if (!selectedClassInfo) return []
+        
+        console.log('🔍 TIMETABLE - Filtering courses for class:', selectedClassInfo);
+        console.log('📚 TIMETABLE - All courses:', courses.map(c => ({ id: c.id, name: c.name, grade: c.grade, sections: c.sections })));
+        
+        const filtered = courses.filter(course => {
+            // Check if course is for this grade
+            const gradeMatch = course.grade === selectedClassInfo.grade;
+            // Check if sections is defined and includes this className, OR if sections is undefined (backward compatibility)
+            const sectionMatch = !course.sections || course.sections.length === 0 || course.sections.includes(selectedClassInfo.className);
+            
+            const match = gradeMatch && sectionMatch;
+            if (!match) {
+                console.log(`⏭️ Skipping course "${course.name}" (ID: ${course.id}) - Grade: ${course.grade} (need ${selectedClassInfo.grade}), Sections:`, course.sections);
+            } else {
+                console.log(`✅ Including course "${course.name}" (ID: ${course.id}) - Grade: ${course.grade}, Sections:`, course.sections);
+            }
+            
+            return match;
+        });
+        
+        console.log('📋 TIMETABLE - Filtered courses:', filtered.map(c => ({ id: c.id, name: c.name })));
+        
+        if (filtered.length === 0) {
+            console.warn('⚠️ TIMETABLE - No courses found for this class! This may be because:');
+            console.warn('   1. No courses exist for grade', selectedClassInfo.grade);
+            console.warn('   2. Courses exist but sections array is empty or doesn\'t include', selectedClassInfo.className);
+            console.warn('   💡 Solution: Make sure courses have sections array populated, or leave it empty/undefined for all sections');
+        }
+        
+        return filtered;
+    }, [courses, selectedClassInfo])
 
     async function onSubmit(values: z.infer<typeof timetableSchema>) {
         if (!selectedClassInfo) return
@@ -257,15 +386,22 @@ export default function TimetablePage() {
     }
 
     const handleDelete = async (entry: TimetableEntry) => {
-        if (!entry.id) return
+        setEntryToDelete(entry)
+    }
+
+    const confirmDelete = async () => {
+        if (!entryToDelete || !entryToDelete.id) return
+        setIsDeleteConfirming(true)
         try {
-            await deleteTimetableEntry(entry.id)
+            await deleteTimetableEntry(entryToDelete.id)
             toast({ title: t('timetable.entryRemoved'), description: t('timetable.timetableUpdated') })
-            // announce and refresh
             setLiveMessage('Entry deleted')
             if (selectedClassInfo) fetchTimetable(selectedClassInfo.grade, selectedClassInfo.className)
         } catch (err) {
             toast({ title: t('common.error'), description: t('timetable.failedToDeleteEntry'), variant: 'destructive' })
+        } finally {
+            setIsDeleteConfirming(false)
+            setEntryToDelete(null)
         }
     }
 
@@ -297,6 +433,12 @@ export default function TimetablePage() {
             <style jsx global>{`
                 @media print {
                     .no-print { display: none !important; }
+                    body { margin: 0; padding: 0; }
+                    .print-area { margin: 0; padding: 0; }
+                    .print-header { display: block !important; }
+                    .border { border-collapse: collapse; }
+                    .grid { table-layout: auto; }
+                    * { page-break-inside: avoid; }
                 }
             `}</style>
             <div className="p-4">
@@ -313,18 +455,37 @@ export default function TimetablePage() {
 
             <div className="flex flex-col gap-6 no-print p-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>جداول الحصص</CardTitle>
-                            <CardDescription>اختر صفاً لعرض الجدول الأسبوعي.</CardDescription>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>جداول الحصص</CardTitle>
+                                <CardDescription>الجدول الأسبوعي للصف {selectedClassInfo?.grade} - الشعبة {selectedClassInfo?.className}</CardDescription>
+                            </div>
+                            
+                            {/* Week Navigation */}
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setCurrentWeekOffset(currentWeekOffset - 1)}>
+                                    ← الأسبوع السابق
+                                </Button>
+                                <div className="px-4 py-2 bg-muted rounded-md text-sm font-medium">
+                                    {weekRangeText}
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => setCurrentWeekOffset(currentWeekOffset + 1)}>
+                                    الأسبوع التالي →
+                                </Button>
+                                {currentWeekOffset !== 0 && (
+                                    <Button variant="ghost" size="sm" onClick={() => setCurrentWeekOffset(0)}>
+                                        الأسبوع الحالي
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 mt-4">
                             <div className="w-48 space-y-2">
-                                <Label>اختر الصف</Label>
                                 <Select onValueChange={setSelectedClassId} value={selectedClassId}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Class..." />
+                                        <SelectValue placeholder="اختر صفاً" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {allClasses.map((c) => (
@@ -337,10 +498,9 @@ export default function TimetablePage() {
                             </div>
 
                             <div className="w-40 space-y-2">
-                                <Label>فلتر حسب اليوم</Label>
                                 <Select onValueChange={setDayFilter} value={dayFilter}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="All Days" />
+                                        <SelectValue placeholder="كل الأيام" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="All">الكل</SelectItem>
@@ -353,7 +513,7 @@ export default function TimetablePage() {
 
                             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button disabled={!selectedClassId}>
+                                    <Button disabled={!selectedClassId} title={!selectedClassId ? "اختر صفاً وشعبة أولاً" : ""}>
                                         <PlusCircle /> أضف إلى الجدول
                                     </Button>
                                 </DialogTrigger>
@@ -381,7 +541,7 @@ export default function TimetablePage() {
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                {courses.map((course) => (
+                                                                {classSpecificCourses.map((course) => (
                                                                     <SelectItem key={course.id} value={course.id}>
                                                                         {course.name} - {course.teachers?.[0]?.name || 'غير محدد'}
                                                                     </SelectItem>
@@ -503,7 +663,7 @@ export default function TimetablePage() {
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                {courses.map((course) => (
+                                                                {classSpecificCourses.map((course) => (
                                                                     <SelectItem key={course.id} value={course.id}>
                                                                         {course.name} - {course.teachers?.[0]?.name || 'غير محدد'}
                                                                     </SelectItem>
@@ -590,9 +750,9 @@ export default function TimetablePage() {
                 </Card>
             </div>
 
-            <div className="print-area p-4">
-                <Card>
-                    <CardContent className="pt-6">
+            <div className="print-area p-4" style={{ pageBreakInside: 'avoid' }}>
+                <Card className="print:border-0 print:shadow-none">
+                    <CardContent className="pt-6 print:p-0 print:pt-0">
                         <div className="print-header hidden print:block text-center mb-4">
                             <h1 className="text-xl font-bold">{schoolName}</h1>
                             <h2 className="text-lg font-semibold">الجدول الدراسي</h2>
@@ -606,25 +766,47 @@ export default function TimetablePage() {
                         )}
 
                         {!isLoading && selectedClassId && (
-                            <div className="border rounded-lg overflow-hidden">
-                                <div className="grid grid-cols-[1fr_repeat(5,2fr)]">
-                                    <div className="font-semibold bg-muted p-3 border-b border-r">
-                                        <CalendarDays className="inline-block mr-2" /> الوقت
+                            <div key={`week-${currentWeekOffset}`} className="border rounded-lg bg-white w-full" style={{ overflow: 'visible' }}>
+                                <div className="grid w-full" style={{ gridTemplateColumns: '100px repeat(' + filteredDays.length + ', 1fr)' }}>
+                                    <div className="font-semibold bg-muted p-2 border-b border-r text-xs text-center">
+                                        <CalendarDays className="inline-block h-3 w-3 mr-1" /> الوقت
                                     </div>
                                     {filteredDays.map((d) => (
-                                        <div key={d.key} className="font-semibold bg-muted p-3 text-center border-b border-r last:border-r-0">
-                                            {d.label}
+                                        <div key={d.key} className="font-semibold bg-muted p-2 text-center border-b border-r last:border-r-0 text-xs">
+                                            <div>{d.label}</div>
+                                            <div className="text-xs text-muted-foreground">{getDayDate(d.key)}</div>
                                         </div>
                                     ))}
 
                                     {timeSlots.map((timeSlot) => (
                                         <div key={timeSlot} className="contents">
-                                            <div className="p-3 border-b border-r font-mono text-sm">{timeSlot}</div>
+                                            <div className="p-2 border-b border-r font-mono text-xs text-center whitespace-normal break-words" style={{ minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{timeSlot}</div>
                                             {filteredDays.map((d) => {
                                                 const entry = getEntryForSlot(d.key, timeSlot)
+                                                // ابحث عن الامتحانات في هذا اليوم
+                                                const examForDay = classExams.find(exam => {
+                                                    const examDay = getExamDay(exam.examDate)
+                                                    return examDay === d.key
+                                                })
+                                                
+                                                // إذا كان هناك امتحان في هذا اليوم وهذا هو أول وقت في الجدول، اعرضه
+                                                const shouldShowExam = examForDay && timeSlot === '08:00 - 09:00'
+                                                
                                                 return (
-                                                    <div key={`${d.key}-${timeSlot}`} className="p-3 border-b border-r last:border-r-0 text-center">
-                                                        {entry ? (
+                                                    <div key={`${d.key}-${timeSlot}`} className="p-1 border-b border-r last:border-r-0 text-center min-h-[80px] overflow-y-auto">
+                                                        {shouldShowExam ? (
+                                                            // عرض الامتحان
+                                                            <div className="bg-amber-100 text-amber-900 p-1 rounded-md relative border border-amber-400 text-left">
+                                                                <div className="flex justify-between items-start gap-1">
+                                                                    <div className="flex-1">
+                                                                        <p className="font-semibold text-xs">📝 {examForDay.title}</p>
+                                                                        <p className="text-xs text-amber-900">{examForDay.courseName}</p>
+                                                                        <p className="text-xs">⏱️ {examForDay.duration}د</p>
+                                                                        {examForDay.room && <p className="text-xs">🚪 {examForDay.room}</p>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : entry ? (
                                                             editingInPlaceId === entry.id ? (
                                                                 <div ref={editingContainerRef} onKeyDown={handleEditingContainerKeyDown} role="dialog" aria-label={`Edit ${editingInPlaceValues?.courseName || 'timetable entry'}`} className="bg-primary/10 text-primary p-2 rounded-md relative no-print">
                                                                     <div className="flex flex-col items-stretch gap-2">
@@ -643,19 +825,19 @@ export default function TimetablePage() {
                                                                     </div>
                                                                 </div>
                                                             ) : (
-                                                                <div className="bg-primary/10 text-primary p-2 rounded-md relative" onClick={() => handleEditClick(entry)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEditClick(entry); } }} aria-label={`Open editor for ${entry.courseName}`}>
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div>
-                                                                            <p className="font-semibold text-sm">{entry.courseName}</p>
-                                                                            <p className="text-xs">{entry.teacherName}</p>
-                                                                            {entry.notes && <p className="text-xs italic text-primary/70 mt-1">{entry.notes}</p>}
+                                                                <div className="bg-primary/10 text-primary p-1 rounded-md relative text-left cursor-pointer" onClick={() => handleEditClick(entry)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEditClick(entry); } }} aria-label={`Open editor for ${entry.courseName}`}>
+                                                                    <div className="flex justify-between items-start gap-1">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="font-semibold text-xs truncate">{entry.courseName}</p>
+                                                                            <p className="text-xs text-primary truncate">{entry.teacherName}</p>
+                                                                            {entry.notes && <p className="text-xs italic text-primary/60 truncate">{entry.notes}</p>}
                                                                         </div>
-                                                                        <div className="flex gap-2 no-print">
-                                                                            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleEditClick(entry) }} aria-label="Edit entry">
-                                                                                <Edit className="h-4 w-4" />
+                                                                        <div className="flex gap-1 no-print flex-shrink-0">
+                                                                            <Button size="xs" variant="outline" onClick={(e) => { e.stopPropagation(); handleEditClick(entry) }} aria-label="Edit entry" className="h-5 w-5 p-0">
+                                                                                <Edit className="h-3 w-3" />
                                                                             </Button>
-                                                                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDelete(entry) }} aria-label="Delete entry">
-                                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                                            <Button size="xs" variant="ghost" onClick={(e) => { e.stopPropagation(); setEntryToDelete(entry) }} aria-label="Delete entry" className="h-5 w-5 p-0">
+                                                                                <Trash2 className="h-3 w-3 text-destructive" />
                                                                             </Button>
                                                                         </div>
                                                                     </div>
@@ -675,12 +857,32 @@ export default function TimetablePage() {
 
                         {!isLoading && !selectedClassId && (
                             <div className="text-center py-12 text-muted-foreground no-print">
-                                <p>Please select a class to view the timetable.</p>
+                                <p>يرجى اختيار صفاً لعرض الجدول الزمني.</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!entryToDelete} onOpenChange={(open) => { if (!open) setEntryToDelete(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            هل تريد حذف حصة {entryToDelete?.courseName} من {entryToDelete?.day}؟ 
+                            <br />
+                            <span className="text-destructive font-semibold">هذا الإجراء لا يمكن التراجع عنه.</span>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} disabled={isDeleteConfirming} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {isDeleteConfirming ? 'جارٍ الحذف...' : 'حذف الحصة'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     )
 }

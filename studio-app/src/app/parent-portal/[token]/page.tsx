@@ -6,13 +6,14 @@ import { notFound, useParams } from "next/navigation";
 import { Student, Course, TimetableEntry, ReportCard } from "@/lib/types";
 import { validateParentAccessToken } from "@/services/parentService";
 import { getStudent } from "@/services/studentService";
-import { getCoursesForStudent } from "@/services/enrollmentService";
-import { getCourse, getSupportCourses } from "@/services/courseService";
-import { getAttendanceForStudent } from "@/services/attendanceService";
+import { getCoursesByGrade, getSupportCourses } from "@/services/courseService";
+import { getAttendanceForStudent, getAttendance } from "@/services/attendanceService";
 import { getStudentGradeForCourse } from "@/services/gradeService";
 import { getTimetableForClass } from "@/services/timetableService";
 import { generateReportCard } from "@/services/reportCardService";
-import { Loader2, User, BookOpen, CalendarCheck, ShieldX, Clock, FileText, Wand2, Star } from "lucide-react";
+import { calculateConductSummary, getRecentConductNotes } from "@/services/conductService";
+import { getUpcomingWorkForStudent } from "@/services/studentWorkService";
+import { Loader2, User, BookOpen, CalendarCheck, ShieldX, Clock, FileText, Wand2, Star, TrendingUp, Alert, AlertCircle, CheckCircle2, Calendar, BookOpenCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -53,14 +54,21 @@ export default function ParentPortalPage() {
   const { toast } = useToast();
   
   const [student, setStudent] = useState<Student | null>(null);
-  const [enrolledCourses, setEnrolledCourses] = useState<CourseWithGrade[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
   const [supportCourses, setSupportCourses] = useState<Course[]>([]);
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(true);
   const [attendance, setAttendance] = useState<any[]>([]);
+  const [attendanceRate, setAttendanceRate] = useState<number>(0);
+  const [behaviorNotes, setBehaviorNotes] = useState<any[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingAssignments, setPendingAssignments] = useState<number>(0);
+  const [conductStatus, setConductStatus] = useState<string>('ممتاز');
+  const [upcomingAssignments, setUpcomingAssignments] = useState<any[]>([]);
+  const [upcomingExams, setUpcomingExams] = useState<any[]>([]);
+  const [conductSummary, setConductSummary] = useState<any>(null);
 
   // State for report card generation
   const [isReportCardOpen, setIsReportCardOpen] = useState(false);
@@ -94,34 +102,68 @@ export default function ParentPortalPage() {
             return;
         }
 
-        const [courseIds, studentAttendance, timetableData, allSupportCourses] = await Promise.all([
-            getCoursesForStudent(studentId),
-            getAttendanceForStudent(studentId),
-            // Timetable API may be external; guard against failures so the whole portal doesn't fail.
-            getTimetableForClass(studentData.grade, studentData.className).catch(() => []),
-            getSupportCourses(),
-        ]);
+        console.log('👤 Loading parent portal data for:', studentData.name, 'Grade:', studentData.grade);
+
+        // Get all courses for grade level
+        const gradeCourses = await getCoursesByGrade(String(studentData.grade));
         
-        setSupportCourses(allSupportCourses);
-        setTimetable(timetableData);
-        setAttendance(
-          studentAttendance
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .slice(0, 5) // Get last 5 attendance records
+        // Get grades for each course
+        const coursesWithGrades = await Promise.all(
+          gradeCourses.map(async (course) => {
+            const finalGrade = await getStudentGradeForCourse(course.id, studentId);
+            return { ...course, finalGrade };
+          })
         );
+        
+        setEnrolledCourses(coursesWithGrades);
+        console.log('📚 Loaded', coursesWithGrades.length, 'courses');
 
-        if (courseIds.length > 0) {
-            const coursePromises = courseIds.map(async (id) => {
-                const course = await getCourse(id);
-                if (!course) return null;
-                const finalGrade = await getStudentGradeForCourse(id, studentId);
-                return { ...course, finalGrade };
-            });
-
-            const courses = await Promise.all(coursePromises);
-            const validCourses = courses.filter(c => c !== null) as CourseWithGrade[];
-            setEnrolledCourses(validCourses);
+        // Get attendance data
+        const studentAttendance = await getAttendanceForStudent(studentId);
+        const recentAttendance = studentAttendance
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 10);
+        
+        setAttendance(recentAttendance);
+        
+        // Calculate attendance rate
+        if (studentAttendance.length > 0) {
+          const present = studentAttendance.filter(a => a.status === 'present').length;
+          const rate = Math.round((present / studentAttendance.length) * 100);
+          setAttendanceRate(rate);
+          console.log('📊 Attendance rate:', rate + '%');
         }
+
+        // Get timetable
+        const timetableData = await getTimetableForClass(studentData.grade, studentData.className).catch(() => []);
+        setTimetable(timetableData);
+
+        // Get support courses
+        const allSupportCourses = await getSupportCourses();
+        setSupportCourses(allSupportCourses);
+
+        // 🔴 جديد: احصل على بيانات السلوك الحقيقية
+        const conduct = await calculateConductSummary(studentId);
+        setConductSummary(conduct);
+        setConductStatus(conduct.overallRating);
+        console.log('📋 Conduct summary:', conduct);
+
+        // احصل على آخر ملاحظات السلوك
+        const recentNotes = await getRecentConductNotes(studentId, 5);
+        setBehaviorNotes(recentNotes);
+        console.log('📋 Recent behavior notes:', recentNotes);
+
+        // 🔴 جديد: احصل على الواجبات والاختبارات القادمة
+        const work = await getUpcomingWorkForStudent(
+          studentId,
+          String(studentData.grade),
+          studentData.className
+        );
+        setUpcomingAssignments(work.assignments);
+        setUpcomingExams(work.exams);
+        setPendingAssignments(work.totalPending);
+        console.log('📝 Pending assignments:', work.totalPending);
+        console.log('📅 Upcoming exams:', work.exams.length);
 
       } catch (error) {
         console.error("Error fetching parent portal data:", error);
@@ -150,18 +192,38 @@ export default function ParentPortalPage() {
                 }
                 const student = await getStudent(studentId);
                 const all = await getAnnouncements(5);
+                console.log('📢 MAIN PAGE - All announcements fetched:', all);
+                
                 const filtered = all.filter((a: any) => {
-                    if (a.audience && a.audience !== 'both' && a.audience !== 'parents') return false;
-                    if (a.grade && student && String(a.grade) !== String(student.grade)) return false;
-                    if (a.className && student && String(a.className) !== String(student.className)) return false;
-                    // Exclude announcements that contain English letters (A-Z / a-z)
-                    const combined = `${a.title || ''} ${a.content || ''}`;
-                    if (/[A-Za-z]/.test(combined)) return false;
+                    console.log(`  🔍 Filtering announcement "${a.title}"`);
+                    
+                    if (a.audience && a.audience !== 'both' && a.audience !== 'parents' && a.audience !== 'all') {
+                        console.log(`    ❌ Filtered: audience is "${a.audience}"`);
+                        return false;
+                    }
+                    
+                    if (a.grade && student && String(a.grade) !== String(student.grade)) {
+                        console.log(`    ❌ Filtered: grade mismatch`);
+                        return false;
+                    }
+                    
+                    if (a.className && student && String(a.className) !== String(student.className)) {
+                        console.log(`    ❌ Filtered: className mismatch`);
+                        return false;
+                    }
+                    
+                    // ✅ REMOVED: This filter was excluding announcements with English text!
+                    // const combined = `${a.title || ''} ${a.content || ''}`;
+                    // if (/[A-Za-z]/.test(combined)) return false;
+                    
+                    console.log(`    ✅ Passed all filters!`);
                     return true;
                 });
+                
+                console.log(`✨ Final announcements to display (${filtered.length}):`, filtered);
                 setAnnouncements(filtered.slice(0,3));
             } catch (err) {
-                console.error(err);
+                console.error('❌ Error loading announcements:', err);
             } finally {
                 setIsAnnouncementsLoading(false);
             }
@@ -197,6 +259,15 @@ export default function ParentPortalPage() {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('');
   }
+    // Display a shortened, user-friendly student ID for parents
+    const formatId = (id?: string | number) => {
+        const value = String(id ?? '').trim();
+        if (!value) return '';
+        // Extract numeric part and format as ST{3digit}
+        const numericId = value.replace(/\D/g, '');
+        const shortId = numericId.slice(-3).padStart(3, '0');
+        return `ST${shortId}`;
+    };
 
     // Map displayed Arabic day names to canonical keys returned by the timetable API
     const dayKeyMap: Record<string, string> = {
@@ -269,11 +340,17 @@ export default function ParentPortalPage() {
                     <p className="font-semibold">{student.name}</p>
                     <p className="text-muted-foreground">الصف {student.grade} — الفصل {student.className}</p>
                     <div className="mt-2 flex items-center justify-end gap-2">
-                        <Link href={`./assignments`}>
+                        <Link href={`./assignments-simple`}>
                             <Button size="sm">{t('nav.assignments')}</Button>
                         </Link>
                         <Link href={`./calendar`}>
                             <Button size="sm" variant="outline">{t('nav.calendar')}</Button>
+                        </Link>
+                        <Link href={`./attendance`}>
+                            <Button size="sm" variant="ghost">{t('nav.attendance') || 'الحضور'}</Button>
+                        </Link>
+                        <Link href={`./behavior`}>
+                            <Button size="sm" variant="ghost">{t('nav.behavior') || 'السلوك'}</Button>
                         </Link>
                             <Link href={`./announcements`}>
                                 <Button size="sm" variant="ghost">{t('nav.announcements')}</Button>
@@ -286,6 +363,73 @@ export default function ParentPortalPage() {
             </div>
         </header>
         <main className="container mx-auto p-4 md:p-6 lg:p-8">
+            {/* ملخص سريع - 4 مؤشرات أساسية */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {/* المؤشر 1: التقدم الأكاديمي */}
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    التقدم الأكاديمي
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {enrolledCourses.length > 0 
+                      ? Math.round(enrolledCourses.reduce((sum, c) => sum + (c.finalGrade || 0), 0) / enrolledCourses.length)
+                      : 0}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">من {enrolledCourses.length} مادة</p>
+                </CardContent>
+              </Card>
+
+              {/* المؤشر 2: الحضور */}
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    نسبة الحضور
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {attendanceRate}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">{attendance.length} أيام مسجلة</p>
+                </CardContent>
+              </Card>
+
+              {/* المؤشر 3: السلوك */}
+              <Card className="border-l-4 border-l-yellow-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    السلوك والانضباط
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge className="bg-yellow-100 text-yellow-800">{conductStatus}</Badge>
+                  <p className="text-xs text-muted-foreground mt-2">حالة السلوك الحالية</p>
+                </CardContent>
+              </Card>
+
+              {/* المؤشر 4: الواجبات المعلقة */}
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    واجبات معلقة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-red-600">
+                    {pendingAssignments}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">تنتظر التسليم</p>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 flex flex-col gap-6">
                      <Card>
@@ -300,7 +444,7 @@ export default function ParentPortalPage() {
                         <CardContent>
                              <Separator className="my-4" />
                                               <div className="space-y-2 text-sm">
-                                                  <p><span className="font-semibold">{t('student.idLabel')}:</span> {student.id}</p>
+                                                      <p><span className="font-semibold">{t('student.idLabel')}:</span> {formatId(student.id)}</p>
                                                   <p><span className="font-semibold">{t('student.emailLabel')}:</span> {student.email}</p>
                                                   <p><span className="font-semibold">{t('student.guardianLabel')}:</span> {student.parentName}</p>
                                                   <p><span className="font-semibold">{t('student.contactLabel')}:</span> {student.contact}</p>
@@ -334,6 +478,68 @@ export default function ParentPortalPage() {
                            )}
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5" />
+                                السلوك والانضباط
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {conductSummary ? (
+                                <div className="space-y-4">
+                                    <div className="p-3 bg-muted/50 rounded-lg">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-muted-foreground">التقييم العام:</span>
+                                            <Badge className={`${
+                                                conductSummary.overallRating === 'ممتاز' ? 'bg-green-500' :
+                                                conductSummary.overallRating === 'جيد' ? 'bg-blue-500' :
+                                                conductSummary.overallRating === 'متوسط' ? 'bg-yellow-500' :
+                                                'bg-red-500'
+                                            }`}>
+                                                {conductSummary.overallRating}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <p className="text-muted-foreground">إيجابي</p>
+                                                <p className="font-bold text-green-600">{conductSummary.positiveCount}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-muted-foreground">سلبي</p>
+                                                <p className="font-bold text-red-600">{conductSummary.negativeCount}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-muted-foreground">إجمالي</p>
+                                                <p className="font-bold">{conductSummary.totalNotes}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Recent behavior notes */}
+                                    {behaviorNotes.length > 0 && (
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-semibold text-muted-foreground">آخر الملاحظات:</p>
+                                            {behaviorNotes.slice(0, 3).map((note: any) => (
+                                                <div key={note.id} className={`p-2 text-xs rounded border-l-2 ${
+                                                    note.type === 'positive' 
+                                                        ? 'border-l-green-500 bg-green-50' 
+                                                        : note.type === 'negative' 
+                                                        ? 'border-l-red-500 bg-red-50'
+                                                        : 'border-l-gray-500 bg-gray-50'
+                                                }`}>
+                                                    <p className="font-medium">{note.note}</p>
+                                                    <p className="text-muted-foreground mt-1">{new Date(note.date).toLocaleDateString('ar-SA')}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">لا توجد ملاحظات سلوك بعد.</p>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
                 <div className="lg:col-span-2 space-y-6">
                     <Card>
@@ -344,7 +550,7 @@ export default function ParentPortalPage() {
                             {isAnnouncementsLoading ? (
                                 <p>{t('announcements.loading')}</p>
                             ) : announcements.length === 0 ? (
-                                <p className="text-muted-foreground">{t('announcements.noUrgent')}</p>
+                                <p className="text-muted-foreground">{t('announcements.noForParents')}</p>
                             ) : (
                                 <div className="space-y-3">
                                     {announcements.map(a => (
@@ -364,75 +570,7 @@ export default function ParentPortalPage() {
                                 <BookOpen />
                                 {t('academic.progressTitle')}
                             </CardTitle>
-                            <Dialog open={isReportCardOpen} onOpenChange={setIsReportCardOpen}>
-                                    <DialogTrigger asChild>
-                                    <Button variant="outline"><FileText /> {t('report.dialog.viewButton')}</Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-3xl">
-                                    <DialogHeader>
-                                        <DialogTitle>{t('report.dialog.title')}</DialogTitle>
-                                        <DialogDescription>
-                                            {t('report.dialog.description')}
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="py-4">
-                                        {!generatedReport && (
-                                            <div className="flex items-end gap-2">
-                                                <div className="flex-1 space-y-2">
-                                                    <Label htmlFor="reporting-period">{t('report.dialog.reportingPeriodLabel')}</Label>
-                                                    <Input 
-                                                        id="reporting-period" 
-                                                        placeholder={t('report.dialog.placeholder')}
-                                                        value={reportingPeriod}
-                                                        onChange={e => setReportingPeriod(e.target.value)}
-                                                    />
-                                                </div>
-                                                <Button onClick={handleGenerateReport} disabled={isGenerating || !reportingPeriod}>
-                                                    {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                                                    {generatingMessages[generatingState]}
-                                                </Button>
-                                            </div>
-                                        )}
-                                        {isGenerating && (
-                                            <div className="flex flex-col items-center justify-center h-64 gap-4">
-                                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                                                <p className="text-muted-foreground">{generatingMessages[generatingState]}</p>
-                                            </div>
-                                        )}
-                                        {generatedReport && (
-                                           <div className="border rounded-lg p-4 max-h-[60vh] overflow-y-auto">
-                                                <div className="text-center mb-4">
-                                                    <h3 className="text-xl font-bold">{generatedReport.studentName}</h3>
-                                                    <p>{generatedReport.class}</p>
-                                                    <p className="text-muted-foreground">{generatedReport.reportingPeriod}</p>
-                                                </div>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <h4 className="font-semibold">{t('report.overviewTitle')}</h4>
-                                                        <p className="text-sm text-muted-foreground italic">"{generatedReport.overallSummary}"</p>
-                                                    </div>
-                                                    <Separator />
-                                                    <div className="space-y-3">
-                                                        {generatedReport.courses.map((course, i) => (
-                                                            <div key={i}>
-                                                                <div className="flex justify-between font-semibold">
-                                                                    <p>{course.courseName}</p>
-                                                                    <p>{course.finalGrade}</p>
-                                                                </div>
-                                                                <p className="text-xs text-muted-foreground">المدرس: {course.teacherName}</p>
-                                                                <p className="text-sm mt-1">{course.comments}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <DialogFooter>
-                                        <Button variant="secondary" onClick={() => { setIsReportCardOpen(false); setGeneratedReport(null); setReportingPeriod("")}}>{t('report.dialog.closeButton')}</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                            {/* Report dialog removed in dev: avoid prompting parents to enter a period */}
                         </CardHeader>
                         <CardContent>
                             {enrolledCourses.length > 0 ? (
@@ -440,7 +578,7 @@ export default function ParentPortalPage() {
                                     {enrolledCourses.map(course => (
                                         <div key={course.id}>
                                             <div className="flex justify-between items-center mb-2">
-                                                <Link href={`./courses/${course.id}`} className="font-medium text-primary underline">{course.name}</Link>
+                                                <Link href={`/parent-portal/${token}/courses/${course.id}`} className="font-medium text-primary underline">{course.name}</Link>
                                                     <span className={`font-semibold ${course.finalGrade === null ? 'text-muted-foreground' : course.finalGrade < 50 ? 'text-destructive' : 'text-primary'}`}>
                                                     {course.finalGrade !== null ? `${course.finalGrade.toFixed(1)}%` : 'غير متوفر'}
                                                 </span>
@@ -504,6 +642,54 @@ export default function ParentPortalPage() {
                                                         </div>
                                                     </div>
                                                 </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <BookOpenCheck />
+                                الواجبات والاختبارات القادمة
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {/* عرض الواجبات القادمة */}
+                                {upcomingAssignments.length > 0 ? (
+                                    upcomingAssignments.slice(0, 5).map((assignment, idx) => (
+                                        <div key={`assignment-${assignment.id}`} className="p-3 border-r-4 border-r-blue-500 bg-blue-50 rounded">
+                                            <p className="font-semibold text-sm">{assignment.name}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{assignment.courseName}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                📅 {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('ar-SA') : 'لا يوجد تاريخ'}
+                                            </p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-3 text-center text-muted-foreground">
+                                        ✅ لا توجد واجبات معلقة
+                                    </div>
+                                )}
+
+                                {/* عرض الاختبارات القادمة */}
+                                {upcomingExams.length > 0 && (
+                                    <>
+                                        <Separator className="my-3" />
+                                        {upcomingExams.slice(0, 5).map((exam, idx) => (
+                                            <div key={`exam-${exam.id}`} className="p-3 border-r-4 border-r-green-500 bg-green-50 rounded">
+                                                <p className="font-semibold text-sm">اختبار {exam.courseName}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{exam.title}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    📅 {new Date(exam.examDate).toLocaleDateString('ar-SA')} - المدة: {exam.duration} دقيقة
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+
+                                {upcomingAssignments.length === 0 && upcomingExams.length === 0 && (
+                                    <p className="text-sm text-muted-foreground text-center py-4">✅ لا توجد واجبات أو اختبارات قادمة</p>
+                                )}
+                            </div>
+                        </CardContent>
                     </Card>
                     <Card>
                         <CardHeader>

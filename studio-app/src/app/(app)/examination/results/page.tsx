@@ -78,26 +78,28 @@ export default function ExamResultsPage() {
         const examDetails = exams.find(e => e.id === selectedExam);
         if (!examDetails) return;
 
+        // Set exam classes directly from exam data
+        const examClassesFromExam = (examDetails as any).classes || [];
+        setExamClasses(examClassesFromExam.sort());
+
         // Get all students from enrollment
         const enrollment = await getEnrollmentForCourse(examDetails.courseId);
         let students: Student[] = [];
         
-        if (enrollment && enrollment.studentIds.length > 0) {
+        if (enrollment && enrollment.studentIds && enrollment.studentIds.length > 0) {
           const studentPromises = enrollment.studentIds.map(id => getStudent(id));
           students = (await Promise.all(studentPromises)).filter(s => s) as Student[];
-        } else {
-          // Moroccan fallback: get students by grade and className from exam classes
+        }
+        
+        // Fallback: get students by grade and className from exam classes
+        if (students.length === 0) {
           const allStudents = await getStudents();
-          const examClassesSet = new Set((examDetails as any).classes || []);
+          const examClassesSet = new Set(examClassesFromExam);
           students = allStudents.filter((s: any) => {
             const classId = `${s.grade}-${s.className}`;
             return examClassesSet.has(classId);
           });
         }
-
-        // Extract unique classes
-        const classesSet = new Set(students.map((s: any) => `${s.grade}-${s.className}`));
-        setExamClasses(Array.from(classesSet).sort());
 
         // Filter by selected class
         const filteredStudents = selectedClass === "all" 
@@ -108,6 +110,11 @@ export default function ExamResultsPage() {
 
         // Fetch existing scores
         const scoreData = await getExamScores(selectedExam);
+        console.log('🔍 ADMIN LOADING EXAM SCORES:');
+        console.log('📝 Exam ID:', selectedExam);
+        console.log('👥 Enrolled students:', enrolledStudents.map(s => ({ name: s.name, id: s.id, studentId: s.studentId })));
+        console.log('📊 Score data loaded from DB:', scoreData?.studentScores);
+        console.log('🎯 Keys in scoreData:', Object.keys(scoreData?.studentScores || {}));
         setScores(scoreData?.studentScores || {});
 
       } catch (error) {
@@ -137,6 +144,11 @@ export default function ExamResultsPage() {
     if(!selectedExam) return;
     setIsSaving(true);
     try {
+        console.log('💾 SAVING EXAM SCORES:');
+        console.log('📝 Exam ID:', selectedExam);
+        console.log('👥 Students being saved:', enrolledStudents.map(s => ({ name: s.name, id: s.id, studentId: s.studentId })));
+        console.log('📊 Scores object keys:', Object.keys(scores));
+        console.log('📊 Full scores object:', scores);
         await saveExamScores(selectedExam, scores);
         toast({title: "تم الحفظ", description: "تم حفظ درجات الامتحان بنجاح."});
     } catch (error) {

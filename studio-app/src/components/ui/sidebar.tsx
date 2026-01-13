@@ -44,6 +44,8 @@ import {
   BarChart,
   UserSquare,
   Banknote,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -132,8 +134,8 @@ const menuItems = [
     subMenus: [
       { label: "navigation.courses", href: "/academic-management/courses", icon: BookOpenCheck },
       { label: "navigation.classes", href: "/academic-management/classes", icon: Users2 },
-      { label: "navigation.enrollment", href: "/academic-management/enrollment", icon: ClipboardList },
       { label: "navigation.attendance", href: "/academic-management/attendance", icon: CalendarCheck },
+      { label: "navigation.conduct", href: "/academic-management/conduct", icon: ShieldCheck },
       { label: "navigation.timetable", href: "/academic-management/timetable", icon: CalendarDays },
     ],
   },
@@ -405,8 +407,8 @@ export const AppSidebar: React.FC = () => {
         subMenus: [
         { label: "academics.courses", href: "/academic-management/courses", icon: BookOpenCheck },
         { label: "academics.classes", href: "/academic-management/classes", icon: Users2 },
-        { label: "academics.enrollment", href: "/academic-management/enrollment", icon: ClipboardList },
         { label: "academics.attendance", href: "/academic-management/attendance", icon: CalendarCheck },
+        { label: "academics.conduct", href: "/academic-management/conduct", icon: ShieldCheck },
         { label: "navigation.timetable", href: "/academic-management/timetable", icon: CalendarDays },
       ],
     },

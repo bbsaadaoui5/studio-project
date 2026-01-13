@@ -11,8 +11,7 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { getCourse } from "@/services/courseService";
 import { Course, Student } from "@/lib/types";
-import { getEnrollmentForCourse } from "@/services/enrollmentService";
-import { getStudent } from "@/services/studentService";
+import { getStudents } from "@/services/studentService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CourseDetailsClient } from "./CourseDetailsClient";
 import { Badge } from "@/components/ui/badge";
@@ -39,17 +38,13 @@ export default function CourseDetailsPage() {
           }
           setCourse(courseData);
       
-          const enrollment = await getEnrollmentForCourse(id);
-          let students: Student[] = [];
-          if (enrollment && enrollment.studentIds.length > 0) {
-            const studentPromises = enrollment.studentIds.map(sid => getStudent(sid));
-            const studentResults = await Promise.all(studentPromises);
-            students = studentResults.filter(s => s !== null) as Student[];
-          }
+          // جلب جميع الطلاب في نفس المستوى الدراسي
+          const allStudents = await getStudents();
+          const students = allStudents.filter(s => s.grade === courseData.grade);
           setEnrolledStudents(students);
 
         } catch (error) {
-          console.error("Could not fetch course details:", error);
+          console.error("لم يكن بالإمكان جلب تفاصيل المقرر:", error);
           // Handle error appropriately, maybe show a toast
         } finally {
           setIsLoading(false);
@@ -82,10 +77,10 @@ export default function CourseDetailsPage() {
         <Button variant="outline" size="icon" asChild aria-label={t('common.backToCourses')}>
           <Link href={`/academic-management/courses/grade/${course.grade}`}>
             <ArrowLeft />
-            <span className="sr-only">{t('common.backToCourses') || 'Back to courses'}</span>
+            <span className="sr-only">{t('common.backToCourses') || 'العودة إلى المقررات'}</span>
           </Link>
         </Button>
-              <h1 className="text-2xl font-bold">Course Details</h1>
+              <h1 className="text-2xl font-bold">تفاصيل المقرر</h1>
           </div>
           <CourseDetailsClient course={course} />
         </div>
@@ -96,30 +91,30 @@ export default function CourseDetailsPage() {
                       <div className="flex justify-between items-start">
                         <div>
                             <CardTitle className="text-3xl">{course.name}</CardTitle>
-                            <CardDescription className="text-lg">Taught by {course.teachers?.[0]?.name || 'TBA'}</CardDescription>
+                            <CardDescription className="text-lg">يقوم بالتدريس {course.teachers?.[0]?.name || 'لم يتم تحديده'}</CardDescription>
                         </div>
                         <Badge variant="secondary" className="text-base flex items-center gap-2">
                             <GraduationCap className="h-4 w-4" />
-                            {course.type === 'academic' ? `Grade ${course.grade}` : 'Support Program'}
+                            {course.type === 'academic' ? `الصف ${course.grade}` : 'برنامج دعم'}
                         </Badge>
                       </div>
                   </CardHeader>
                   <CardContent className="mt-6">
                       <div className="space-y-6">
                           <div>
-                              <h3 className="text-lg font-semibold">Description</h3>
+                              <h3 className="text-lg font-semibold">الوصف</h3>
                               <Separator className="my-2" />
                               <p className="text-muted-foreground">{course.description}</p>
                           </div>
                           <div>
-                              <h3 className="text-lg font-semibold">Details</h3>
+                              <h3 className="text-lg font-semibold">التفاصيل</h3>
                               <Separator className="my-2" />
                               <div className="grid grid-cols-2 gap-4 text-sm">
-                                  <p className="text-muted-foreground">Department</p>
+                                  <p className="text-muted-foreground">القسم</p>
                                   <p className="font-medium">{course.department}</p>
-                                  <p className="text-muted-foreground">Credits</p>
+                                  <p className="text-muted-foreground">الساعات المعتمدة</p>
                                   <p className="font-medium">{course.credits}</p>
-                                  <p className="text-muted-foreground">Course ID</p>
+                                  <p className="text-muted-foreground">معرّف المقرر</p>
                                   <p className="font-medium">{course.id}</p>
                               </div>
                           </div>
@@ -131,9 +126,9 @@ export default function CourseDetailsPage() {
               <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                       <Users />
-                      Enrolled Students ({enrolledStudents.length})
+                      الطلاب المسجلون ({enrolledStudents.length})
                   </CardTitle>
-                  <CardDescription>Students currently taking this course.</CardDescription>
+                  <CardDescription>الطلاب الذين يتابعون هذا المقرر حالياً.</CardDescription>
               </CardHeader>
               <CardContent>
                   {enrolledStudents.length > 0 ? (
@@ -152,7 +147,7 @@ export default function CourseDetailsPage() {
                           ))}
                       </div>
                   ): (
-                      <p className="text-sm text-muted-foreground text-center py-8">No students are currently enrolled in this course.</p>
+                      <p className="text-sm text-muted-foreground text-center py-8">لا يوجد طلاب مسجلون حالياً في هذا المقرر.</p>
                   )}
               </CardContent>
           </Card>

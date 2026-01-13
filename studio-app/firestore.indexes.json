@@ -7,6 +7,14 @@
         { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "lastMessage.timestamp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "conduct",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

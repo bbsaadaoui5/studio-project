@@ -9,6 +9,8 @@ import Link from "next/link";
 import { validateParentAccessToken } from "@/services/parentService";
 import { getCourse } from "@/services/courseService";
 import { getStaffMember } from "@/services/staffService";
+import { getStudentGradeForCourse } from "@/services/gradeService";
+import { getStudent } from "@/services/studentService";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -22,6 +24,8 @@ export default function ParentCoursePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [course, setCourse] = useState<any | null>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [studentId, setStudentId] = useState<string>("");
+  const [finalGrade, setFinalGrade] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -33,15 +37,24 @@ export default function ParentCoursePage() {
           toast({ title: t('unauthorized.title'), description: t('unauthorized.description'), variant: "destructive" });
           return;
         }
+        
+        setStudentId(studentId);
+        console.log('📚 Loading course details for:', courseId, 'Student:', studentId);
 
         const c = await getCourse(courseId);
   if (!c) return notFound();
         setCourse(c);
+        console.log('✅ Course loaded:', c.name);
+
+        // Fetch student's final grade for this course
+        const grade = await getStudentGradeForCourse(courseId, studentId);
+        setFinalGrade(grade);
+        console.log('📊 Student grade for this course:', grade ?? 'غير متوفر');
 
         // fetch teacher contact info when available
-        const tPromises = (c.teachers || []).map((t: any) => getStaffMember(t.id));
-        const tResults = await Promise.all(tPromises);
-        setTeachers(tResults.filter(Boolean));
+        const teacherPromises = (c.teachers || []).map((teacherInfo: any) => getStaffMember(teacherInfo.id));
+        const teacherResults = await Promise.all(teacherPromises);
+        setTeachers(teacherResults.filter(Boolean));
       } catch (err) {
         console.error(err);
   toast({ title: t('common.error'), description: t('courses.fetchError') || 'Failed to fetch course data.', variant: "destructive" });
@@ -81,6 +94,38 @@ export default function ParentCoursePage() {
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
+              <CardTitle>الدرجة النهائية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {finalGrade !== null ? (
+                <div className="flex items-center gap-4">
+                  <div className={`text-4xl font-bold ${finalGrade >= 50 ? 'text-green-600' : 'text-red-600'}`}>
+                    {finalGrade.toFixed(1)}%
+                  </div>
+                  <div className="flex-1">
+                    <div className="w-full bg-gray-200 rounded-full h-4">
+                      <div 
+                        className={`h-4 rounded-full ${finalGrade >= 50 ? 'bg-green-600' : 'bg-red-600'}`}
+                        style={{ width: `${Math.min(finalGrade, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {finalGrade >= 90 ? 'ممتاز' : 
+                       finalGrade >= 80 ? 'جيد جداً' : 
+                       finalGrade >= 70 ? 'جيد' : 
+                       finalGrade >= 60 ? 'مقبول' : 
+                       finalGrade >= 50 ? 'نجح' : 'راسب'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">لا توجد درجة متوفرة حالياً</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
               <CardTitle>{t('courses.descriptionTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
@@ -97,16 +142,16 @@ export default function ParentCoursePage() {
               {/* If teacher-provided resources pages exist, link to them; otherwise show placeholder */}
               {teachers.length > 0 ? (
                 <ul className="space-y-2">
-                  {teachers.map(t => (
-                    <li key={t.id} className="p-2 border rounded-md">
+                  {teachers.map(teacher => (
+                    <li key={teacher.id} className="p-2 border rounded-md">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{t.name}</p>
-                          <p className="text-sm text-muted-foreground">{t.position || 'Teacher'}</p>
+                          <p className="font-medium">{teacher.name}</p>
+                          <p className="text-sm text-muted-foreground">{teacher.position || 'Teacher'}</p>
                         </div>
                         <div className="flex flex-col items-end">
-                          <Link href={`/teacher/portal/${t.id}/resources`} className="text-sm text-primary">{t('courses.viewResources')}</Link>
-                          {t.email && <a className="text-xs text-muted-foreground">{t.email}</a>}
+                          <Link href={`/teacher/portal/${teacher.id}/resources`} className="text-sm text-primary">{t('courses.viewResources')}</Link>
+                          {teacher.email && <a className="text-xs text-muted-foreground">{teacher.email}</a>}
                         </div>
                       </div>
                     </li>
@@ -140,13 +185,13 @@ export default function ParentCoursePage() {
                 <p className="text-sm text-muted-foreground">{t('courses.noTeacherAssigned')}</p>
               ) : (
                 <div className="space-y-3">
-                  {teachers.map(t => (
-                    <div key={t.id} className="p-2 border rounded">
-                      <p className="font-medium">{t.name}</p>
-                      {t.email && <p className="text-sm text-muted-foreground">البريد الإلكتروني: {t.email}</p>}
-                      {t.phone && <p className="text-sm text-muted-foreground">الهاتف: {t.phone}</p>}
+                  {teachers.map(teacher => (
+                    <div key={teacher.id} className="p-2 border rounded">
+                      <p className="font-medium">{teacher.name}</p>
+                      {teacher.email && <p className="text-sm text-muted-foreground">البريد الإلكتروني: {teacher.email}</p>}
+                      {teacher.phone && <p className="text-sm text-muted-foreground">الهاتف: {teacher.phone}</p>}
                       <div className="mt-2">
-                        <Link href={`/teacher/portal/${t.id}`}>
+                        <Link href={`/teacher/portal/${teacher.id}`}>
                           <Button size="sm">{t('courses.viewTeacherProfile')}</Button>
                         </Link>
                       </div>

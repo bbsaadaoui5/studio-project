@@ -118,7 +118,7 @@ export default function StudentDirectoryPage() {
         const shortId = numericId.slice(-3).padStart(3, '0');
         return (
           <div className="font-mono text-sm font-semibold">
-            SD{shortId}
+            ST{shortId}
           </div>
         );
       },

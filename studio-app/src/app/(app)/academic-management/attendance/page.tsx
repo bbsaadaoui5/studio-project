@@ -50,11 +50,27 @@ export default function AttendancePage() {
     fetchStudents();
   }, [toast, t]);
 
-  const grades = useMemo(() => [...new Set(allStudents.map(s => s.grade))].sort((a,b) => parseInt(a)-parseInt(b)), [allStudents]);
+  // Ensure no empty grade values end up as SelectItem values
+  const grades = useMemo(
+    () =>
+      [...new Set(
+        allStudents
+          .map((s) => s.grade)
+          .filter((g) => typeof g === 'string' && g.trim() !== '')
+      )].sort((a, b) => parseInt(a) - parseInt(b)),
+    [allStudents]
+  );
   
   const classNamesForGrade = useMemo(() => {
     if (!selectedGrade) return [];
-    return [...new Set(allStudents.filter(s => s.grade === selectedGrade).map(s => s.className))].sort();
+    return [
+      ...new Set(
+        allStudents
+          .filter((s) => s.grade === selectedGrade)
+          .map((s) => s.className)
+          .filter((c) => typeof c === 'string' && c.trim() !== '')
+      ),
+    ].sort();
   }, [allStudents, selectedGrade]);
 
   useEffect(() => {
@@ -164,11 +180,17 @@ export default function AttendancePage() {
                 <SelectValue placeholder="اختر المستوى الدراسي" />
               </SelectTrigger>
               <SelectContent>
-                {grades.map((grade) => (
-                  <SelectItem key={grade} value={grade}>
-                    المستوى {grade}
+                {grades && grades.length > 0 ? (
+                  grades.map((grade) => (
+                    <SelectItem key={grade} value={String(grade)}>
+                      المستوى {grade}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="placeholder" disabled>
+                    لا توجد مستويات متاحة
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -179,11 +201,17 @@ export default function AttendancePage() {
                 <SelectValue placeholder="اختر القسم" />
               </SelectTrigger>
               <SelectContent>
-                {classNamesForGrade.map((className) => (
-                  <SelectItem key={className} value={className}>
-                    القسم {className}
+                {classNamesForGrade && classNamesForGrade.length > 0 ? (
+                  classNamesForGrade.map((className) => (
+                    <SelectItem key={className} value={String(className)}>
+                      القسم {className}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="placeholder" disabled>
+                    لا توجد أقسام متاحة
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>

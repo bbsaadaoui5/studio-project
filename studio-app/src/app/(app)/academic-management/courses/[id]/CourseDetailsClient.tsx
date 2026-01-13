@@ -30,15 +30,15 @@ export function CourseDetailsClient({ course }: { course: Course }) {
     try {
       await deleteCourse(course.id);
       toast({
-        title: "Course Deleted",
-        description: `Successfully deleted ${course.name}.`,
+        title: "متم حذف المقرر",
+        description: `تم حذف ${course.name} بنجاح.`,
       });
       router.push("/academic-management/courses");
       router.refresh();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete the course. Please try again.",
+        title: "خطأ",
+        description: "فشل حذف المقرر. يرجى محاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {
@@ -53,27 +53,27 @@ export function CourseDetailsClient({ course }: { course: Course }) {
         onClick={() => router.push(`/academic-management/courses/${course.id}/edit`)}
       >
         <Edit className="mr-2 h-4 w-4" />
-        Edit
+        تعديل
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive">
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            حذف
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the course
-              and all associated enrollment and grade data.
+              لا يمكن التراجع عن هذا الإجراء. سيؤدي هذا إلى حذف المقرر بشكل دائم
+              وجميع بيانات التسجيل والدرجات المرتبطة به..
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? "Deleting..." : "Continue"}
+              {isDeleting ? "جاري الحذف..." : "متابعة"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

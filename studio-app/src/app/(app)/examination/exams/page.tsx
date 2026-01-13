@@ -39,9 +39,6 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCourses } from "@/services/courseService";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -224,7 +221,7 @@ export default function ExamsPage() {
                 جدولة امتحان جديد
               </Button>
             </GlassModalTrigger>
-            <GlassModalContent className="sm:max-w-[500px]">
+            <GlassModalContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
               <GlassModalHeader>
                 <GlassModalTitle>{editingId ? "تحديث الامتحان" : "جدولة امتحان جديد"}</GlassModalTitle>
                 <GlassModalDescription>
@@ -232,7 +229,7 @@ export default function ExamsPage() {
                 </GlassModalDescription>
               </GlassModalHeader>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 px-4">
                    <FormField
                     control={form.control}
                     name="courseId"
@@ -265,36 +262,20 @@ export default function ExamsPage() {
                       control={form.control}
                       name="examDate"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem>
                           <FormLabel>تاريخ الامتحان</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal text-xs",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>اختر التاريخ</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start" side="top" sideOffset={4}>
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
+                          <FormControl>
+                            <Input
+                              className="glass-input text-xs"
+                              type="date"
+                              value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  field.onChange(new Date(e.target.value));
+                                }
+                              }}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

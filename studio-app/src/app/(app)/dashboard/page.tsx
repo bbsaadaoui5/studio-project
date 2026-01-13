@@ -17,6 +17,9 @@ import {
     PieChart,
     BarChart,
     Loader2,
+    Bell,
+    AlertCircle,
+    Eye,
 } from "lucide-react";
 import { StudentEnrollmentChart } from "@/components/charts/student-enrollment-chart";
 import { StudentClassDistributionChart } from "@/components/charts/student-class-distribution-chart";
@@ -26,6 +29,12 @@ import { getCourseCount } from "@/services/courseService";
 import { getStaffCount } from "@/services/staffService";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/i18n/translation-provider";
+import { getActiveAnnouncements, getAnnouncementsByStatus, incrementAnnouncementViews } from "@/services/announcementService";
+import type { Announcement } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import Link from "next/link";
 
 export default function DashboardPage() {
     const { toast } = useToast();
@@ -36,6 +45,8 @@ export default function DashboardPage() {
         staff: 0,
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -63,6 +74,66 @@ export default function DashboardPage() {
         };
         fetchStats();
     }, [toast, t]);
+
+    useEffect(() => {
+        const fetchAnnouncements = async () => {
+            try {
+                const [activeAnnouncements, scheduledAnnouncements] = await Promise.all([
+                    getActiveAnnouncements(undefined, 10),
+                    getAnnouncementsByStatus("scheduled")
+                ]);
+                
+                // Merge and filter for today's events or active announcements
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                const merged = [...activeAnnouncements, ...scheduledAnnouncements]
+                    .filter((a, index, self) => self.findIndex(x => x.id === a.id) === index) // deduplicate
+                    .filter(a => {
+                        // Include if active and not expired
+                        if (a.status === 'active') return true;
+                        
+                        // Include scheduled if eventDate is today or in near future
+                        if (a.eventDate) {
+                            const eventDate = new Date(a.eventDate);
+                            eventDate.setHours(0, 0, 0, 0);
+                            return eventDate >= today && eventDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        }
+                        
+                        return false;
+                    })
+                    .slice(0, 5);
+                
+                setAnnouncements(merged);
+            } catch (error) {
+                console.error("Error loading announcements:", error);
+            } finally {
+                setIsLoadingAnnouncements(false);
+            }
+        };
+        fetchAnnouncements();
+    }, []);
+
+    const handleAnnouncementView = async (id: string) => {
+        try {
+            await incrementAnnouncementViews(id);
+        } catch (error) {
+            console.error("Error incrementing views:", error);
+        }
+    };
+
+    const getPriorityBadge = (priority?: string) => {
+        switch (priority) {
+            case "urgent":
+                return <Badge variant="destructive" className="mr-2 text-xs"><AlertCircle className="w-3 h-3 ml-1" />عاجل</Badge>;
+            case "important":
+                return <Badge variant="default" className="mr-2 text-xs bg-orange-500"><Bell className="w-3 h-3 ml-1" />مهم</Badge>;
+            default:
+                return null;
+        }
+    };
 
     const renderStat = (value: number | null, suffix: string = "") => {
         if (isLoading) {
@@ -147,6 +218,79 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent className="flex justify-center">
                        <DashboardCalendar />
+                    </CardContent>
+                </Card>
+                
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Bell className="h-5 w-5" />
+                                    📢 الإعلانات النشطة
+                                </CardTitle>
+                                <CardDescription>آخر الإعلانات والأخبار المهمة</CardDescription>
+                            </div>
+                            <Link href="/communication/announcements">
+                                <Badge variant="outline" className="cursor-pointer hover:bg-primary/10">
+                                    عرض الكل
+                                </Badge>
+                            </Link>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingAnnouncements ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : announcements.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                لا توجد إعلانات نشطة حالياً
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {announcements.map((announcement) => (
+                                    <div 
+                                        key={announcement.id}
+                                        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                        onClick={() => handleAnnouncementView(announcement.id)}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {getPriorityBadge(announcement.priority)}
+                                                <h4 className="font-semibold text-base">{announcement.title}</h4>
+                                            </div>
+                                            {announcement.viewCount !== undefined && (
+                                                <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                                    <Eye className="w-3 h-3" />
+                                                    {announcement.viewCount}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                            {announcement.content}
+                                        </p>
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                            {announcement.eventDate && (
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" />
+                                                    موعد: {format(new Date(announcement.eventDate), "dd MMM yyyy", { locale: ar })}
+                                                </span>
+                                            )}
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                نشر: {format(new Date(announcement.publishDate), "dd MMM yyyy", { locale: ar })}
+                                            </span>
+                                            {announcement.expiryDate && (
+                                                <span>
+                                                    ينتهي: {format(new Date(announcement.expiryDate), "dd MMM", { locale: ar })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

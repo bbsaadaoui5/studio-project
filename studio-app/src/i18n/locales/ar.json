@@ -24,6 +24,7 @@
     "staffDirectory": "دليل الطاقم",
     "payroll": "الرواتب",
     "attendance": "الحضور",
+    "conduct": "السلوك",
     "reviews": "التقييمات",
     "supportPrograms": "برامج الدعم",
     "courses": "المقررات",
@@ -277,6 +278,7 @@
   "announcements": {
     "latestTitle": "آخر الإعلانات",
     "noForParents": "لا توجد إعلانات موجهة لأولياء الأمور في الوقت الحالي.",
+    "noUrgent": "لا توجد إعلانات عاجلة",
     "title": "الإعلانات",
     "loading": "Announcements loading",
     "fetchError": "Failed to load announcements."
@@ -308,9 +310,8 @@
     "departmentLabel": "القسم",
     "fetchError": "تعذر جلب بيانات المادة.",
     "notAvailable": "غير متوفر",
-    "noGrades": "No grades available yet.",
-    "viewResources": "View resources"
-    ,
+    "noGrades": "لا توجد درجات متاحة بعد.",
+    "viewResources": "عرض الموارد",
     "nameMinLength": "يجب أن يكون اسم المقرر 3 أحرف على الأقل.",
     "teacherNameMinLength": "يجب أن يكون اسم الأستاذ 3 أحرف على الأقل.",
     "selectDepartment": "يرجى اختيار القسم.",
@@ -925,6 +926,7 @@
     "classes": "الفصول",
     "enrollment": "التسجيل",
     "attendance": "الحضور",
+    "conduct": "السلوك",
     "couldNotFetchGrades": "تعذر جلب الدرجات",
     "courseEnrollmentUpdated": "تم تحديث تسجيل المقرر",
     "enrollmentUpdated": "تم تحديث التسجيل",
@@ -1034,6 +1036,8 @@
   "nav": {
     "assignments": "الواجبات",
     "calendar": "التقويم",
+    "attendance": "الحضور",
+    "behavior": "السلوك",
     "announcements": "الإعلانات",
     "messages": "الرسائل"
   },
@@ -1060,11 +1064,22 @@
     },
     "errorFetchingStudents": "فشل في جلب الطلاب",
     "fetchError": "فشل في تحميل بيانات الحضور",
-    "title": "Recent attendance",
+    "title": "الحضور الأخير",
     "record": "Attendance record",
     "present": "Present",
     "late": "Late",
     "absent": "Absent"
+  },
+  "conduct": {
+    "pageTitle": "السلوك والانضباط",
+    "recordTitle": "سجل السلوك",
+    "noRecords": "لا توجد ملاحظات سلوك بعد.",
+    "overallRating": "التقييم العام",
+    "positive": "إيجابي",
+    "negative": "سلبي",
+    "neutral": "محايد",
+    "total": "إجمالي الملاحظات",
+    "by": "من قبل"
   },
   "calendar": {
     "cardTitle": "التقويم والتكامل مع الجدول",

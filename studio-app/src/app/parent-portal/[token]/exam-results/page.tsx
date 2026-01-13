@@ -41,17 +41,28 @@ export default function ExamResultsPage() {
       
       // Filter exams for this student's class
       const studentClassId = `${studentGrade}-${studentClassName}`;
+      console.log('🔍 Student Class ID:', studentClassId);
+      console.log('📚 All Exams:', allExams.map((e: any) => ({ title: e.title, classes: e.classes })));
+      
       const studentExams = allExams.filter((exam: any) => 
         (exam.classes || []).includes(studentClassId)
       );
+      
+      console.log('✅ Filtered Exams for this student:', studentExams.length);
 
       // Fetch scores and course info for each exam
       const examsWithScores = await Promise.all(
         studentExams.map(async (exam: any) => {
           const course = await getCourse(exam.courseId);
           const scoreData = await getExamScores(exam.id);
-          const studentScore = scoreData?.studentScores?.[studentId]?.score;
-
+          const studentScore = scoreData?.studentScores?.[studentId]?.score;          
+          console.log('🔍 PARENT PORTAL LOADING EXAM SCORES:');
+          console.log('📝 Exam ID:', exam.id, 'Title:', exam.title);
+          console.log('👤 Student ID from token:', studentId);
+          console.log('📊 Full scoreData from DB:', scoreData?.studentScores);
+          console.log('🔑 Keys in scoreData:', Object.keys(scoreData?.studentScores || {}));
+          console.log('🎯 Searching for score at key:', studentId);
+          console.log('🎯 Score for this student:', studentScore);
           return {
             ...exam,
             courseName: course?.name || exam.courseName || "Unknown Course",

@@ -19,7 +19,7 @@ common.areYouSure,Are you absolutely sure?,auto-filled
 common.continue,Continue,auto-filled
 common.cannotUndo,This action cannot be undone.,auto-filled
 common.deleting,Deleting...,auto-filled
-attendance.title,Recent attendance,auto-filled
+attendance.title,الحضور الأخير,auto-filled
 attendance.record,Attendance record,auto-filled
 attendance.present,Present,auto-filled
 attendance.late,Late,auto-filled

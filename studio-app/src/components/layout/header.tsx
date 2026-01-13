@@ -123,8 +123,23 @@ export function Header() {
             let link = await getParentAccessLink(viewSelectedStudent);
             // If no link exists, generate one automatically
             if (!link) {
-                await generateParentAccessToken(viewSelectedStudent);
-                link = await getParentAccessLink(viewSelectedStudent);
+                try {
+                    console.log('Generating parent access token for student:', viewSelectedStudent);
+                    await generateParentAccessToken(viewSelectedStudent);
+                    // Add a small delay to ensure the token is written to the database
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    link = await getParentAccessLink(viewSelectedStudent);
+                    console.log('Generated parent access link:', link);
+                } catch (genError) {
+                    console.error('Error generating token:', genError);
+                    toast({
+                        title: t('common.error') || 'خطأ',
+                        description: 'فشل في إنشاء رابط الوصول. يرجى محاولة مرة أخرى.',
+                        variant: "destructive",
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
             }
             
             if (link) {
@@ -138,14 +153,15 @@ export function Header() {
             } else {
                 toast({
                     title: t('common.error') || 'خطأ',
-                    description: t('parent.couldNotGenerateLink') || 'فشل في إنشاء رابط الوصول',
+                    description: 'لم يتمكن من العثور على رابط الوصول. يرجى المحاولة مرة أخرى.',
                     variant: "destructive",
                 });
             }
         } catch(error) {
+            console.error('Error in handleViewParentPortal:', error);
              toast({ 
                  title: t('common.error') || 'خطأ', 
-                 description: t('parent.couldNotGenerateLink') || 'فشل في إنشاء رابط الوصول', 
+                 description: 'حدث خطأ أثناء فتح بوابة ولي الأمر. يرجى المحاولة مرة أخرى.', 
                  variant: "destructive" 
              });
         } finally {
