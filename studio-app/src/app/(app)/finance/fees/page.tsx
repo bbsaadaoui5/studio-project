@@ -500,6 +500,20 @@ export default function FeesPage() {
                     </CardContent>
                 </Card>
             )}
+
+            {!isLoading && students.length === 0 && (
+                <Card>
+                    <CardContent className="text-center py-12">
+                        <p className="text-lg font-medium">{t('common.noData')}</p>
+                        <p className="text-muted-foreground">لم يتم العثور على أي طلاب نشطين. يرجى إضافة طلاب أولاً.</p>
+                        <Link href="/students">
+                            <Button className="mt-4 btn-gradient btn-click-effect">
+                                إذهب إلى إدارة الطلاب
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            )}
         </div>
             
         {(!isLoading && selectedStudent && feeStructure && feeStatus) && (
