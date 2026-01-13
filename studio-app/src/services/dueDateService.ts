@@ -103,17 +103,27 @@ export const getStaffDuePayments = async (year: number, month: number): Promise<
     const lastDayOfMonth = new Date(year, month, 0);
     const isOverdue = today > lastDayOfMonth;
 
-    return monthPayrolls.map(payroll => ({
-      staffId: payroll.staffId,
-      staffName: payroll.staffName || 'Unknown',
-      position: payroll.position || '',
-      salary: payroll.totalAmount,
-      month: new Date(year, month - 1).toLocaleString('ar-SA', { month: 'long' }),
-      year,
-      dueDate: new Date(year, month, 0).toISOString(), // آخر الشهر
-      status: payroll.isPaid ? 'paid' : isOverdue ? 'overdue' : 'pending',
-      paymentDate: payroll.paymentDate
-    }));
+    const staffPayments: StaffDuePayment[] = [];
+
+    for (const payroll of monthPayrolls) {
+      // حصل على معلومات الموظف من أول payslip
+      const firstPayslip = payroll.payslips?.[0];
+      if (!firstPayslip) continue;
+
+      staffPayments.push({
+        staffId: firstPayslip.staffId,
+        staffName: firstPayslip.staffName || 'Unknown',
+        position: firstPayslip.staffPosition || '',
+        salary: payroll.totalAmount,
+        month: new Date(year, month - 1).toLocaleString('ar-SA', { month: 'long' }),
+        year,
+        dueDate: new Date(year, month, 0).toISOString(), // آخر الشهر
+        status: payroll.status === 'paid' ? 'paid' : isOverdue ? 'overdue' : 'pending',
+        paymentDate: firstPayslip.paymentDate
+      });
+    }
+
+    return staffPayments;
   } catch (error) {
     console.error("Error fetching staff due payments:", error);
     return [];
