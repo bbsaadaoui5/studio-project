@@ -706,6 +706,12 @@
         }
       },
   "settings": {
+      "finance": {
+        "feeStructures": {
+          "title": "Fee Structures",
+          "academicYearDescription": "Define monthly fees for each grade for the {academicYear} academic year."
+        }
+      },
         "editDescription": "Run Date: {runDate}. Adjust payslip details below as needed.",
       "monthlyFeePlaceholder": "Enter monthly fee amount...",
         "staffIdLabel": "Staff ID: {id}",
