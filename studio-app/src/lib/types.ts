@@ -22,6 +22,7 @@ export type Student = {
   address: string;
   dateOfBirth: string; // ISO Date String
   medicalNotes?: string;
+  monthlyFee?: number; // الرسم الشهري
 };
 
 export type Announcement = {

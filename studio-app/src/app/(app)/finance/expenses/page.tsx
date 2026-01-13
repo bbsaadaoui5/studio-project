@@ -41,6 +41,7 @@ import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { startOfYear, endOfYear } from "date-fns";
 
 const expenseSchema = z.object({
         category: z.enum([
@@ -58,7 +59,12 @@ export default function ExpensesPage() {
         const { toast } = useToast();
         const { t } = useTranslation();
         const [expenses, setExpenses] = useState<Expense[]>([]);
-        const [dateRange, setDateRange] = useState<DateRange | undefined>();
+        const currentYear = new Date().getFullYear();
+        const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
+        const [dateRange, setDateRange] = useState<DateRange | undefined>(() => ({
+            from: startOfYear(new Date(currentYear, 0, 1)),
+            to: endOfYear(new Date(currentYear, 0, 1))
+        }));
         const [schoolName, setSchoolName] = useState("");
         const [isLoading, setIsLoading] = useState(true);
         const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,13 +172,19 @@ export default function ExpensesPage() {
         return new Intl.NumberFormat('ar-MA', { style: 'currency', currency: 'MAD' }).format(amount);
     };
 
-    // Group expenses by month and year
-    const expensesByMonth: { [key: string]: number } = {};
+    // Group expenses by month and year with proper sorting
+    const expensesByMonth: { [key: string]: { amount: number; date: Date } } = {};
     expenses.forEach(e => {
         const d = new Date(e.date);
-        const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-        expensesByMonth[key] = (expensesByMonth[key] || 0) + e.amount;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!expensesByMonth[key]) {
+            expensesByMonth[key] = { amount: 0, date: d };
+        }
+        expensesByMonth[key].amount += e.amount;
     });
+
+    // Sort months chronologically
+    const sortedMonths = Object.entries(expensesByMonth).sort(([keyA], [keyB]) => keyB.localeCompare(keyA));
 
     // حذف مصروف
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
@@ -201,14 +213,35 @@ export default function ExpensesPage() {
                                 راقب جميع مصروفات المدرسة وسجل النفقات الجديدة بسهولة
                             </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="year-filter" className="text-sm font-medium">السنة:</Label>
+                                <select
+                                    id="year-filter"
+                                    value={selectedYear}
+                                    onChange={(e) => {
+                                        setSelectedYear(e.target.value);
+                                        const yearNum = Number(e.target.value);
+                                        setDateRange({
+                                            from: startOfYear(new Date(yearNum, 0, 1)),
+                                            to: endOfYear(new Date(yearNum, 0, 1))
+                                        });
+                                    }}
+                                    className="rounded-md border px-3 py-2 text-sm"
+                                >
+                                    {Array.from({ length: 5 }).map((_, idx) => {
+                                        const year = currentYear - idx;
+                                        return <option key={year} value={year}>{year}</option>;
+                                    })}
+                                </select>
+                            </div>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                     id="date"
                                     variant={"outline"}
                                     className={cn(
-                                        "w-[300px] justify-start text-left font-normal",
+                                        "justify-start text-left font-normal",
                                         !dateRange && "text-muted-foreground"
                                     )}
                                     >
@@ -223,19 +256,22 @@ export default function ExpensesPage() {
                                         format(dateRange.from, "LLL dd, y")
                                         )
                                     ) : (
-                                        <span>اختر فترة زمنية</span>
+                                        <span>اختر فترة زمنية مخصصة</span>
                                     )}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={dateRange?.from}
-                                    selected={dateRange}
-                                    onSelect={setDateRange}
-                                    numberOfMonths={2}
-                                    />
+                                <PopoverContent className="w-auto p-3" align="end">
+                                    <div className="space-y-2">
+                                        <p className="text-xs text-muted-foreground font-medium">اختر نطاق مخصص (يتجاوز اختيار السنة)</p>
+                                        <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from}
+                                        selected={dateRange}
+                                        onSelect={setDateRange}
+                                        numberOfMonths={1}
+                                        />
+                                    </div>
                                 </PopoverContent>
                             </Popover>
 
@@ -391,14 +427,15 @@ export default function ExpensesPage() {
                             <div className="mt-6">
                                 <h3 className="font-bold text-lg mb-2">إجمالي المصروفات الشهرية</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {Object.keys(expensesByMonth).length > 0 ? (
-                                        Object.entries(expensesByMonth).map(([key, value]) => {
+                                    {sortedMonths.length > 0 ? (
+                                        sortedMonths.map(([key, data]) => {
                                             const [year, month] = key.split('-');
-                                            const date = new Date(Number(year), Number(month) - 1);
+                                            const monthNum = Number(month) - 1;
+                                            const monthName = new Date(Number(year), monthNum).toLocaleString('ar-SA', { month: 'long' });
                                             return (
                                                 <div key={key} className="border rounded p-3 flex flex-col items-center">
-                                                    <span className="font-semibold">{t('months.' + date.toLocaleString('en-US', { month: 'long' }).toLowerCase())} {year}</span>
-                                                    <span className="text-green-700 font-bold text-xl">{formatCurrency(value)}</span>
+                                                    <span className="font-semibold">{monthName} {year}</span>
+                                                    <span className="text-green-700 font-bold text-xl">{formatCurrency(data.amount)}</span>
                                                 </div>
                                             );
                                         })

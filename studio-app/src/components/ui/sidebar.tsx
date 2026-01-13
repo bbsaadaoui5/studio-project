@@ -46,6 +46,7 @@ import {
   Banknote,
   AlertCircle,
   ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -177,6 +178,7 @@ const menuItems = [
       { label: "navigation.fees", href: "/finance/fees", icon: Receipt },
       { label: "navigation.expenses", href: "/finance/expenses", icon: TrendingDown },
       { label: "navigation.reports", href: "/finance/reports", icon: BarChart },
+      { label: "المستحقات", href: "/finance/due-payments", icon: AlertTriangle },
       { label: "finance.reports.studentOutstanding", href: "/finance/reports/student-outstanding", icon: Users },
       { label: "finance.reports.staffPaymentDue", href: "/finance/reports/staff-payment-due", icon: Banknote },
     ],

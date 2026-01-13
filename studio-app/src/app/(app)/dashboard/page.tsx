@@ -20,6 +20,7 @@ import {
     Bell,
     AlertCircle,
     Eye,
+    AlertTriangle,
 } from "lucide-react";
 import { StudentEnrollmentChart } from "@/components/charts/student-enrollment-chart";
 import { StudentClassDistributionChart } from "@/components/charts/student-class-distribution-chart";
@@ -27,6 +28,7 @@ import { DashboardCalendar } from "@/components/layout/dashboard-calendar";
 import { getStudentStats } from "@/services/studentService";
 import { getCourseCount } from "@/services/courseService";
 import { getStaffCount } from "@/services/staffService";
+import { getOverduePayments } from "@/services/dueDateService";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/i18n/translation-provider";
 import { getActiveAnnouncements, getAnnouncementsByStatus, incrementAnnouncementViews } from "@/services/announcementService";
@@ -47,6 +49,8 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [isLoadingAnnouncements, setIsLoadingAnnouncements] = useState(true);
+    const [overdue, setOverdue] = useState<any>(null);
+    const [isLoadingOverdue, setIsLoadingOverdue] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -116,6 +120,20 @@ export default function DashboardPage() {
         fetchAnnouncements();
     }, []);
 
+    useEffect(() => {
+        const fetchOverdue = async () => {
+            try {
+                const overdueData = await getOverduePayments();
+                setOverdue(overdueData);
+            } catch (error) {
+                console.error("Error loading overdue payments:", error);
+            } finally {
+                setIsLoadingOverdue(false);
+            }
+        };
+        fetchOverdue();
+    }, []);
+
     const handleAnnouncementView = async (id: string) => {
         try {
             await incrementAnnouncementViews(id);
@@ -144,6 +162,10 @@ export default function DashboardPage() {
         }
         return <div className="text-3xl font-bold">{value.toFixed(0)}{suffix}</div>;
     }
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('ar-MA', { style: 'currency', currency: 'MAD' }).format(amount);
+    };
 
     return (
         <div className="flex flex-col gap-6">
@@ -208,6 +230,40 @@ export default function DashboardPage() {
                 </Card>
             </div>
              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                {/* Overdue Payments Alert */}
+                {overdue && !isLoadingOverdue && (overdue.overdueStudents.length > 0 || overdue.overdueStaff.length > 0) && (
+                    <Card className="border-red-200 bg-red-50 lg:col-span-3">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-red-700">
+                                <AlertTriangle className="h-5 w-5" />
+                                تنبيه: مستحقات مالية متأخرة
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {overdue.overdueStudents.length > 0 && (
+                                    <Link href="/finance/due-payments">
+                                        <div className="p-4 bg-white rounded-lg border border-red-200 hover:shadow-md transition-shadow cursor-pointer">
+                                            <p className="font-semibold text-sm mb-2 text-red-700">👨‍🎓 رسوم الطلاب المتأخرة</p>
+                                            <p className="text-2xl font-bold text-red-700">{overdue.overdueStudents.length}</p>
+                                            <p className="text-sm text-muted-foreground">{formatCurrency(overdue.totalOverdueStudentAmount)}</p>
+                                        </div>
+                                    </Link>
+                                )}
+                                {overdue.overdueStaff.length > 0 && (
+                                    <Link href="/finance/due-payments">
+                                        <div className="p-4 bg-white rounded-lg border border-red-200 hover:shadow-md transition-shadow cursor-pointer">
+                                            <p className="font-semibold text-sm mb-2 text-red-700">👔 رواتب الموظفين المتأخرة</p>
+                                            <p className="text-2xl font-bold text-red-700">{overdue.overdueStaff.length}</p>
+                                            <p className="text-sm text-muted-foreground">{formatCurrency(overdue.totalOverdueStaffAmount)}</p>
+                                        </div>
+                                    </Link>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="lg:col-span-1">
                      <CardHeader>
                         <CardTitle className="flex items-center gap-2">
