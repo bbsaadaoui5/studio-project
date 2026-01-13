@@ -52,7 +52,7 @@ export default function ConductManagementPage() {
       } catch (error) {
         toast({
           title: t("common.error"),
-          description: "Failed to fetch students",
+          description: "تعذر جلب بيانات الطلاب",
           variant: "destructive",
         });
       } finally {
@@ -90,7 +90,7 @@ export default function ConductManagementPage() {
       } catch (error) {
         toast({
           title: "Error",
-          description: "Failed to fetch students for the selected class.",
+          description: "تعذر جلب الطلاب لهذا الفصل.",
           variant: "destructive",
         });
         setStudentsInClass([]);
@@ -105,7 +105,7 @@ export default function ConductManagementPage() {
     if (!selectedStudent || !noteText.trim()) {
       toast({
         title: t("common.error"),
-        description: "Please select a student and enter a note.",
+        description: "يرجى اختيار طالب وإدخال الملاحظة.",
         variant: "destructive",
       });
       return;
@@ -114,7 +114,7 @@ export default function ConductManagementPage() {
     if (!user) {
       toast({
         title: t("common.error"),
-        description: "User not authenticated.",
+        description: "المستخدم غير مسجل الدخول.",
         variant: "destructive",
       });
       return;
@@ -133,7 +133,7 @@ export default function ConductManagementPage() {
 
       toast({
         title: t("common.success"),
-        description: "Conduct note added successfully.",
+        description: "تم إضافة ملاحظة السلوك بنجاح.",
       });
 
       // Reset form
@@ -142,7 +142,7 @@ export default function ConductManagementPage() {
     } catch (error) {
       toast({
         title: t("common.error"),
-        description: "Failed to add conduct note.",
+        description: "تعذر إضافة ملاحظة السلوك.",
         variant: "destructive",
       });
     } finally {
@@ -161,7 +161,7 @@ export default function ConductManagementPage() {
     } catch (error) {
       toast({
         title: t("common.error"),
-        description: "Failed to load conduct history.",
+        description: "تعذر تحميل سجل السلوك.",
         variant: "destructive",
       });
       setHistoryNotes([]);
