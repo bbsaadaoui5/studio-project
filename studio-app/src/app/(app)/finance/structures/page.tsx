@@ -97,9 +97,18 @@ export default function FeeStructuresPage() {
         getFeeStructures(),
         getSettings()
       ]);
-      setStructures(fetchedStructures.filter(s => s.academicYear === settings.academicYear));
+      // Show all structures regardless of academic year to help recover lost data
+      setStructures(fetchedStructures);
       setAcademicYear(settings.academicYear);
+      if (fetchedStructures.length > 0) {
+        console.log('[Fee Structures] Loaded:', {
+          total: fetchedStructures.length,
+          years: [...new Set(fetchedStructures.map(s => s.academicYear))],
+          current: settings.academicYear
+        });
+      }
     } catch (error) {
+      console.error('[Fee Structures Error]', error);
       toast({
         title: "Error",
         description: "Could not fetch fee structures.",
