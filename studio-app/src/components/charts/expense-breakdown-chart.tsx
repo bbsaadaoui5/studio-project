@@ -10,9 +10,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
-import { getExpenseSummaryWithSalaries } from "@/services/financeService"
 
 // تعريب الفئات
 const categoryLabels: Record<string, string> = {
@@ -24,49 +22,37 @@ const categoryLabels: Record<string, string> = {
     "Staff Salaries": "رواتب الموظفين"
 };
 
-export function ExpenseBreakdownChart() {
+type ExpenseBreakdownChartProps = {
+    summary: Record<string, number>;
+    isLoading: boolean;
+};
+
+export function ExpenseBreakdownChart({ summary, isLoading }: ExpenseBreakdownChartProps) {
     const [chartData, setChartData] = React.useState<any[]>([]);
     const [chartConfig, setChartConfig] = React.useState<ChartConfig>({});
-    const [isLoading, setIsLoading] = React.useState(true);
-    const { toast } = useToast();
 
     React.useEffect(() => {
-        const fetchExpenseData = async () => {
-            try {
-                const expenseSummary = await getExpenseSummaryWithSalaries();
-                const data = Object.keys(expenseSummary).map((key, index) => ({
-                    name: categoryLabels[key] || key,
-                    value: expenseSummary[key],
-                    fill: `hsl(var(--chart-${index + 1}))`
-                }));
-                setChartData(data);
+        const data = Object.keys(summary).map((key, index) => ({
+            name: categoryLabels[key] || key,
+            value: summary[key],
+            fill: `hsl(var(--chart-${index + 1}))`
+        }));
+        setChartData(data);
 
-                const config = {
-                    value: {
-                        label: "Expenses (MAD)",
-                    },
-                    ...data.reduce((acc, entry) => {
-                        acc[entry.name as keyof typeof acc] = {
-                            label: entry.name,
-                            color: entry.fill,
-                        };
-                        return acc;
-                    }, {} as ChartConfig),
-                } satisfies ChartConfig;
-                setChartConfig(config);
-
-            } catch (error) {
-                 toast({
-                    title: "Error",
-                    description: "Could not fetch expense data for charts.",
-                    variant: "destructive",
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchExpenseData();
-    }, [toast]);
+        const config = {
+            value: {
+                label: "Expenses (MAD)",
+            },
+            ...data.reduce((acc, entry) => {
+                acc[entry.name as keyof typeof acc] = {
+                    label: entry.name,
+                    color: entry.fill,
+                };
+                return acc;
+            }, {} as ChartConfig),
+        } satisfies ChartConfig;
+        setChartConfig(config);
+    }, [summary]);
     
     if (isLoading) {
         return <div className="flex h-full w-full items-center justify-center"><Loader2 className="animate-spin" /></div>
@@ -102,7 +88,7 @@ export function ExpenseBreakdownChart() {
             </div>
             {/* Legend */}
             <div className="flex flex-col gap-1 min-w-[120px] pr-1">
-                {chartData.map((entry, idx) => (
+                {chartData.map((entry) => (
                     <div key={entry.name} className="flex items-center gap-1">
                         <span
                             className="inline-block rounded-sm"

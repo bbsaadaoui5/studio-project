@@ -9,10 +9,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import * as React from "react";
-import { getIncomeSummary } from "@/services/financeService";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { format, subMonths } from "date-fns";
+import { addMonths, format, startOfMonth, subMonths } from "date-fns";
 
 const chartConfig = {
   income: {
@@ -21,41 +19,33 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function IncomeOverviewChart() {
-  const [chartData, setChartData] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const { toast } = useToast();
+type IncomeOverviewChartProps = {
+  summary: Record<string, number>;
+  isLoading: boolean;
+  from?: Date;
+  to?: Date;
+};
 
-  React.useEffect(() => {
-    const fetchIncomeData = async () => {
-      try {
-        const incomeSummary = await getIncomeSummary();
-        
-        const now = new Date();
-        const monthlyData: Record<string, number> = {};
-        for (let i = 5; i >= 0; i--) {
-            const month = format(subMonths(now, i), 'MMMM');
-            monthlyData[month] = incomeSummary[month] || 0;
-        }
-
-        const data = Object.keys(monthlyData).map(month => ({
-            month: month,
-            income: monthlyData[month]
-        }));
-
-        setChartData(data);
-      } catch (error) {
-        toast({
-            title: "Error",
-            description: "Could not fetch income data for chart.",
-            variant: "destructive"
-        })
-      } finally {
-        setIsLoading(false);
+export function IncomeOverviewChart({ summary, isLoading, from, to }: IncomeOverviewChartProps) {
+  const months = React.useMemo(() => {
+    if (from && to) {
+      const normalizedStart = startOfMonth(from);
+      const result: string[] = [];
+      let cursor = normalizedStart;
+      while (cursor <= to) {
+        result.push(format(cursor, 'MMMM'));
+        cursor = addMonths(cursor, 1);
       }
+      return result;
     }
-    fetchIncomeData();
-  }, [toast]);
+
+    const now = new Date();
+    return Array.from({ length: 6 }).map((_, idx) => format(subMonths(now, 5 - idx), 'MMMM'));
+  }, [from, to]);
+
+  const chartData = React.useMemo(() => (
+    months.map(month => ({ month, income: summary[month] || 0 }))
+  ), [months, summary]);
 
   if (isLoading) {
     return <div className="flex h-full w-full items-center justify-center"><Loader2 className="animate-spin" /></div>

@@ -100,12 +100,12 @@ export const addExpense = async (expenseData: Omit<Expense, 'id'>) => {
   }
 };
 
-export const getExpenseSummary = async (): Promise<Record<string, number>> => {
-    const expenses = await getExpenses();
-    return expenses.reduce((acc, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-        return acc;
-    }, {} as Record<string, number>);
+export const getExpenseSummary = async (from?: Date, to?: Date): Promise<Record<string, number>> => {
+  const expenses = await getExpenses(from, to);
+  return expenses.reduce((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    return acc;
+  }, {} as Record<string, number>);
 };
 
 // --- Fee Structures ---
@@ -289,16 +289,27 @@ export const deletePayment = async (paymentId: string): Promise<void> => {
 };
 
 
-export const getIncomeSummary = async (): Promise<Record<string, number>> => {
+export const getIncomeSummary = async (from?: Date, to?: Date): Promise<Record<string, number>> => {
     try {
     if (!db) {
       console.warn('Firestore not initialized. getIncomeSummary() returning empty summary.');
       return {};
     }
-    const querySnapshot = await getDocs(collection(db, "payments"));
+
+    const paymentsCol = collection(db, "payments");
+    const paymentsQuery = from && to
+      ? query(
+          paymentsCol,
+          where("date", ">=", Timestamp.fromDate(from)),
+          where("date", "<=", Timestamp.fromDate(to))
+        )
+      : paymentsCol;
+
+    const querySnapshot = await getDocs(paymentsQuery);
     return querySnapshot.docs.reduce((acc, doc) => {
             const payment = doc.data() as Payment;
-            const month = new Date(payment.date).toLocaleString('default', { month: 'long' });
+            const paymentDate = (payment.date as any)?.toDate ? (payment.date as any).toDate() : new Date(payment.date);
+            const month = paymentDate.toLocaleString('en-US', { month: 'long' });
             acc[month] = (acc[month] || 0) + payment.amount;
             return acc;
         }, {} as Record<string, number>);
@@ -308,11 +319,19 @@ export const getIncomeSummary = async (): Promise<Record<string, number>> => {
     }
 };
 
-export const getSalaryExpenses = async (): Promise<Record<string, number>> => {
+export const getSalaryExpenses = async (from?: Date, to?: Date): Promise<Record<string, number>> => {
     try {
         const payrolls = await getPayrolls();
-        return payrolls.reduce((acc, payroll) => {
-            const month = new Date(payroll.runDate).toLocaleString('default', { month: 'long' });
+    const filtered = payrolls.filter(payroll => {
+      const runDate = new Date(payroll.runDate);
+      if (Number.isNaN(runDate.getTime())) return false;
+      if (from && runDate < from) return false;
+      if (to && runDate > to) return false;
+      return true;
+    });
+
+    return filtered.reduce((acc, payroll) => {
+      const month = new Date(payroll.runDate).toLocaleString('en-US', { month: 'long' });
             acc[month] = (acc[month] || 0) + payroll.totalAmount;
             return acc;
         }, {} as Record<string, number>);
@@ -322,11 +341,11 @@ export const getSalaryExpenses = async (): Promise<Record<string, number>> => {
     }
 };
 
-export const getExpenseSummaryWithSalaries = async (): Promise<Record<string, number>> => {
+export const getExpenseSummaryWithSalaries = async (from?: Date, to?: Date): Promise<Record<string, number>> => {
     try {
         const [regularExpenses, salaryExpenses] = await Promise.all([
-            getExpenseSummary(),
-            getSalaryExpenses()
+      getExpenseSummary(from, to),
+      getSalaryExpenses(from, to)
         ]);
         
         const totalSalaries = Object.values(salaryExpenses).reduce((sum, amount) => sum + amount, 0);
